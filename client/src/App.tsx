@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { auth, Providers, analytics } from "./Config/firebase"; // adjust path as necessary
 import logo from "./logo.svg";
 import "./App.css";
+import myIcon from "./Assets/SVG_dodatno/home.svg";
 
 interface IUser {
   displayName: string | null;
@@ -19,7 +20,7 @@ const App: React.FC = () => {
           email: firebaseUser.email,
         };
         setUser(newUser);
-        analytics.logEvent('login', { method: 'Google' }); // Log login event
+        analytics.logEvent("login", { method: "Google" }); // Log login event
         console.log("Logged in user:", newUser);
       } else {
         setUser(null);
@@ -42,11 +43,14 @@ const App: React.FC = () => {
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          {user ? `Welcome, ${user.displayName}!` : "Please sign in."}
-        </p>
+        <p>{user ? `Welcome, ${user.displayName}!` : "Please sign in."}</p>
         <button onClick={signInWithGoogle}>Sign In with Google</button>
-        <p>Edit <code>src/App.tsx</code> and save to reload.</p>
+
+        <img src={myIcon} alt="My Icon" />
+
+        <p>
+          Edit <code>src/App.tsx</code> and save to reload.
+        </p>
         <a
           className="App-link"
           href="https://reactjs.org"
