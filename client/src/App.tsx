@@ -3,7 +3,31 @@ import { auth, Providers, analytics } from "./Config/firebase"; // adjust path a
 import logo from "./logo.svg";
 import "./App.css";
 import myIcon from "./Assets/SVG_dodatno/home.svg";
+import Dashboard from "./screens/Dashboard/Dashboard";
+import Timetable from "./screens/Timetable/Timetable";
+import Signin from "./screens/Signin/Signin";
+import Navigation from "./Components/Navigation/Navigation";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
+
+const App = () => {
+  return (
+    <div>
+      <BrowserRouter>
+        <Navigation />
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/timetable" element={<Timetable timetableData={[]} />} />
+          <Route path="/signin" element={<Signin />} />
+        </Routes>
+      </BrowserRouter>
+    </div>
+  );
+};
+
+export default App;
+
+/*
 interface IUser {
   displayName: string | null;
   email: string | null;
@@ -65,3 +89,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+*/
