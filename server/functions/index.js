@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const { db } = require('./firebaseAdmin');
-const { performApiRequest } = require('./apiRequest');
+const { performApiRequest, addFacultyDocumentsFromList } = require('./apiRequest');
+const { request } = require('express');
 
 exports.addDataFromApi = functions.https.onRequest(async (request, response) => {
   try {
@@ -11,3 +12,8 @@ exports.addDataFromApi = functions.https.onRequest(async (request, response) => 
     response.status(500).send(error);
   }
 });
+
+exports.addFaculties = functions.https.onRequest(async (request, response) => {
+    const result = await addFacultyDocumentsFromList();
+    response.json({ result })
+})
