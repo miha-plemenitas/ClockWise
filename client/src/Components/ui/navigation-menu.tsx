@@ -1,8 +1,6 @@
 import * as React from "react";
-import { ChevronDownIcon } from "@radix-ui/react-icons";
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
 import { cva } from "class-variance-authority";
-
 import { cn } from "src/lib/utils";
 
 const NavigationMenu = React.forwardRef<
@@ -12,7 +10,7 @@ const NavigationMenu = React.forwardRef<
   <NavigationMenuPrimitive.Root
     ref={ref}
     className={cn(
-      "relative z-10 flex max-w-max flex-1 items-center justify-center",
+      "relative z-10 flex w-full items-center justify-start px-8 py-3 border-b border-gray-300", // Adjusted px-4 to px-8 to match the dashboard padding
       className
     )}
     {...props}
@@ -30,7 +28,7 @@ const NavigationMenuList = React.forwardRef<
   <NavigationMenuPrimitive.List
     ref={ref}
     className={cn(
-      "group flex flex-1 list-none items-center justify-center space-x-1",
+      "flex flex-1 list-none items-center justify-start space-x-4", // Changed justify-center to justify-start for list alignment
       className
     )}
     {...props}
@@ -54,11 +52,6 @@ const NavigationMenuTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    {/* Commented out to remove the arrow icon */}
-    {/* <ChevronDown
-      className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
-      aria-hidden="true"
-    /> */}
   </NavigationMenuPrimitive.Trigger>
 ));
 NavigationMenuTrigger.displayName = NavigationMenuPrimitive.Trigger.displayName;
