@@ -1,0 +1,66 @@
+[
+    {
+       "schoolCode":"wtt_umpf",
+       "naziv":"Pravna fakulteta"
+    },
+    {
+       "schoolCode":"wtt_um_pef",
+       "naziv":"Pedagoška fakulteta"
+    },
+    {
+       "schoolCode":"wtt_um_mf",
+       "naziv":"Medicinska fakulteta"
+    },
+    {
+       "schoolCode":"wtt_um_ff",
+       "naziv":"Filozofska fakulteta"
+    },
+    {
+       "schoolCode":"wtt_um_fzv",
+       "naziv":"Fakulteta za zdravstvene vede"
+    },
+    {
+       "schoolCode":"wtt_ft",
+       "naziv":"Fakulteta za turizem"
+    },
+    {
+       "schoolCode":"wtt_um_fvv",
+       "naziv":"Fakulteta za varnostne vede"
+    },
+    {
+       "schoolCode":"wtt_um_fs",
+       "naziv":"Fakulteta za strojništvo"
+    },
+    {
+       "schoolCode":"wtt_um_fkbv",
+       "naziv":"Fakulteta za kmetijstvo in biosistemske vede"
+    },
+    {
+       "schoolCode":"wtt_um_fnm",
+       "naziv":"Fakulteta za naravoslovje in matematiko"
+    },
+    {
+       "schoolCode":"wtt_um_fl",
+       "naziv":"Fakulteta za logistiko"
+    },
+    {
+       "schoolCode":"wtt_um_fkkt",
+       "naziv":"Fakulteta za kemijo in kemijsko tehnologijo"
+    },
+    {
+       "schoolCode":"wtt_um_feum",
+       "naziv":"Fakulteta za energetiko"
+    },
+    {
+       "schoolCode":"wtt_um_feri",
+       "naziv":"Fakulteta za elektrotehniko, računalništvo in informatiko"
+    },
+    {
+       "schoolCode":"wtt_um_fgpa",
+       "naziv":"Fakulteta za gradbeništvo, prometno inženirstvo in arhitekturo"
+    },
+    {
+       "schoolCode":"wtt_um_epf",
+       "naziv":"Ekonomsko-poslovna fakulteta"
+    }
+ ]
