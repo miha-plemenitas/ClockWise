@@ -1,14 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { auth, Providers, analytics } from "./Config/firebase"; // adjust path as necessary
-import logo from "./logo.svg";
-import "./App.css";
-import myIcon from "./Assets/SVG_dodatno/home.svg";
-import Dashboard from "./screens/Dashboard/Dashboard";
-import Timetable from "./screens/Timetable/Timetable";
-import Signin from "./screens/Signin/Signin";
-import Navigation from "./Components/Navigation/Navigation";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-
+import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import Dashboard from './screens/Dashboard/Dashboard';
+import Timetable from './screens/Timetable/Timetable';
+import Signin from './screens/Signin/Signin';
+import Navigation from './Components/Navigation/Navigation';
+import './App.css';
 
 const App = () => {
   return (
@@ -26,6 +22,7 @@ const App = () => {
 };
 
 export default App;
+
 
 /*
 interface IUser {
