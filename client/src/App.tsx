@@ -1,28 +1,27 @@
-import React from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import Dashboard from './screens/Dashboard/Dashboard';
-import Timetable from './screens/Timetable/Timetable';
-import Signin from './screens/Signin/Signin';
-import Navigation from './Components/Navigation/Navigation';
-import './App.css';
+import React from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import Dashboard from "./screens/Dashboard/Dashboard";
+import Timetable from "./screens/Timetable/Timetable";
+import Signin from "./screens/Signin/Signin";
+import Navigation from "./Components/Navigation/Navigation";
+import Footer from "./Components/Footer/Footer";
+import "./App.css";
 
 const App = () => {
   return (
-    <div>
-      <BrowserRouter>
-        <Navigation />
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/timetable" element={<Timetable timetableData={[]} />} />
-          <Route path="/signin" element={<Signin />} />
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <Navigation />
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/timetable" element={<Timetable timetableData={[]} />} />
+        <Route path="/signin" element={<Signin />} />
+      </Routes>
+      <Footer />
+    </BrowserRouter>
   );
 };
 
 export default App;
-
 
 /*
 interface IUser {

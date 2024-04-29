@@ -19,12 +19,14 @@ module.exports = {
     extend: {
       colors: {
         oranzna: {
-          DEFAULT: "#FF9233",
-          700: "#e6821d", // Example darker shade for hover, adjust the hex code as needed
+          DEFAULT: "#FF9233", // Default shade of orange
+          100: "#FFD9B3", // Lighter shade for oranzna at 100
+          700: "#E6821D", // Darker shade for hover
         },
         modra: {
-          DEFAULT: "#1B364B",
-          700: "#162c3c", // Darker shade for hover
+          DEFAULT: "#1B364B", // Default shade of blue
+          100: "#D4DBE3", // Lighter shade for modra at 100
+          700: "#162C3C", // Darker shade for hover
         },
         crna: {
           DEFAULT: "#292929",

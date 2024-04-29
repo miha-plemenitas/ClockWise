@@ -2,6 +2,16 @@ import React, { useState } from "react";
 import { Card, CardContent } from "../../Components/ui/card";
 import { Input } from "../../Components/ui/input";
 import { Button } from "../../Components/ui/button";
+import { motion } from "framer-motion"; // Import motion
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.5 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.8, delay: 0.5, ease: [0, 0.71, 0.2, 1.01] },
+  },
+};
 
 const Signin: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -47,57 +57,63 @@ const Signin: React.FC = () => {
         </div>
 
         <div className="w-full md:w-1/2 max-w-md">
-          <Card className="shadow-2xl rounded-lg">
-            <CardContent className="p-8">
-              <h2 className="text-xl font-semibold mb-6">Sign In</h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={handleEmailChange}
-                    placeholder="Email"
-                    className="w-full px-4 py-2 rounded-lg border-gray-300"
-                    required
-                  />
-                </div>
-                <div>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={handlePasswordChange}
-                    placeholder="Password"
-                    className="w-full px-4 py-2 rounded-lg border-gray-300"
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-crna hover:bg-crna-700 text-white font-bold py-2 px-4 rounded-lg"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Loading..." : "Sign In"}
+          <motion.div
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <Card className="shadow-2xl rounded-lg">
+              <CardContent className="p-8">
+                <h2 className="text-xl font-semibold mb-6">Sign In</h2>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={handleEmailChange}
+                      placeholder="Email"
+                      className="w-full px-4 py-2 rounded-lg border-gray-300"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={handlePasswordChange}
+                      placeholder="Password"
+                      className="w-full px-4 py-2 rounded-lg border-gray-300"
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-crna hover:bg-crna-700 text-white font-bold py-2 px-4 rounded-lg"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Loading..." : "Sign In"}
+                  </Button>
+                </form>{" "}
+                <div className="my-4 text-center">OR CONTINUE WITH</div>
+                <Button className="w-full bg-oranzna hover:bg-oranzna-700 text-white font-bold py-2 px-4 rounded-lg">
+                  Microsoft Student Account
                 </Button>
-              </form>{" "}
-              <div className="my-4 text-center">OR CONTINUE WITH</div>
-              <Button className="w-full bg-oranzna hover:bg-oranzna-700 text-white font-bold py-2 px-4 rounded-lg">
-                Microsoft Student Account
-              </Button>
-              <p className="mt-4 text-xs text-center">
-                By clicking continue, you agree to our{" "}
-                <a href="#terms" className="underline">
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a href="#privacy" className="underline">
-                  Privacy Policy
-                </a>
-                .
-              </p>
-            </CardContent>
-          </Card>
+                <p className="mt-4 text-xs text-center">
+                  By clicking continue, you agree to our{" "}
+                  <a href="#terms" className="underline">
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a href="#privacy" className="underline">
+                    Privacy Policy
+                  </a>
+                  .
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
     </div>
