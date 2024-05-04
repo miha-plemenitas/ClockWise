@@ -1,29 +1,37 @@
 import React from 'react';
+import './Timetable.css'
+import FullCalendar from '@fullcalendar/react'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import timeGridPlugin from '@fullcalendar/timegrid'
 
 interface TimetableProps {
     timetableData: string[][];
 }
 
+const events = [
+    { title: 'Meeting', start: new Date() }
+  ]
+
+function renderEventContent(eventInfo: { timeText: any; event: any; }) {
+    return (
+      <>
+        <b>{eventInfo.timeText}</b>
+        <i>{eventInfo.event.title}</i>
+      </>
+    )
+  }
+
 const Timetable: React.FC<TimetableProps> = ({ timetableData }) => {
     return (
-        <table>
-            <thead>
-                <tr>
-                    <th>Day</th>
-                    <th>Time</th>
-                    <th>Event</th>
-                </tr>
-            </thead>
-            <tbody>
-                {timetableData.map((row, index) => (
-                    <tr key={index}>
-                        <td>{row[0]}</td>
-                        <td>{row[1]}</td>
-                        <td>{row[2]}</td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
+        <div className='timetable'>
+            <FullCalendar
+                plugins={[timeGridPlugin]}
+                initialView='timeGridWeek'
+                weekends={false}
+                events={events}
+                eventContent={renderEventContent}
+            />
+        </div>
     );
 };
 
