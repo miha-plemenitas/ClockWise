@@ -7,6 +7,8 @@ import Signin from './screens/Signin/Signin';
 import Navigation from './Components/Navigation/Navigation';
 import './App.css';
 import ForgotPassword from './screens/ForgotPassword/ForgotPassword';
+import Footer from "./Components/Footer/Footer";
+
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,7 +21,7 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/" element={<Timetable timetableData={[]} />} />
           <Route path="/signin" element={<Signin />} />
-          <Route path="/forgot" element={<ForgotPassword/>} />
+          <Route path="/forgot" element={<ForgotPassword />} />
         </Routes>
       </BrowserRouter>
     </div>
@@ -27,7 +29,6 @@ const App = () => {
 };
 
 export default App;
-
 
 /*
 interface IUser {

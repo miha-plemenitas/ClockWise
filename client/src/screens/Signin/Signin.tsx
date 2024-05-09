@@ -4,6 +4,16 @@ import { Input } from "../../Components/ui/input";
 import { Button } from "../../Components/ui/button";
 import { Link, useNavigate } from 'react-router-dom';
 import { BASE_URL } from '../../api';
+import { motion } from "framer-motion"; // Import motion
+
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.5 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.8, delay: 0.5, ease: [0, 0.71, 0.2, 1.01] },
+  },
+};
 
 const Signin: React.FC = () => {
   const [authenticating, setAuthenticating] = useState<boolean>(false);
