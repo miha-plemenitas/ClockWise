@@ -23,12 +23,12 @@ const Navigation = () => {
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <NavigationMenuLink href="/">
+          <NavigationMenuLink href="/dashboard">
             <NavigationMenuTrigger>Dashboard</NavigationMenuTrigger>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
-          <NavigationMenuLink href="/timetable">
+          <NavigationMenuLink href="/">
             <NavigationMenuTrigger>Timetable</NavigationMenuTrigger>
           </NavigationMenuLink>
         </NavigationMenuItem>
