@@ -1,18 +1,15 @@
 const axios = require('axios');
+
 const { db } = require('./firebaseAdmin');
 const { wtt_URL } = require('./constants');
 const faculties = require('./faculties.json');
 
-/**
- * Asynchronously retrieves an authentication token from a server.
- *
- * This function uses HTTP Basic Authentication to request a token from the WiseTimeTable server.
- * It constructs the authentication header with a username and password, encodes 
- * the credentials to Base64, and sends a GET request to the server's login endpoint.
- * 
- * @returns {Promise<string>} A promise that resolves to the authentication JWT token.
- */
-async function getToken() {
+// TODO: Fill DB with courses and branches
+// TODO: Fill DB with lectureres
+// TODO: FIll DB with lectures, separate from lectureres, rooms and groups
+
+
+async function getHeadersWithToken() {
   username = "wtt_api_user_a"
   password = "H50lsd2$XejBIBv7t"
 
@@ -26,35 +23,29 @@ async function getToken() {
 
   const response = await axios.get(`${wtt_URL}/login`, { headers });
   const token = response.data.token;
-  return token;
+
+  const headersWithToken = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+  return headersWithToken;
 }
 
-/**
- * Adds faculty information to the Firestore 'faculties' collection from a provided list.
- * 
- * This function iterates through an array of faculty objects, each containing faculty
- * information. It uses each faculty's name as a document ID and adds a document to the
- * Firestore 'faculties' collection if it does not already exist. Each document includes
- * the faculty's name, school code, and an index as an identifier.
- *
- * Note: This function assumes that 'faculties' is a globally accessible array where each
- * element is an object with 'name' and 'schoolCode' properties.
- */
+
 async function addFacultyDocumentsFromList() {
-  console.log(faculties.length)
   for (let index = 0; index < faculties.length; index++) {
     const faculty = faculties[index];
 
     try {
-      const docId = faculty.name;
-      const docRef = db.collection('faculties').doc(docId);
+      const facultyId = index.toString();
+      const docRef = db.collection('faculties').doc(facultyId);
       const doc = await docRef.get();
 
       if (!doc.exists) {
         await docRef.set({
           name: faculty.name,
           schoolCode: faculty.schoolCode,
-          id: index
+          facultyId: index
         });
         console.log(`Added faculty: ${faculty.name} with ID ${index}`);
       }
@@ -62,20 +53,22 @@ async function addFacultyDocumentsFromList() {
       console.error('Error processing faculty:', faculty.name, error);
     }
   }
+  console.log("Added all the faculties to the Database.");
+  return true;
 }
 
-async function getPrograms(token, attempt = 0) {
+
+async function fetchAndStoreProgramsForFaculties() {
+  const headers = await getHeadersWithToken();
+
   const faculties = await db.collection('faculties').get();
 
   faculties.forEach(async (doc) => {
     const faculty = doc.data();
 
     const params = {
-      "schoolCode": faculty.schoolCode
-    }
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      "schoolCode": faculty.schoolCode,
+      "language": "slo"
     }
 
     try {
@@ -87,29 +80,140 @@ async function getPrograms(token, attempt = 0) {
       const programs = response.data;
 
       programs.forEach(async (program) => {
-        await doc.ref.collection('programs').doc(program.name).set({
+        const programData = {
           name: program.name,
-          programLength: program.year,
-          id: program.id,
+          programDuration: program.year,
+          programId: Number(program.id),
           facultyRef: doc.ref
-        });
+        }
+
+        const programId = program.id.toString();
+        await doc.ref.collection('programs').doc(programId).set(programData);
       });
     } catch (error) {
       console.log('Error while fetching program data: ' + error);
     }
   });
+  return true;
 }
 
-async function performApiRequest() {
-  let token;
-  try {
-    token = await getToken();
-    await getPrograms(token);
-  } catch (error) {
-    console.error('Error in performApiRequest:', error);
+async function fetchAndStoreBranchesForPrograms() {
+  const headers = await getHeadersWithToken();
+
+  const faculties = await db.collection('faculties').get();
+  for (const facultyDoc of faculties.docs) {
+    const faculty = facultyDoc.data();
+    const programs = await facultyDoc.ref.collection('programs').get();
+
+    for (const programDoc of programs.docs) {
+      const program = programDoc.data();
+      const year = Number(program.programDuration);
+
+      for (let index = 1; index <= year; index++) {
+        const params = {
+          "schoolCode": faculty.schoolCode,
+          "language": "slo",
+          "programmeId": program.programId,
+          "year": index
+        };
+        let response;
+        try {
+          response = await axios.get(wtt_URL + "/branchAllForProgrmmeYear", { params, headers });
+        } catch (error) {
+          console.error("Error while fetching program branches", error);
+          continue;
+        }
+
+        for (const branch of response.data) {
+          if (!branch.branchName) {
+            console.log("Skipping branch with empty name");
+            continue;
+          }
+          const branchData = {
+            name: branch.branchName,
+            branchId: branch.id,
+            year: index,
+            programRef: programDoc.ref,
+          };
+
+          try {
+            const branchId = branch.id.toString();
+            await programDoc.ref.collection('branches').doc(branchId).set(branchData);
+            console.log(`Added branch ${branch.branchName}, for program ${program.programId}, ${faculty.facultyId} on year ${index}`);
+          } catch (error) {
+            console.error("Failed to process branch:", branch.branchName, error);
+          }
+        }
+      }
+    }
   }
-  console.log("Token:", token);
-  return token;
+  return true;
 }
 
-module.exports = { performApiRequest, addFacultyDocumentsFromList };
+
+async function fetchAndStoreBranchesForProgram(id) {
+  const headers = await getHeadersWithToken();
+
+  let facultyDoc;
+  try {
+    const facultyRef = db.collection('faculties').doc(id);
+    facultyDoc = await facultyRef.get();
+
+    if (!facultyDoc.exists)
+      throw new Error();
+  } catch (error) {
+    return "Faculty with this ID could not be found";
+  }
+
+  const faculty = facultyDoc.data();
+  const programs = await facultyDoc.ref.collection('programs').get();
+
+  for (const programDoc of programs.docs) {
+    const program = programDoc.data();
+    const year = Number(program.programDuration);
+
+    for (let index = 1; index <= year; index++) {
+      const params = {
+        "schoolCode": faculty.schoolCode,
+        "language": "slo",
+        "programmeId": program.programId,
+        "year": index
+      }
+
+      let response;
+      try {
+        response = await axios.get(wtt_URL + "/branchAllForProgrmmeYear", {
+          params: params,
+          headers: headers
+        });
+      } catch (error) {
+        console.error("Error while fatching program branche from API");
+      }
+
+      const branchPromises = response.data.map(async (branch) => {
+        if (!branch.branchName) {
+          return;
+        }
+
+        const branchData = {
+          name: branch.branchName,
+          branchId: branch.id,
+          year: index,
+          programRef: programDoc.ref,
+        };
+
+        const branchId = branch.id.toString();
+        try {
+          await programDoc.ref.collection('branches').doc(branchId).set(branchData);
+          console.log(`Added branch ${branch.branchName}, for program ${program.programId}, ${faculty.facultyId}`);
+        } catch (error) {
+          console.error("Failed to save branch data: " + error.message);
+        }
+      });
+
+      await Promise.all(branchPromises);
+    }
+  }
+}
+
+module.exports = { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchAndStoreBranchesForPrograms, fetchAndStoreBranchesForProgram };
