@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const { db } = require('./firebaseAdmin');
-const { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchAndStoreBranchesForPrograms, fetchAndStoreBranchesForProgram } = require('./apiRequest');
+const { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchAndStoreBranchesForPrograms, fetchAndStoreBranchesForProgram, fetchAndStoreCoursesById, 
+  fetchAndStoreCoursesForAllFaculties } = require('./apiRequest');
 const { request } = require('express');
 
 
@@ -28,5 +29,22 @@ exports.addBranch = functions.https.onRequest(async (request, response) => {
   }
 
   const result = await fetchAndStoreBranchesForProgram(id);
+  response.json({ result })
+});
+
+exports.addCourse = functions.https.onRequest(async (request, response) => {
+  const id = request.query.id;
+
+  if (!id) {
+    response.status(400).send('No ID provided');
+    return;
+  }
+
+  const result = await fetchAndStoreCoursesById(id);
+  response.json({ result })
+});
+
+exports.addCourses = functions.https.onRequest(async (request, response) => {
+  const result = await fetchAndStoreCoursesForAllFaculties();
   response.json({ result })
 });

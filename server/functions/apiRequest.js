@@ -1,10 +1,10 @@
 const axios = require('axios');
 
-const { db } = require('./firebaseAdmin');
+const { db, admin } = require('./firebaseAdmin');
 const { wtt_URL } = require('./constants');
 const faculties = require('./faculties.json');
 
-// TODO: Fill DB with courses and branches
+// TODO: Fill DB with courses
 // TODO: Fill DB with lectureres
 // TODO: FIll DB with lectures, separate from lectureres, rooms and groups
 
@@ -33,27 +33,27 @@ async function getHeadersWithToken() {
 
 
 async function addFacultyDocumentsFromList() {
-  for (let index = 0; index < faculties.length; index++) {
-    const faculty = faculties[index];
+  const batch = db.batch();
 
-    try {
-      const facultyId = index.toString();
-      const docRef = db.collection('faculties').doc(facultyId);
-      const doc = await docRef.get();
+  faculties.forEach((faculty, index) => {
+    const facultyId = index.toString();
+    const docRef = db.collection('faculties').doc(facultyId);
 
-      if (!doc.exists) {
-        await docRef.set({
-          name: faculty.name,
-          schoolCode: faculty.schoolCode,
-          facultyId: index
-        });
-        console.log(`Added faculty: ${faculty.name} with ID ${index}`);
-      }
-    } catch (error) {
-      console.error('Error processing faculty:', faculty.name, error);
-    }
+    batch.set(docRef, {
+      name: faculty.name,
+      schoolCode: faculty.schoolCode,
+      facultyId: index
+    }, { merge: true });
+  });
+
+  try {
+    await batch.commit();
+    console.log("All faculties added or updated successfully.");
+  } catch (error) {
+    console.error('Error processing faculties:', error);
+    return false;
   }
-  console.log("Added all the faculties to the Database.");
+
   return true;
 }
 
@@ -131,15 +131,15 @@ async function fetchAndStoreBranchesForPrograms() {
           }
           const branchData = {
             name: branch.branchName,
-            branchId: branch.id,
+            branchId: Number(branch.id),
             year: index,
             programRef: programDoc.ref,
+            programId: program.programId
           };
 
           try {
             const branchId = branch.id.toString();
-            await programDoc.ref.collection('branches').doc(branchId).set(branchData);
-            console.log(`Added branch ${branch.branchName}, for program ${program.programId}, ${faculty.facultyId} on year ${index}`);
+            await facultyDoc.ref.collection('branches').doc(branchId).set(branchData);
           } catch (error) {
             console.error("Failed to process branch:", branch.branchName, error);
           }
@@ -147,6 +147,7 @@ async function fetchAndStoreBranchesForPrograms() {
       }
     }
   }
+  console.log("Added Branches");
   return true;
 }
 
@@ -216,4 +217,138 @@ async function fetchAndStoreBranchesForProgram(id) {
   }
 }
 
-module.exports = { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchAndStoreBranchesForPrograms, fetchAndStoreBranchesForProgram };
+
+async function findProgramForBranch(facultyRef, branchId) {
+  try {
+    const branchQuery = facultyRef.collection("branches").doc(branchId);
+    const branchDoc = await branchQuery.get();
+
+    if (!branchDoc.empty) {
+      const branch = branchDoc.data();
+      return branch.programId;
+    }
+  } catch (error) {
+    console.error("Error finding program for branch:", error);
+  }
+
+  return null;
+}
+
+
+async function fetchAndStoreCoursesById(id) {
+  const headers = await getHeadersWithToken();
+
+  let facultyDoc;
+  let facultyRef;
+  try {
+    facultyRef = db.collection('faculties').doc(id);
+    facultyDoc = await facultyRef.get();
+
+    if (!facultyDoc.exists) throw new Error("Faculty not found");
+  } catch (error) {
+    console.error("Error fetching faculty:", error.message);
+    return "Faculty with this ID could not be found";
+  }
+
+  const faculty = facultyDoc.data();
+  let response;
+  try {
+    response = await axios.get(wtt_URL + "/courseAll", {
+      params: { "schoolCode": faculty.schoolCode, "language": "slo" },
+      headers: headers
+    });
+  } catch (error) {
+    console.error("Error fetching courses from API:", error.message);
+    return;
+  }
+
+  const courses = response.data;
+  const batch = db.batch();
+
+  const programLookups = courses.filter((_, index) => index % 20 === 0)
+    .map(course => findProgramForBranch(facultyRef, course.branchId)
+      .then(programId => ({
+        course,
+        programId
+      })));
+
+  const resolvedCourses = await Promise.all(programLookups);
+
+  resolvedCourses.forEach(({ course, programId }) => {
+    const courseData = {
+      courseId: Number(course.id),
+      course: course.course,
+      programId: programId,
+      branchId: Number(course.branchId)
+    };
+    const courseRef = facultyRef.collection('courses').doc(course.id);
+    batch.set(courseRef, courseData);
+  });
+
+  await batch.commit();
+  console.log("Added all selected courses successfully.");
+}
+
+
+async function fetchAndStoreCoursesForAllFaculties() {
+  const headers = await getHeadersWithToken();
+  let facultiesSnapshot;
+  try {
+    facultiesSnapshot = await db.collection('faculties').get();
+    if (facultiesSnapshot.empty) throw new Error("No faculties found");
+  } catch (error) {
+    console.error("Error fetching faculties:", error.message);
+    return "Failed to fetch faculties";
+  }
+
+  for (const facultyDoc of facultiesSnapshot.docs) {
+    const faculty = facultyDoc.data();
+    const facultyRef = facultyDoc.ref;
+
+    let response;
+    try {
+      response = await axios.get(wtt_URL + "/courseAll", {
+        params: { "schoolCode": faculty.schoolCode, "language": "slo" },
+        headers: headers
+      });
+    } catch (error) {
+      console.error(`Error fetching courses for faculty ${faculty.schoolCode}:`, error.message);
+      continue;
+    }
+
+    const courses = response.data;
+    const batch = db.batch();
+
+    const programLookups = courses.filter((_, index) => index % 20 === 0)
+      .map(course => findProgramForBranch(facultyRef, course.branchId)
+        .then(programId => ({
+          course,
+          programId
+        })));
+
+    const resolvedCourses = await Promise.all(programLookups);
+
+    resolvedCourses.forEach(({ course, programId }) => {
+      if (programId) {
+        const courseData = {
+          courseId: Number(course.id),
+          course: course.course,
+          programId: programId,
+          branchId: Number(course.branchId)
+        };
+        const courseRef = facultyRef.collection('courses').doc(course.id);
+        batch.set(courseRef, courseData);
+      }
+    });
+
+    await batch.commit();
+    console.log(`Added all selected courses successfully for faculty ${faculty.schoolCode}.`);
+  }
+}
+
+
+
+module.exports = {
+  addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchAndStoreBranchesForPrograms, fetchAndStoreBranchesForProgram, fetchAndStoreCoursesById,
+  fetchAndStoreCoursesForAllFaculties
+};
