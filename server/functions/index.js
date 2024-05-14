@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
 const { db } = require('./firebaseAdmin');
-const { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchAndStoreBranchesForPrograms, fetchAndStoreBranchesForProgram, fetchAndStoreCoursesById, 
-  fetchAndStoreCoursesForAllFaculties, fetchAndStoreTutorsForFacultiesById, fetchAndStoreTutorsForFaculties } = require('./apiRequest');
+const { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchBranchesForAllFaculties, fetchAndStoreBranchesForProgram, fetchAndStoreCoursesById, 
+  fetchAndStoreCoursesForAllFaculties, fetchAndStoreTutorsForFacultiesById, fetchAndStoreTutorsForFaculties, fetchBranchesByFacultyId } = require('./apiRequest');
 const { request } = require('express');
 
 
@@ -16,7 +16,7 @@ exports.addPrograms = functions.region('europe-west3').https.onRequest(async (re
 });
 
 exports.addBranches = functions.region('europe-west3').https.onRequest(async (request, response) => {
-  const result = await fetchAndStoreBranchesForPrograms();
+  const result = await fetchBranchesForAllFaculties();
   response.json({ result })
 });
 
@@ -28,7 +28,7 @@ exports.addBranch = functions.region('europe-west3').https.onRequest(async (requ
     return;
   }
 
-  const result = await fetchAndStoreBranchesForProgram(id);
+  const result = await fetchBranchesByFacultyId(id);
   response.json({ result })
 });
 

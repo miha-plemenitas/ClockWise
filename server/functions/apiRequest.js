@@ -1,27 +1,39 @@
 const axios = require('axios');
 
 const { db, admin } = require('./firebaseAdmin');
-const { wtt_URL } = require('./constants');
+const { wtt_URL, credentials } = require('./constants');
 const faculties = require('./faculties.json');
 
 // TODO: Fill DB with courses
 // TODO: FIll DB with lectures, separate from lectureres, rooms and groups
 
+async function fetchFromApi(URL, params = null, headers = null) {
+  if (!headers) {
+    headers = await getHeadersWithToken();
+  }
+
+  try {
+    const response = await axios.get(URL, {
+      params: params,
+      headers: headers
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching courses from API:", error.message);
+    throw new Error("Failed to fetch courses");
+  }
+}
+
 
 async function getHeadersWithToken() {
-  username = "wtt_api_user_a"
-  password = "H50lsd2$XejBIBv7t"
-
-  const credentials = `${username}:${password}`;
-  const encodedCredentials = Buffer.from(credentials).toString('base64');
-
+  const URL = `${wtt_URL}/login`;
   const headers = {
-    Authorization: `Basic ${encodedCredentials}`,
+    Authorization: `Basic ${credentials}`,
     'Content-Type': 'application/json'
   };
 
-  const response = await axios.get(`${wtt_URL}/login`, { headers });
-  const token = response.data.token;
+  const data = await fetchFromApi(URL, undefined, headers);
+  const token = data.token;
 
   const headersWithToken = {
     'Content-Type': 'application/json',
@@ -58,26 +70,19 @@ async function addFacultyDocumentsFromList() {
 
 
 async function fetchAndStoreProgramsForFaculties() {
-  const headers = await getHeadersWithToken();
-
   const faculties = await db.collection('faculties').get();
 
   faculties.forEach(async (doc) => {
     const faculty = doc.data();
 
+    const URL = `${wtt_URL}/basicProgrammeAll`;
     const params = {
       "schoolCode": faculty.schoolCode,
       "language": "slo"
     }
 
+    const programs = await fetchFromApi(URL, params);
     try {
-      response = await axios.get(wtt_URL + "/basicProgrammeAll", {
-        params: params,
-        headers: headers
-      });
-
-      const programs = response.data;
-
       programs.forEach(async (program) => {
         const programData = {
           name: program.name,
@@ -96,63 +101,83 @@ async function fetchAndStoreProgramsForFaculties() {
   return true;
 }
 
-async function fetchAndStoreBranchesForPrograms() {
+
+async function fetchBranchesByFacultyId(id) {
+  let facultyDoc;
+  try {
+    const facultyRef = db.collection('faculties').doc(id);
+    facultyDoc = await facultyRef.get();
+
+    if (!facultyDoc.exists)
+      throw new Error();
+  } catch (error) {
+    return "Faculty with this ID could not be found";
+  }
+
+  const response = await fetchBranchesByFacultyDoc(facultyDoc);
+  return response;
+}
+
+
+async function fetchBranchesByFacultyDoc(facultyDoc) {
+  const URL = `${wtt_URL}/branchAllForProgrmmeYear`;
+
+  const faculty = facultyDoc.data();
+  const programs = await facultyDoc.ref.collection('programs').get();
+
+  for (const programDoc of programs.docs) {
+    const program = programDoc.data();
+    const year = Number(program.programDuration);
+
+    for (let index = 1; index <= year; index++) {
+      const params = {
+        "schoolCode": faculty.schoolCode,
+        "language": "slo",
+        "programmeId": program.programId,
+        "year": index
+      }
+
+      const branches = await fetchFromApi(URL, params);
+
+      const branchPromises = branches.map(async (branch) => {
+        if (!branch.branchName) {
+          return;
+        }
+
+        const branchData = {
+          name: branch.branchName,
+          branchId: Number(branch.id),
+          year: index,
+          programRef: programDoc.ref,
+        };
+
+        const branchId = branch.id.toString();
+        try {
+          await facultyDoc.ref.collection('branches').doc(branchId).set(branchData);
+        } catch (error) {
+          console.error("Failed to save branch data: " + error.message);
+        }
+      });
+
+      await Promise.all(branchPromises);
+    }
+    console.log(`Added branches for program ${program.name}`);
+  }
+  console.log(`Added branches for faculty ${faculty.schoolCode}`);
+}
+
+
+async function fetchBranchesForAllFaculties() {
   const headers = await getHeadersWithToken();
 
   const faculties = await db.collection('faculties').get();
   for (const facultyDoc of faculties.docs) {
-    const faculty = facultyDoc.data();
-    const programs = await facultyDoc.ref.collection('programs').get();
-
-    for (const programDoc of programs.docs) {
-      const program = programDoc.data();
-      const year = Number(program.programDuration);
-
-      for (let index = 1; index <= year; index++) {
-        const params = {
-          "schoolCode": faculty.schoolCode,
-          "language": "slo",
-          "programmeId": program.programId,
-          "year": index
-        };
-        let response;
-        try {
-          response = await axios.get(wtt_URL + "/branchAllForProgrmmeYear", { params, headers });
-        } catch (error) {
-          console.error("Error while fetching program branches", error);
-          continue;
-        }
-
-        for (const branch of response.data) {
-          if (!branch.branchName) {
-            console.log("Skipping branch with empty name");
-            continue;
-          }
-          const branchData = {
-            name: branch.branchName,
-            branchId: Number(branch.id),
-            year: index,
-            programRef: programDoc.ref,
-            programId: program.programId
-          };
-
-          try {
-            const branchId = branch.id.toString();
-            await facultyDoc.ref.collection('branches').doc(branchId).set(branchData);
-          } catch (error) {
-            console.error("Failed to process branch:", branch.branchName, error);
-          }
-        }
-      }
-    }
+    const response = await fetchBranchesByFacultyDoc(facultyDoc);
   }
-  console.log("Added Branches");
-  return true;
 }
 
-
 async function fetchAndStoreBranchesForProgram(id) {
-  const headers = await getHeadersWithToken();
+  const URL = `${wtt_URL}/branchAllForProgrmmeYear`;
 
   let facultyDoc;
   try {
@@ -180,17 +205,9 @@ async function fetchAndStoreBranchesForProgram(id) {
         "year": index
       }
 
-      let response;
-      try {
-        response = await axios.get(wtt_URL + "/branchAllForProgrmmeYear", {
-          params: params,
-          headers: headers
-        });
-      } catch (error) {
-        console.error("Error while fatching program branche from API");
-      }
+      const branches = await fetchFromApi(URL, params);
 
-      const branchPromises = response.data.map(async (branch) => {
+      const branchPromises = branches.map(async (branch) => {
         if (!branch.branchName) {
           return;
         }
@@ -436,6 +453,6 @@ async function fetchAndStoreTutorsForFaculties() {
 }
 
 module.exports = {
-  addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchAndStoreBranchesForPrograms, fetchAndStoreBranchesForProgram, fetchAndStoreCoursesById,
-  fetchAndStoreCoursesForAllFaculties, fetchAndStoreTutorsForFacultiesById, fetchAndStoreTutorsForFaculties
+  addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchBranchesForAllFaculties, fetchAndStoreBranchesForProgram, fetchAndStoreCoursesById,
+  fetchAndStoreCoursesForAllFaculties, fetchAndStoreTutorsForFacultiesById, fetchAndStoreTutorsForFaculties, fetchBranchesByFacultyId
 };
