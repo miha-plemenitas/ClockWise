@@ -1,7 +1,6 @@
 const functions = require('firebase-functions');
 const { db } = require('./firebaseAdmin');
-const { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchBranchesForAllFaculties, fetchCoursesByFacultyId,fetchTutorsByFacultyId,
-  fetchCoursesForAllFaculties, fetchTutorsForAllFaculties, fetchBranchesByFacultyId } = require('./apiRequest');
+const { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchDataByFacultyId, fetchDataForAllFaculties } = require('./apiRequest');
 const { request } = require('express');
 
 
@@ -10,15 +9,18 @@ exports.addFaculties = functions.region('europe-west3').https.onRequest(async (r
     response.json({ result })
 });
 
+
 exports.addPrograms = functions.region('europe-west3').https.onRequest(async (request, response) => {
   const result = await fetchAndStoreProgramsForFaculties();
   response.json({ result })
 });
 
+
 exports.addBranches = functions.region('europe-west3').https.onRequest(async (request, response) => {
-  const result = await fetchBranchesForAllFaculties();
+  const result = await fetchDataForAllFaculties("branches");
   response.json({ result })
 });
+
 
 exports.addBranch = functions.region('europe-west3').https.onRequest(async (request, response) => {
   const id = request.query.id;
@@ -28,9 +30,10 @@ exports.addBranch = functions.region('europe-west3').https.onRequest(async (requ
     return;
   }
 
-  const result = await fetchBranchesByFacultyId(id);
+  const result = await fetchDataByFacultyId(id, "branches");
   response.json({ result })
 });
+
 
 exports.addCourse = functions.region('europe-west3').https.onRequest(async (request, response) => {
   const id = request.query.id;
@@ -40,14 +43,16 @@ exports.addCourse = functions.region('europe-west3').https.onRequest(async (requ
     return;
   }
 
-  const result = await fetchCoursesByFacultyId(id);
+  const result = await fetchDataByFacultyId(id, "courses");
   response.json({ result })
 });
 
+
 exports.addCourses = functions.region('europe-west3').https.onRequest(async (request, response) => {
-  const result = await fetchCoursesForAllFaculties();
+  const result = await fetchDataForAllFaculties("courses");
   response.json({ result })
 });
+
 
 exports.addTutor = functions.region('europe-west3').https.onRequest(async (request, response) => {
   const id = request.query.id;
@@ -57,11 +62,12 @@ exports.addTutor = functions.region('europe-west3').https.onRequest(async (reque
     return;
   }
 
-  const result = await fetchTutorsByFacultyId(id);
+  const result = await fetchDataByFacultyId(id, "tutors");
   response.json({ result })
 });
 
+
 exports.addTutors = functions.region('europe-west3').https.onRequest(async (request, response) => {
-  const result = await fetchTutorsForAllFaculties();
+  const result = await fetchDataForAllFaculties("tutors");
   response.json({ result })
 });

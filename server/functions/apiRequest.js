@@ -3,6 +3,7 @@ const axios = require('axios');
 const { db, admin } = require('./firebaseAdmin');
 const { wtt_URL, credentials } = require('./constants');
 const faculties = require('./faculties.json');
+const { response } = require('express');
 
 // TODO: FIll DB with lectures, separate from lectureres, rooms and groups
 
@@ -101,23 +102,6 @@ async function fetchAndStoreProgramsForFaculties() {
 }
 
 
-async function fetchBranchesByFacultyId(id) {
-  let facultyDoc;
-  try {
-    const facultyRef = db.collection('faculties').doc(id);
-    facultyDoc = await facultyRef.get();
-
-    if (!facultyDoc.exists)
-      throw new Error();
-  } catch (error) {
-    return "Faculty with this ID could not be found";
-  }
-
-  const response = await fetchBranchesByFacultyDoc(facultyDoc);
-  return response;
-}
-
-
 async function fetchBranchesByFacultyDoc(facultyDoc) {
   const URL = `${wtt_URL}/branchAllForProgrmmeYear`;
 
@@ -164,31 +148,6 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
     console.log(`Added branches for program ${program.name}`);
   }
   console.log(`Added branches for faculty ${faculty.schoolCode}`);
-}
-
-
-async function fetchBranchesForAllFaculties() {
-  const faculties = await db.collection('faculties').get();
-  for (const facultyDoc of faculties.docs) {
-    const response = await fetchBranchesByFacultyDoc(facultyDoc);
-  }
-}
-
-
-async function fetchCoursesByFacultyId(id) {
-  let facultyDoc;
-  try {
-    const facultyRef = db.collection('faculties').doc(id);
-    facultyDoc = await facultyRef.get();
-
-    if (!facultyDoc.exists)
-      throw new Error();
-  } catch (error) {
-    return "Faculty with this ID could not be found";
-  }
-
-  const response = await fetchCoursesByFacultyDoc(facultyDoc);
-  return response;
 }
 
 
@@ -244,32 +203,6 @@ async function findProgramForBranch(facultyRef, branchId) {
 }
 
 
-async function fetchCoursesForAllFaculties() {
-  const faculties = await db.collection('faculties').get();
-
-  for (const facultyDoc of faculties.docs) {
-    const response = await fetchCoursesByFacultyDoc(facultyDoc);
-  }
-}
-
-
-async function fetchTutorsByFacultyId(id) {
-  let facultyDoc;
-  try {
-    const facultyRef = db.collection('faculties').doc(id);
-    facultyDoc = await facultyRef.get();
-
-    if (!facultyDoc.exists)
-      throw new Error();
-  } catch (error) {
-    return "Faculty with this ID could not be found";
-  }
-
-  const response = await fetchTutorsByFacultyDoc(facultyDoc);
-  return response;
-}
-
-
 async function fetchTutorsByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
   const URL = `${wtt_URL}/basicTutorAll`;
@@ -294,15 +227,49 @@ async function fetchTutorsByFacultyDoc(facultyDoc) {
 }
 
 
-async function fetchTutorsForAllFaculties() {
-  const faculties = await db.collection('faculties').get();
+async function fetchDataForFaculty(facultyParam, dataType) {
+  let facultyDoc;
 
-  for (const facultyDoc of faculties.docs) {
-    const response = await fetchTutorsByFacultyDoc(facultyDoc);
+  if (typeof facultyParam === 'string') {
+    let facultyRef = db.collection('faculties').doc(facultyParam);
+    facultyDoc = await facultyRef.get();
+    if (!facultyDoc) {
+      return "Faculty with this ID could not be found";
+    }
+  } else {
+    facultyDoc = facultyParam;   // If facultyParam is a DocumentSnapshot
+  }
+
+  switch (dataType) {
+    case 'tutors':
+      return fetchTutorsByFacultyDoc(facultyDoc);
+    case 'courses':
+      return fetchCoursesByFacultyDoc(facultyDoc);
+    case 'branches':
+      return fetchBranchesByFacultyDoc(facultyDoc);
+    default:
+      console.error('Invalid data type specified');
+      return null;
   }
 }
 
+
+async function fetchDataForAllFaculties(dataType) {
+  const faculties = await db.collection('faculties').get();
+  const promises = faculties.docs.map(facultyDoc => {
+    return fetchDataForFaculty(facultyDoc, dataType);
+  });
+
+  await Promise.all(promises);
+  return;
+}
+
+
+async function fetchDataByFacultyId(id, dataType) {
+  return fetchDataForFaculty(id, dataType);
+}
+
+
 module.exports = {
-  addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchBranchesForAllFaculties, fetchTutorsByFacultyId,
-  fetchCoursesForAllFaculties, fetchTutorsForAllFaculties, fetchBranchesByFacultyId, fetchCoursesByFacultyId
+  addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchDataByFacultyId, fetchDataForAllFaculties
 };
