@@ -1,56 +1,15 @@
 const express = require("express");
 const cors = require("cors");
-const { initializeApp } = require("firebase-admin/app");
-const { signInWithEmailAndPassword } = require('firebase/auth');
+const admin = require("firebase-admin");
+const { initializeApp } = require("firebase/app");
+const { getAuth, signInWithEmailAndPassword, signOut } = require("firebase/auth");
 const bodyParser = require("body-parser");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-var admin = require("firebase-admin");
-
-var serviceAccount = require("./adminsdk.json");
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-
-//prijava
-app.post('/signin', async (req, res) => {
-  const { email, password } = req.body;
-
-  await signInWithEmailAndPassword(admin.auth(), email, password)
-    .then(result => {
-      res.sendStatus(200);
-    })
-    .catch(error => {
-      res.status(500).json({ error: "Napaka" });
-    });
-
-});
-
-app.get('/test', (req, res) => {
-  res.send('Dela!');
-});
-
-app.listen(4000, () => { console.log("Listening on port 4000") })
-
-
-/*
-const express = require("express");
-const cors = require("cors");
-const { initializeApp } = require("firebase-admin/app");
-const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = require('firebase/auth');
-const bodyParser = require("body-parser");
-
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
-
-var admin = require("firebase-admin");
-
-var serviceAccount = require("./adminsdk.json");
+const serviceAccount = require("./adminsdk.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -65,25 +24,10 @@ const firebaseConfig = {
   appId: "1:985838922008:web:5d36305a8f0bb94632566d",
 };
 
-const appFire = initializeApp(firebaseConfig);
-const auth = getAuth(appFire);
+const clientApp = initializeApp(firebaseConfig);
+const auth = getAuth(clientApp);
 
 
-//prijava
-app.post('/signin', async (req, res) => {
-  const { email, password } = req.body;
-
-  console.log('Dela?')
-  
-    await signInWithEmailAndPassword(auth, email, password)
-    .then(result => {
-      res.sendStatus(200);
-    })
-    .catch(error => {
-      res.status(500).json({ error: "Napaka" });
-    });
-    
+app.listen(4000, () => {
+  console.log("Listening on port 4000");
 });
-
-app.listen(4000, () => { console.log("Listening on port 4000") })
-*/

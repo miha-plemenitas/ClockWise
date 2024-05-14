@@ -1,15 +1,26 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import {
-  NavigationMenu,
-  NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuTrigger,
-  NavigationMenuLink,
-} from "../ui/navigation-menu"; // Adjust path as necessary
-import logo from "../../Assets/SVG_dodatno/calendar.svg"; // Adjust path as necessary
+import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuLink } from "../ui/navigation-menu";
+import logo from "../../Assets/SVG_dodatno/calendar.svg";
+import { useNavigate } from "react-router-dom";
+import { auth } from '../../Config/firebase';
 
-const Navigation = () => {
+interface NavigationProps {
+  isAuthenticated: boolean;
+  onLogout: () => void;
+}
+
+const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, onLogout }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      onLogout();
+      navigate('/signin');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
+  };
+
   return (
     <NavigationMenu>
       <NavigationMenuList>
@@ -17,7 +28,7 @@ const Navigation = () => {
           <NavigationMenuLink href="/">
             <img
               src={logo}
-              className="mr-4 align-middle w-6 h-6" // Tailwind CSS classes
+              className="mr-4 align-middle w-6 h-6"
               alt="logo"
             />
           </NavigationMenuLink>
@@ -32,14 +43,22 @@ const Navigation = () => {
             <NavigationMenuTrigger>Timetable</NavigationMenuTrigger>
           </NavigationMenuLink>
         </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink href="/signin">
-            <NavigationMenuTrigger>Sign In</NavigationMenuTrigger>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
+        {isAuthenticated ? (
+          <NavigationMenuItem>
+            <NavigationMenuTrigger onClick={handleLogout}>Sign out</NavigationMenuTrigger>
+          </NavigationMenuItem>
+        ) : (
+          <NavigationMenuItem>
+            <NavigationMenuLink href="/signin">
+              <NavigationMenuTrigger>Sign In</NavigationMenuTrigger>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        )}
       </NavigationMenuList>
     </NavigationMenu>
   );
 };
 
 export default Navigation;
+
+
