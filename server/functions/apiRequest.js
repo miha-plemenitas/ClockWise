@@ -4,7 +4,6 @@ const { db, admin } = require('./firebaseAdmin');
 const { wtt_URL, credentials } = require('./constants');
 const faculties = require('./faculties.json');
 
-// TODO: Fill DB with courses
 // TODO: FIll DB with lectures, separate from lectureres, rooms and groups
 
 async function fetchFromApi(URL, params = null, headers = null) {
@@ -149,6 +148,7 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
           branchId: Number(branch.id),
           year: index,
           programRef: programDoc.ref,
+          programId: program.programId
         };
 
         const branchId = branch.id.toString();
@@ -168,17 +168,14 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
 
 
 async function fetchBranchesForAllFaculties() {
-  const headers = await getHeadersWithToken();
-
   const faculties = await db.collection('faculties').get();
   for (const facultyDoc of faculties.docs) {
     const response = await fetchBranchesByFacultyDoc(facultyDoc);
   }
 }
 
-async function fetchAndStoreBranchesForProgram(id) {
-  const URL = `${wtt_URL}/branchAllForProgrmmeYear`;
 
+async function fetchCoursesByFacultyId(id) {
   let facultyDoc;
   try {
     const facultyRef = db.collection('faculties').doc(id);
@@ -190,47 +187,43 @@ async function fetchAndStoreBranchesForProgram(id) {
     return "Faculty with this ID could not be found";
   }
 
+  const response = await fetchCoursesByFacultyDoc(facultyDoc);
+  return response;
+}
+
+
+async function fetchCoursesByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
-  const programs = await facultyDoc.ref.collection('programs').get();
+  const URL = `${wtt_URL}/courseAll`;
+  const params = { "schoolCode": faculty.schoolCode, "language": "slo" }
 
-  for (const programDoc of programs.docs) {
-    const program = programDoc.data();
-    const year = Number(program.programDuration);
+  const courses = await fetchFromApi(URL, params);
+  const batch = db.batch();
 
-    for (let index = 1; index <= year; index++) {
-      const params = {
-        "schoolCode": faculty.schoolCode,
-        "language": "slo",
-        "programmeId": program.programId,
-        "year": index
-      }
+  const programLookups = courses.filter((_, index) => index % 20 === 0)
+    .map(course => findProgramForBranch(facultyDoc.ref, course.branchId)
+      .then(programId => ({
+        course,
+        programId
+      })));
 
-      const branches = await fetchFromApi(URL, params);
+  const resolvedCourses = await Promise.all(programLookups);
 
-      const branchPromises = branches.map(async (branch) => {
-        if (!branch.branchName) {
-          return;
-        }
+  resolvedCourses.forEach(({ course, programId }) => {
+    const courseData = {
+      courseId: Number(course.id),
+      course: course.course,
+      programId: programId,
+      branchId: Number(course.branchId)
+    };
+    const courseRef = facultyDoc.ref.collection('courses').doc(course.id);
+    batch.set(courseRef, courseData);
+  });
 
-        const branchData = {
-          name: branch.branchName,
-          branchId: Number(branch.id),
-          year: index,
-          programRef: programDoc.ref,
-        };
+  await batch.commit();
+  console.log(`Added courses for faculty ${faculty.schoolCode}`);
 
-        const branchId = branch.id.toString();
-        try {
-          await programDoc.ref.collection('branches').doc(branchId).set(branchData);
-          console.log(`Added branch ${branch.branchName}, for program ${program.programId}, ${faculty.facultyId}`);
-        } catch (error) {
-          console.error("Failed to save branch data: " + error.message);
-        }
-      });
-
-      await Promise.all(branchPromises);
-    }
-  }
+  return;
 }
 
 
@@ -251,145 +244,38 @@ async function findProgramForBranch(facultyRef, branchId) {
 }
 
 
-async function fetchAndStoreCoursesById(id) {
-  const headers = await getHeadersWithToken();
+async function fetchCoursesForAllFaculties() {
+  const faculties = await db.collection('faculties').get();
 
-  let facultyDoc;
-  let facultyRef;
-  try {
-    facultyRef = db.collection('faculties').doc(id);
-    facultyDoc = await facultyRef.get();
-
-    if (!facultyDoc.exists) throw new Error("Faculty not found");
-  } catch (error) {
-    console.error("Error fetching faculty:", error.message);
-    return "Faculty with this ID could not be found";
-  }
-
-  const faculty = facultyDoc.data();
-  let response;
-  try {
-    response = await axios.get(wtt_URL + "/courseAll", {
-      params: { "schoolCode": faculty.schoolCode, "language": "slo" },
-      headers: headers
-    });
-  } catch (error) {
-    console.error("Error fetching courses from API:", error.message);
-    return;
-  }
-
-  const courses = response.data;
-  const batch = db.batch();
-
-  const programLookups = courses.filter((_, index) => index % 20 === 0)
-    .map(course => findProgramForBranch(facultyRef, course.branchId)
-      .then(programId => ({
-        course,
-        programId
-      })));
-
-  const resolvedCourses = await Promise.all(programLookups);
-
-  resolvedCourses.forEach(({ course, programId }) => {
-    const courseData = {
-      courseId: Number(course.id),
-      course: course.course,
-      programId: programId,
-      branchId: Number(course.branchId)
-    };
-    const courseRef = facultyRef.collection('courses').doc(course.id);
-    batch.set(courseRef, courseData);
-  });
-
-  await batch.commit();
-  console.log("Added all selected courses successfully.");
-}
-
-
-async function fetchAndStoreCoursesForAllFaculties() {
-  const headers = await getHeadersWithToken();
-  let facultiesSnapshot;
-  try {
-    facultiesSnapshot = await db.collection('faculties').get();
-    if (facultiesSnapshot.empty) throw new Error("No faculties found");
-  } catch (error) {
-    console.error("Error fetching faculties:", error.message);
-    return "Failed to fetch faculties";
-  }
-
-  for (const facultyDoc of facultiesSnapshot.docs) {
-    const faculty = facultyDoc.data();
-    const facultyRef = facultyDoc.ref;
-
-    let response;
-    try {
-      response = await axios.get(wtt_URL + "/courseAll", {
-        params: { "schoolCode": faculty.schoolCode, "language": "slo" },
-        headers: headers
-      });
-    } catch (error) {
-      console.error(`Error fetching courses for faculty ${faculty.schoolCode}:`, error.message);
-      continue;
-    }
-
-    const courses = response.data;
-    const batch = db.batch();
-
-    const programLookups = courses.filter((_, index) => index % 20 === 0)
-      .map(course => findProgramForBranch(facultyRef, course.branchId)
-        .then(programId => ({
-          course,
-          programId
-        })));
-
-    const resolvedCourses = await Promise.all(programLookups);
-
-    resolvedCourses.forEach(({ course, programId }) => {
-      if (programId) {
-        const courseData = {
-          courseId: Number(course.id),
-          course: course.course,
-          programId: programId,
-          branchId: Number(course.branchId)
-        };
-        const courseRef = facultyRef.collection('courses').doc(course.id);
-        batch.set(courseRef, courseData);
-      }
-    });
-
-    await batch.commit();
-    console.log(`Added all selected courses successfully for faculty ${faculty.schoolCode}.`);
+  for (const facultyDoc of faculties.docs) {
+    const response = await fetchCoursesByFacultyDoc(facultyDoc);
   }
 }
 
-async function fetchAndStoreTutorsForFacultiesById(id) {
-  const headers = await getHeadersWithToken();
 
+async function fetchTutorsByFacultyId(id) {
   let facultyDoc;
-  let facultyRef;
   try {
-    facultyRef = db.collection('faculties').doc(id);
+    const facultyRef = db.collection('faculties').doc(id);
     facultyDoc = await facultyRef.get();
 
-    if (!facultyDoc.exists) throw new Error("Faculty not found");
+    if (!facultyDoc.exists)
+      throw new Error();
   } catch (error) {
-    console.error("Error fetching faculty:", error.message);
     return "Faculty with this ID could not be found";
   }
 
-  const faculty = facultyDoc.data();
-  let response;
-  try {
-    response = await axios.get(wtt_URL + "/basicTutorAll", {
-      params: { "schoolCode": faculty.schoolCode, "language": "slo" },
-      headers: headers
-    });
-  } catch (error) {
-    console.error("Error fetching courses from API:", error.message);
-    return;
-  }
+  const response = await fetchTutorsByFacultyDoc(facultyDoc);
+  return response;
+}
 
-  const tutors = response.data;
+
+async function fetchTutorsByFacultyDoc(facultyDoc) {
+  const faculty = facultyDoc.data();
+  const URL = `${wtt_URL}/basicTutorAll`;
+  const params = { "schoolCode": faculty.schoolCode, "language": "slo" }
+
+  const tutors = await fetchFromApi(URL, params);
 
   for (const tutor of tutors) {
     const tutorId = tutor.id;
@@ -400,59 +286,23 @@ async function fetchAndStoreTutorsForFacultiesById(id) {
       lastName: tutor.lastName
     }
 
-    await facultyRef.collection('tutors').doc(tutorId).set(tutorData);
+    await facultyDoc.ref.collection('tutors').doc(tutorId).set(tutorData);
   }
 
-  console.log("Succesfully added tutors");
+  console.log(`Added tutors for faculty ${faculty.schoolCode}`);
+  return;
 }
 
-async function fetchAndStoreTutorsForFaculties() {
-  const headers = await getHeadersWithToken();
 
-  let facultiesSnapshot;
-  try {
-    facultiesSnapshot = await db.collection('faculties').get();
-    if (facultiesSnapshot.empty) throw new Error("No faculties found");
-  } catch (error) {
-    console.error("Error fetching faculties:", error.message);
-    return "Failed to fetch faculties";
-  }
+async function fetchTutorsForAllFaculties() {
+  const faculties = await db.collection('faculties').get();
 
-  for (const facultyDoc of facultiesSnapshot.docs) {
-
-    const faculty = facultyDoc.data();
-    const facultyRef = facultyDoc.ref;
-
-    let response;
-    try {
-      response = await axios.get(wtt_URL + "/basicTutorAll", {
-        params: { "schoolCode": faculty.schoolCode, "language": "slo" },
-        headers: headers
-      });
-    } catch (error) {
-      console.error("Error fetching courses from API:", error.message);
-      return;
-    }
-
-    const tutors = response.data;
-
-    for (const tutor of tutors) {
-      const tutorId = tutor.id;
-
-      const tutorData = {
-        tutorId: Number(tutorId),
-        firstName: tutor.firstName,
-        lastName: tutor.lastName
-      }
-
-      await facultyRef.collection('tutors').doc(tutorId).set(tutorData);
-    }
-
-    console.log("Succesfully added tutors");
+  for (const facultyDoc of faculties.docs) {
+    const response = await fetchTutorsByFacultyDoc(facultyDoc);
   }
 }
 
 module.exports = {
-  addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchBranchesForAllFaculties, fetchAndStoreBranchesForProgram, fetchAndStoreCoursesById,
-  fetchAndStoreCoursesForAllFaculties, fetchAndStoreTutorsForFacultiesById, fetchAndStoreTutorsForFaculties, fetchBranchesByFacultyId
+  addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchBranchesForAllFaculties, fetchTutorsByFacultyId,
+  fetchCoursesForAllFaculties, fetchTutorsForAllFaculties, fetchBranchesByFacultyId, fetchCoursesByFacultyId
 };

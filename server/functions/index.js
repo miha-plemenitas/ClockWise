@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
 const { db } = require('./firebaseAdmin');
-const { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchBranchesForAllFaculties, fetchAndStoreBranchesForProgram, fetchAndStoreCoursesById, 
-  fetchAndStoreCoursesForAllFaculties, fetchAndStoreTutorsForFacultiesById, fetchAndStoreTutorsForFaculties, fetchBranchesByFacultyId } = require('./apiRequest');
+const { addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchBranchesForAllFaculties, fetchCoursesByFacultyId,fetchTutorsByFacultyId,
+  fetchCoursesForAllFaculties, fetchTutorsForAllFaculties, fetchBranchesByFacultyId } = require('./apiRequest');
 const { request } = require('express');
 
 
@@ -40,12 +40,12 @@ exports.addCourse = functions.region('europe-west3').https.onRequest(async (requ
     return;
   }
 
-  const result = await fetchAndStoreCoursesById(id);
+  const result = await fetchCoursesByFacultyId(id);
   response.json({ result })
 });
 
 exports.addCourses = functions.region('europe-west3').https.onRequest(async (request, response) => {
-  const result = await fetchAndStoreCoursesForAllFaculties();
+  const result = await fetchCoursesForAllFaculties();
   response.json({ result })
 });
 
@@ -57,11 +57,11 @@ exports.addTutor = functions.region('europe-west3').https.onRequest(async (reque
     return;
   }
 
-  const result = await fetchAndStoreTutorsForFacultiesById(id);
+  const result = await fetchTutorsByFacultyId(id);
   response.json({ result })
 });
 
 exports.addTutors = functions.region('europe-west3').https.onRequest(async (request, response) => {
-  const result = await fetchAndStoreTutorsForFaculties();
+  const result = await fetchTutorsForAllFaculties();
   response.json({ result })
 });
