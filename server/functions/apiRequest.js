@@ -5,7 +5,6 @@ const { wtt_URL } = require('./constants');
 const faculties = require('./faculties.json');
 
 // TODO: Fill DB with courses
-// TODO: Fill DB with lectureres
 // TODO: FIll DB with lectures, separate from lectureres, rooms and groups
 
 
@@ -198,7 +197,7 @@ async function fetchAndStoreBranchesForProgram(id) {
 
         const branchData = {
           name: branch.branchName,
-          branchId: branch.id,
+          branchId: Number(branch.id),
           year: index,
           programRef: programDoc.ref,
         };
@@ -346,9 +345,97 @@ async function fetchAndStoreCoursesForAllFaculties() {
   }
 }
 
+async function fetchAndStoreTutorsForFacultiesById(id) {
+  const headers = await getHeadersWithToken();
 
+  let facultyDoc;
+  let facultyRef;
+  try {
+    facultyRef = db.collection('faculties').doc(id);
+    facultyDoc = await facultyRef.get();
+
+    if (!facultyDoc.exists) throw new Error("Faculty not found");
+  } catch (error) {
+    console.error("Error fetching faculty:", error.message);
+    return "Faculty with this ID could not be found";
+  }
+
+  const faculty = facultyDoc.data();
+  let response;
+  try {
+    response = await axios.get(wtt_URL + "/basicTutorAll", {
+      params: { "schoolCode": faculty.schoolCode, "language": "slo" },
+      headers: headers
+    });
+  } catch (error) {
+    console.error("Error fetching courses from API:", error.message);
+    return;
+  }
+
+  const tutors = response.data;
+
+  for (const tutor of tutors) {
+    const tutorId = tutor.id;
+
+    const tutorData = {
+      tutorId: Number(tutorId),
+      firstName: tutor.firstName,
+      lastName: tutor.lastName
+    }
+
+    await facultyRef.collection('tutors').doc(tutorId).set(tutorData);
+  }
+
+  console.log("Succesfully added tutors");
+}
+
+async function fetchAndStoreTutorsForFaculties() {
+  const headers = await getHeadersWithToken();
+
+  let facultiesSnapshot;
+  try {
+    facultiesSnapshot = await db.collection('faculties').get();
+    if (facultiesSnapshot.empty) throw new Error("No faculties found");
+  } catch (error) {
+    console.error("Error fetching faculties:", error.message);
+    return "Failed to fetch faculties";
+  }
+
+  for (const facultyDoc of facultiesSnapshot.docs) {
+
+    const faculty = facultyDoc.data();
+    const facultyRef = facultyDoc.ref;
+
+    let response;
+    try {
+      response = await axios.get(wtt_URL + "/basicTutorAll", {
+        params: { "schoolCode": faculty.schoolCode, "language": "slo" },
+        headers: headers
+      });
+    } catch (error) {
+      console.error("Error fetching courses from API:", error.message);
+      return;
+    }
+
+    const tutors = response.data;
+
+    for (const tutor of tutors) {
+      const tutorId = tutor.id;
+
+      const tutorData = {
+        tutorId: Number(tutorId),
+        firstName: tutor.firstName,
+        lastName: tutor.lastName
+      }
+
+      await facultyRef.collection('tutors').doc(tutorId).set(tutorData);
+    }
+
+    console.log("Succesfully added tutors");
+  }
+}
 
 module.exports = {
   addFacultyDocumentsFromList, fetchAndStoreProgramsForFaculties, fetchAndStoreBranchesForPrograms, fetchAndStoreBranchesForProgram, fetchAndStoreCoursesById,
-  fetchAndStoreCoursesForAllFaculties
+  fetchAndStoreCoursesForAllFaculties, fetchAndStoreTutorsForFacultiesById, fetchAndStoreTutorsForFaculties
 };
