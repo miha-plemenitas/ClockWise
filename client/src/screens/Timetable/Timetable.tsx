@@ -264,7 +264,8 @@ export function DropdownMenuUniversity() {
 
 const Timetable: React.FC<TimetableProps> = ({ timetableData }) => {
   return (
-    <div className="p-5">
+    <div className="container mx-auto p-5">
+      <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
       <div className="flex flex-col items-start mb-4">
         <div className="flex space-x-4">
           <DropdownMenuUniversity />
