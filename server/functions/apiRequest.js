@@ -109,6 +109,8 @@ async function fetchProgramsForAllFaculties() {
 async function fetchBranchesByFacultyDoc(facultyDoc) {
   const URL = `${wtt_URL}/branchAllForProgrmmeYear`;
 
+  let batch = db.batch();
+  let batchCounter = 0;
   const faculty = facultyDoc.data();
   const programs = await facultyDoc.ref.collection('programs').get();
 
@@ -126,9 +128,9 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
 
       const branches = await fetchFromApi(URL, params);
 
-      const branchPromises = branches.map(async (branch) => {
+      for (const branch of branches) {
         if (!branch.branchName) {
-          return;
+          continue;
         }
 
         const branchData = {
@@ -140,19 +142,35 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
         };
 
         const branchId = branch.id.toString();
-        try {
-          await facultyDoc.ref.collection('branches').doc(branchId).set(branchData);
-        } catch (error) {
-          console.error("Failed to save branch data: " + error.message);
-        }
-      });
+        const branchRef = facultyDoc.ref.collection('branches').doc(branchId);
+        batch.set(branchRef, branchData);
+        batchCounter += 1;
+      }
+    }
 
-      await Promise.all(branchPromises);
+    if (batchCounter >= 400) {
+      try {
+        await batch.commit();
+        console.log(`Added branches for faculty ${faculty.schoolCode}, with counter at ${batchCounter}`);
+        batchCounter = 0;
+        batch = db.batch();
+      }
+      catch (error) {
+        console.error(`Failed to add branches for faculty ${faculty.schoolCode}, counter at ${batchCounter}: ${error.message}`);
+      }
     }
   }
-  const log = `Added branches for faculty ${faculty.schoolCode}`;
-  console.log(log);
-  return log;
+
+  try {
+    await batch.commit();
+    const log = `Added branches for faculty ${faculty.schoolCode}`;
+    console.log(log);
+    return log;
+  } catch (error) {
+    const log = `Failed to add branches for faculty ${faculty.schoolCode}: ${error.message}`;
+    console.log(log);
+    return log;
+  }
 }
 
 
@@ -162,7 +180,8 @@ async function fetchCoursesByFacultyDoc(facultyDoc) {
   const params = { "schoolCode": faculty.schoolCode, "language": "slo" }
 
   const courses = await fetchFromApi(URL, params);
-  const batch = db.batch();
+  let batch = db.batch();
+  let batchCounter = 0;
 
   const programLookups = courses.filter((_, index) => index % 20 === 0)
     .map(course => findProgramForBranch(facultyDoc.ref, course.branchId)
@@ -173,7 +192,7 @@ async function fetchCoursesByFacultyDoc(facultyDoc) {
 
   const resolvedCourses = await Promise.all(programLookups);
 
-  resolvedCourses.forEach(({ course, programId }) => {
+  for (const { course, programId } of resolvedCourses) {
     const courseData = {
       courseId: Number(course.id),
       course: course.course,
@@ -182,12 +201,31 @@ async function fetchCoursesByFacultyDoc(facultyDoc) {
     };
     const courseRef = facultyDoc.ref.collection('courses').doc(course.id);
     batch.set(courseRef, courseData);
-  });
+    batchCounter += 1;
 
-  await batch.commit();
-  const log = `Added courses for faculty ${faculty.schoolCode}`;
-  console.log(log);
-  return log;
+    if (batchCounter >= 400) {
+      try {
+        await batch.commit();
+        console.log(`Added courses for faculty ${faculty.schoolCode}, with counter at ${batchCounter}`);
+        batchCounter = 0;
+        batch = db.batch();
+      }
+      catch (error) {
+        console.error(`Failed to add courses for faculty ${faculty.schoolCode}, counter at ${batchCounter}: ${error.message}`);
+      }
+    }
+  }
+
+  try {
+    await batch.commit();
+    const log = `Added courses for faculty ${faculty.schoolCode}`;
+    console.log(log);
+    return log;
+  } catch (error) {
+    const log = `Failed to add courses for faculty ${faculty.schoolCode}: ${error.message}`;
+    console.log(log);
+    return log;
+  }
 }
 
 
@@ -196,6 +234,8 @@ async function fetchTutorsByFacultyDoc(facultyDoc) {
   const URL = `${wtt_URL}/basicTutorAll`;
   const params = { "schoolCode": faculty.schoolCode, "language": "slo" }
 
+  let batch = db.batch();
+  let batchCounter = 0;
   const tutors = await fetchFromApi(URL, params);
 
   for (const tutor of tutors) {
@@ -207,12 +247,48 @@ async function fetchTutorsByFacultyDoc(facultyDoc) {
       lastName: tutor.lastName
     }
 
-    await facultyDoc.ref.collection('tutors').doc(tutorId).set(tutorData);
+    const tutorRef = facultyDoc.ref.collection('tutors').doc(tutorId);
+    batch.set(tutorRef, tutorData);
+    batchCounter += 1;
+
+    if (batchCounter >= 400) {
+      try {
+        await batch.commit();
+        console.log(`Added courses for tutors ${faculty.schoolCode}, with counter at ${batchCounter}`);
+        batchCounter = 0;
+        batch = db.batch();
+      }
+      catch (error) {
+        console.error(`Failed to add tutors for faculty ${faculty.schoolCode}, counter at ${batchCounter}: ${error.message}`);
+      }
+    }
   }
 
-  const log = `Added tutors for faculty ${faculty.schoolCode}`;
-  console.log(log);
-  return log;
+  try {
+    const log = `Added tutors for faculty ${faculty.schoolCode}`;
+    console.log(log);
+    return log;
+    return log;
+  } catch (error) {
+    const log = `Failed to add tutors for faculty ${faculty.schoolCode}: ${error.message}`;
+    console.log(log);
+    return log;
+  }
+}
+
+
+async function fetchGroupsByFacultyDoc(facultyDoc) {
+  const faculty = facultyDoc.data();
+  const URL = `${wtt_URL}/groupAllForBranch`;
+
+  const branches = await facultyDoc.ref.collection('branches').get();
+  for (const branchDoc of branches.docs) {
+    const branch = branchDoc.data();
+    const params = { "schoolCode": faculty.schoolCode, "language": "slo", "branchId": branch.branchId }
+
+    const groups = await fetchFromApi(URL, params);
+
+  }
 }
 
 
