@@ -4,7 +4,7 @@ const { db, admin } = require('./firebaseAdmin');
 const { wtt_URL, credentials } = require('./constants');
 const faculties = require('./faculties.json');
 const { response } = require('express');
-const { findProgramForBranch, processLectureData } = require('./utility');
+const { findProgramForBranch, processLectureData, processFacultyData, processProgramData, processBranchData, processCourseData, processTutorData, processGroupData } = require('./utility');
 
 // TODO: FIll DB with lectures, separate rooms
 
@@ -39,23 +39,23 @@ async function processItemsInBatch(collectionRef, items, processData, batchLimit
     batchCounter++;
 
     if (batchCounter >= batchLimit) {
-      await commitBatch(batch, collectionRef.parent.id);
+      await commitBatch(batch);
       batch = db.batch();
       batchCounter = 0;
     }
   }
 
   if (batchCounter > 0) {
-    await commitBatch(batch, collectionRef.parent.id);
+    await commitBatch(batch);
   }
 }
 
 
-async function commitBatch(batch, logIdentifier) {
+async function commitBatch(batch) {
   try {
     await batch.commit();
   } catch (error) {
-    console.error(`Failed to commit batch for ${logIdentifier}: ${error.message}`);
+    console.error(`Failed to commit batch: ${error.message}`);
   }
 }
 
@@ -79,36 +79,19 @@ async function getHeadersWithToken() {
 
 
 async function addFacultyDocumentsFromList() {
-  const batch = db.batch();
+  await processItemsInBatch(db.collection('faculties'), faculties, processFacultyData);
 
-  faculties.forEach((faculty, index) => {
-    const facultyId = index.toString();
-    const docRef = db.collection('faculties').doc(facultyId);
-
-    batch.set(docRef, {
-      name: faculty.name,
-      schoolCode: faculty.schoolCode,
-      facultyId: index
-    }, { merge: true });
-  });
-
-  try {
-    await batch.commit();
-    const log = "All faculties added or updated successfully.";
-    console.log(log);
-    return log;
-  } catch (error) {
-    console.error('Error processing faculties:', error);
-    throw new Error("Error processing faculties");
-  }
+  const log = `All faculties added or updated successfully`;
+  console.log(log);
+  return log;
 }
 
 
 async function fetchProgramsForAllFaculties() {
   const faculties = await db.collection('faculties').get();
 
-  faculties.forEach(async (doc) => {
-    const faculty = doc.data();
+  for (const facultyDoc of faculties.docs) {
+    const faculty = facultyDoc.data();
 
     const URL = `${wtt_URL}/basicProgrammeAll`;
     const params = {
@@ -117,23 +100,10 @@ async function fetchProgramsForAllFaculties() {
     }
 
     const programs = await fetchFromApi(URL, params);
-    try {
-      programs.forEach(async (program) => {
-        const programData = {
-          name: program.name,
-          programDuration: program.year,
-          programId: Number(program.id),
-          facultyRef: doc.ref
-        }
 
-        const programId = program.id.toString();
-        await doc.ref.collection('programs').doc(programId).set(programData);
-      });
-    } catch (error) {
-      console.log('Error saving data: ' + error);
-      throw new Error("Error saving data");
-    }
-  });
+    await processItemsInBatch(facultyDoc.ref.collection('programs'), programs, processProgramData);
+  }
+
   const log = "Added programs for all faculties";
   console.log(log);
   return log;
@@ -163,14 +133,7 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
       }
 
       const branches = await fetchFromApi(URL, params);
-      await processItemsInBatch(facultyDoc.ref.collection('branches'), branches, (branch) => ({
-        id: branch.id.toString(),
-        name: branch.branchName,
-        branchId: Number(branch.id),
-        year: index,
-        programRef: programDoc.ref,
-        programId: program.programId
-      }));
+      await processItemsInBatch(facultyDoc.ref.collection('branches'), branches, (branch) => processBranchData(branch, program.programId, index));
     }
   }
 
@@ -196,13 +159,7 @@ async function fetchCoursesByFacultyDoc(facultyDoc) {
 
   const resolvedCourses = await Promise.all(programLookups);
 
-  await processItemsInBatch(facultyDoc.ref.collection('courses'), resolvedCourses, (item) => ({
-    id: item.id.toString(),
-    courseId: Number(item.id),
-    course: item.course,
-    programId: item.programId,
-    branchId: Number(item.branchId)
-  }));
+  await processItemsInBatch(facultyDoc.ref.collection('courses'), resolvedCourses, (course) => processCourseData(course));
 
   const log = `Added courses for faculty ${faculty.schoolCode}`;
   console.log(log);
@@ -217,12 +174,7 @@ async function fetchTutorsByFacultyDoc(facultyDoc) {
 
   const tutors = await fetchFromApi(URL, params);
 
-  await processItemsInBatch(facultyDoc.ref.collection('tutors'), tutors, (tutor) => ({
-    id: tutor.id.toString(),
-    tutorId: Number(tutor.id),
-    firstName: tutor.firstName,
-    lastName: tutor.lastName
-  }));
+  await processItemsInBatch(facultyDoc.ref.collection('tutors'), tutors, (tutor) => processTutorData(tutor));
 
   const log = `Added tutors for faculty ${faculty.schoolCode}`;
   console.log(log);
@@ -241,13 +193,7 @@ async function fetchGroupsByFacultyDoc(facultyDoc) {
 
     const groups = await fetchFromApi(URL, params);
 
-    await processItemsInBatch(facultyDoc.ref.collection('groups'), groups, (group) => ({
-      id: group.id.toString(),
-      groupId: Number(group.id),
-      name: group.name,
-      branchId: branch.branchId,
-      programId: branch.programId
-    }));
+    await processItemsInBatch(facultyDoc.ref.collection('groups'), groups, (group) => processGroupData(group, branch));
   }
   const log = `Added groups for faculty ${faculty.schoolCode}`;
   console.log(log);
