@@ -1,12 +1,12 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import Dashboard from './screens/Dashboard/Dashboard';
-import Timetable from './screens/Timetable/Timetable';
-import Signin from './screens/Signin/Signin';
-import Navigation from './Components/Navigation/Navigation';
-import './App.css';
-import ForgotPassword from './screens/ForgotPassword/ForgotPassword';
-import { useEffect, useState } from 'react';
-import { auth } from './Config/firebase';
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import Dashboard from "./screens/Dashboard/Dashboard";
+import Timetable from "./screens/Timetable/Timetable";
+import Signin from "./screens/Signin/Signin";
+import Navigation from "./Components/Navigation/Navigation";
+import "./App.css";
+import ForgotPassword from "./screens/ForgotPassword/ForgotPassword";
+import { useEffect, useState } from "react";
+import { auth } from "./Config/firebase";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -42,4 +42,3 @@ const App = () => {
 };
 
 export default App;
-
