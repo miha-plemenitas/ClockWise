@@ -4,9 +4,9 @@ const { db, admin } = require('./firebaseAdmin');
 const { wtt_URL, credentials } = require('./constants');
 const faculties = require('./faculties.json');
 const { response } = require('express');
-const { findProgramForBranch, processLectureData, processFacultyData, processProgramData, processBranchData, processCourseData, processTutorData, processGroupData } = require('./utility');
+const { findProgramForBranch, processLectureData, processFacultyData, processProgramData, processBranchData, processCourseData, processTutorData,
+  processGroupData, processRoomData } = require('./utility');
 
-// TODO: FIll DB with lectures, separate rooms
 
 async function fetchFromApi(URL, params = null, headers = null) {
   if (!headers) {
@@ -222,6 +222,31 @@ async function fetchLecturesByFacultyDoc(facultyDoc) {
 }
 
 
+async function fetchRoomsByFacultyDoc(facultyDoc) {
+  const faculty = facultyDoc.data();
+  const lectures = await facultyDoc.ref.collection('lectures').get();
+  const uniqueRooms = new Map();
+
+  for (const lectureDoc of lectures.docs) {
+    const lecture = lectureDoc.data();
+
+    for (const room of lecture.rooms) {
+      if (!room.id)
+        continue;
+      uniqueRooms.set(room.id, { id: room.id, name: room.name });
+    }
+  }
+
+  const uniqueRoomsArray = Array.from(uniqueRooms.values());
+
+  await processItemsInBatch(facultyDoc.ref.collection("rooms"), uniqueRoomsArray, (room) => processRoomData(room));
+
+  const log = `Added rooms for faculty ${faculty.schoolCode}`;
+  console.log(log);
+  return log;
+}
+
+
 async function fetchDataForFaculty(facultyParam, dataType) {
   let facultyDoc;
 
@@ -246,6 +271,8 @@ async function fetchDataForFaculty(facultyParam, dataType) {
       return fetchGroupsByFacultyDoc(facultyDoc);
     case 'lectures':
       return fetchLecturesByFacultyDoc(facultyDoc);
+    case 'rooms':
+      return fetchRoomsByFacultyDoc(facultyDoc);
     default:
       console.error('Invalid data type specified');
       return null;

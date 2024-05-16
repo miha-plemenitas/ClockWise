@@ -112,7 +112,16 @@ function processGroupData(group, branch) {
     }
 }
 
+
+function processRoomData(room) {
+    return {
+        id: room.id.toString(),
+        roomId: Number(room.id),
+        roomName: room.name
+    }
+}
+
 module.exports = {
     findProgramForBranch, checkBasicAuth,
-    processLectureData, processFacultyData, processProgramData, processBranchData, processCourseData, processTutorData, processGroupData
+    processLectureData, processFacultyData, processProgramData, processBranchData, processCourseData, processTutorData, processGroupData, processRoomData
 }
