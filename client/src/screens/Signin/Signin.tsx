@@ -3,8 +3,7 @@ import { Card, CardContent } from "../../Components/ui/card";
 import { Input } from "../../Components/ui/input";
 import { Button } from "../../Components/ui/button";
 import { Link, useNavigate } from 'react-router-dom';
-import { BASE_URL } from '../../api';
-import { motion } from "framer-motion"; // Import motion
+import { auth, Providers } from '../../Config/firebase';
 
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.5 },
@@ -15,11 +14,16 @@ const cardVariants = {
   },
 };
 
-const Signin: React.FC = () => {
+interface SigninProps {
+  onSignin: () => void;
+}
+
+const Signin: React.FC<SigninProps> = ({ onSignin }) => {
   const [authenticating, setAuthenticating] = useState<boolean>(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,37 +34,34 @@ const Signin: React.FC = () => {
     setPassword(e.target.value);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthenticating(true);
+    setError(null);
 
-    const formData = {
-      email: email,
-      password: password
-    };
-
-    fetch(`${BASE_URL}/signin`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    })
-      .then(response => {
-        if (response.status === 200) {
-          navigate('/dashboard');
-        } else {
-          throw new Error('Failed to sign in');
-        }
-      })
-      .catch(err => {
-        console.log(err);
-      })
-      .finally(() => {
-        setAuthenticating(false);
-        setIsLoading(false);
-      });
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      onSignin();
+      navigate('/dashboard');
+    } catch (error) {
+      setEmail('');
+      setPassword('');	
+      setAuthenticating(false);
+      setError("Incorrect email or password. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const signInWithGoogle = async () => {
+    try {
+      await auth.signInWithPopup(Providers.google);
+      onSignin();
+      navigate('/dashboard');
+    } catch (error) {
+      setError("An error occurred with Google sign-in. Please try again.");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 flex justify-center items-center">
@@ -85,6 +86,11 @@ const Signin: React.FC = () => {
           <Card className="shadow-2xl rounded-lg">
             <CardContent className="p-8">
               <h2 className="text-xl font-semibold mb-6">Sign In</h2>
+              {error && (
+                <div className="mb-4 text-red-500 text-left">
+                  {error}
+                </div>
+              )}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <Input
@@ -118,9 +124,14 @@ const Signin: React.FC = () => {
                 </Button>
               </form>{" "}
               <div className="my-4 text-center">or sign in with</div>
-              <Button className="w-full bg-oranzna hover:bg-oranzna-700 text-white font-bold py-2 px-4 rounded-lg">
-                Microsoft Student Account
-              </Button>
+              <div className="flex space-x-2">
+                <Button className="flex-1 bg-oranzna hover:bg-oranzna-700 text-white font-bold py-2 px-4 rounded-lg">
+                  UM digital identity
+                </Button>
+                <Button className="flex-1 bg-oranzna hover:bg-oranzna-700 text-white font-bold py-2 px-4 rounded-lg" onClick={signInWithGoogle}>
+                  Google
+                </Button>
+              </div>
               {/* <div className="my-4 text-center">Don't have an account? <Link to="/timetable" onClick={handleContinueAsGuest}><span className="text-oranzna hover:underline">Continue as guest.</span></Link></div>*/}
 
               <p className="mt-4 text-xs text-center">
