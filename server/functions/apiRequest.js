@@ -6,7 +6,8 @@ const faculties = require('./faculties.json');
 const { response } = require('express');
 const { findProgramForBranch } = require('./utility');
 
-// TODO: FILL DB with groups 
+// TODO: Combine endpoints
+// TODO: Fix how courses are being handled
 // TODO: FIll DB with lectures, separate from lectureres, rooms and groups
 
 async function fetchFromApi(URL, params = null, headers = null) {
@@ -146,6 +147,11 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
   const programs = await facultyDoc.ref.collection('programs').get();
 
+  const numberOfPrograms = programs.size;     // Added for courses filter
+  await facultyDoc.ref.update({
+    numberOfPrograms: numberOfPrograms
+  });
+
   for (const programDoc of programs.docs) {
     const program = programDoc.data();
     const year = Number(program.programDuration);
@@ -183,7 +189,7 @@ async function fetchCoursesByFacultyDoc(facultyDoc) {
 
   const courses = await fetchFromApi(URL, params);
 
-  const programLookups = courses.filter((_, index) => index % 20 === 0)
+  const programLookups = courses.filter((_, index) => index % faculty.numberOfPrograms === 0)
     .map(course => findProgramForBranch(facultyDoc.ref, course.branchId)
       .then(programId => ({
         ...course,
