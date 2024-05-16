@@ -4,10 +4,9 @@ const { db, admin } = require('./firebaseAdmin');
 const { wtt_URL, credentials } = require('./constants');
 const faculties = require('./faculties.json');
 const { response } = require('express');
-const { findProgramForBranch } = require('./utility');
+const { findProgramForBranch, processLectureData } = require('./utility');
 
-// TODO: Combine endpoints
-// TODO: FIll DB with lectures, separate from lectureres, rooms and groups
+// TODO: FIll DB with lectures, separate rooms
 
 async function fetchFromApi(URL, params = null, headers = null) {
   if (!headers) {
@@ -32,31 +31,31 @@ async function processItemsInBatch(collectionRef, items, processData, batchLimit
   let batchCounter = 0;
 
   for (const item of items) {
-      const data = processData(item);
-      if (!data) continue;
+    const data = processData(item);
+    if (!data) continue;
 
-      const docRef = collectionRef.doc(data.id);
-      batch.set(docRef, data);
-      batchCounter++;
+    const docRef = collectionRef.doc(data.id);
+    batch.set(docRef, data);
+    batchCounter++;
 
-      if (batchCounter >= batchLimit) {
-          await commitBatch(batch, collectionRef.parent.id);
-          batch = db.batch();
-          batchCounter = 0;
-      }
+    if (batchCounter >= batchLimit) {
+      await commitBatch(batch, collectionRef.parent.id);
+      batch = db.batch();
+      batchCounter = 0;
+    }
   }
 
   if (batchCounter > 0) {
-      await commitBatch(batch, collectionRef.parent.id);
+    await commitBatch(batch, collectionRef.parent.id);
   }
 }
 
 
 async function commitBatch(batch, logIdentifier) {
   try {
-      await batch.commit();
+    await batch.commit();
   } catch (error) {
-      console.error(`Failed to commit batch for ${logIdentifier}: ${error.message}`);
+    console.error(`Failed to commit batch for ${logIdentifier}: ${error.message}`);
   }
 }
 
@@ -164,7 +163,7 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
       }
 
       const branches = await fetchFromApi(URL, params);
-      await processItemsInBatch(facultyDoc.ref.collection('branches'), branches, (branch)=> ({
+      await processItemsInBatch(facultyDoc.ref.collection('branches'), branches, (branch) => ({
         id: branch.id.toString(),
         name: branch.branchName,
         branchId: Number(branch.id),
@@ -256,6 +255,27 @@ async function fetchGroupsByFacultyDoc(facultyDoc) {
 }
 
 
+async function fetchLecturesByFacultyDoc(facultyDoc) {
+  const faculty = facultyDoc.data();
+  const URL = `${wtt_URL}/scheduleAll`;
+
+  const params = {
+    "schoolCode": faculty.schoolCode,
+    "language": "slo",
+    "dateFrom": "2024-02-26",
+    "dateTo": "2024-06-14"
+  }
+
+  const lectures = await fetchFromApi(URL, params);
+
+  await processItemsInBatch(facultyDoc.ref.collection("lectures"), lectures, processLectureData);
+
+  const log = `Added lectures for faculty ${faculty.schoolCode}`;
+  console.log(log);
+  return log;
+}
+
+
 async function fetchDataForFaculty(facultyParam, dataType) {
   let facultyDoc;
 
@@ -278,6 +298,8 @@ async function fetchDataForFaculty(facultyParam, dataType) {
       return fetchBranchesByFacultyDoc(facultyDoc);
     case 'groups':
       return fetchGroupsByFacultyDoc(facultyDoc);
+    case 'lectures':
+      return fetchLecturesByFacultyDoc(facultyDoc);
     default:
       console.error('Invalid data type specified');
       return null;
@@ -301,15 +323,15 @@ async function fetchDataByFacultyId(id, dataType) {
 }
 
 
-async function fetchData (id, collectionName) {
-  let result; 
+async function fetchData(id, collectionName) {
+  let result;
   if (!id) {
-      result = await fetchDataForAllFaculties(collectionName);
-      return result;
-    } else {
-      result = await fetchDataByFacultyId(id, collectionName);
-      return result
-    }
+    result = await fetchDataForAllFaculties(collectionName);
+    return result;
+  } else {
+    result = await fetchDataByFacultyId(id, collectionName);
+    return result
+  }
 }
 
 

@@ -51,7 +51,7 @@ exports.addBranches = functions.region('europe-west3').https.onRequest(async (re
   }
 
   try {
-    const result = await fetchData(id, "branches");
+    const result = await fetchData(id, 'branches');
     response.status(200).json({ result: result });
   } catch (error) {
     console.error('Error adding programs:', error);
@@ -70,7 +70,7 @@ exports.addCourses = functions.region('europe-west3').https.onRequest(async (req
   }
 
   try {
-    const result = await fetchData(id, "courses");
+    const result = await fetchData(id, 'courses');
     response.status(200).json({ result: result });
   } catch (error) {
     console.error('Error adding programs:', error);
@@ -89,7 +89,7 @@ exports.addTutors = functions.region('europe-west3').https.onRequest(async (requ
   }
 
   try {
-    const result = await fetchData(id, "tutors");
+    const result = await fetchData(id, 'tutors');
     response.status(200).json({ result: result });
   } catch (error) {
     console.error('Error adding programs:', error);
@@ -108,10 +108,29 @@ exports.addGroups = functions.region('europe-west3').https.onRequest(async (requ
   }
 
   try {
-    const result = await fetchData(id, "groups");
+    const result = await fetchData(id, 'groups');
     response.status(200).json({ result: result });
   } catch (error) {
     console.error('Error adding programs:', error);
     response.status(500).send('Failed to add groups');
+  }
+});
+
+
+exports.addLectures = functions.region('europe-west3').https.onRequest(async (request, response) => {
+  response.set('Access-Control-Allow-Origin', '*');
+  const id = request.query.id;
+
+  if (!checkBasicAuth(request)) {
+    response.status(401).send('Unauthorized');
+    return;
+  }
+
+  try {
+    const result = await fetchData(id, 'lectures');
+    response.status(200).json({ result: result });
+  } catch (error) {
+    console.error('Error adding programs:', error);
+    response.status(500).send('Failed to add lectures');
   }
 });
