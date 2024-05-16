@@ -7,7 +7,6 @@ const { response } = require('express');
 const { findProgramForBranch } = require('./utility');
 
 // TODO: Combine endpoints
-// TODO: Fix how courses are being handled
 // TODO: FIll DB with lectures, separate from lectureres, rooms and groups
 
 async function fetchFromApi(URL, params = null, headers = null) {
@@ -302,6 +301,18 @@ async function fetchDataByFacultyId(id, dataType) {
 }
 
 
+async function fetchData (id, collectionName) {
+  let result; 
+  if (!id) {
+      result = await fetchDataForAllFaculties(collectionName);
+      return result;
+    } else {
+      result = await fetchDataByFacultyId(id, collectionName);
+      return result
+    }
+}
+
+
 module.exports = {
-  addFacultyDocumentsFromList, fetchProgramsForAllFaculties, fetchDataByFacultyId, fetchDataForAllFaculties
+  addFacultyDocumentsFromList, fetchProgramsForAllFaculties, fetchDataByFacultyId, fetchDataForAllFaculties, fetchData
 };
