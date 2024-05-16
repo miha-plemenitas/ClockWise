@@ -6,6 +6,7 @@ const faculties = require('./faculties.json');
 const { response } = require('express');
 const { findProgramForBranch } = require('./utility');
 
+// TODO: FILL DB with groups 
 // TODO: FIll DB with lectures, separate from lectureres, rooms and groups
 
 async function fetchFromApi(URL, params = null, headers = null) {
@@ -22,6 +23,40 @@ async function fetchFromApi(URL, params = null, headers = null) {
   } catch (error) {
     console.error("Error fetching courses from API:", error.message);
     throw new Error("Failed to fetch courses");
+  }
+}
+
+
+async function processItemsInBatch(collectionRef, items, processData, batchLimit = 400) {
+  let batch = db.batch();
+  let batchCounter = 0;
+
+  for (const item of items) {
+      const data = processData(item);
+      if (!data) continue;
+
+      const docRef = collectionRef.doc(data.id);
+      batch.set(docRef, data);
+      batchCounter++;
+
+      if (batchCounter >= batchLimit) {
+          await commitBatch(batch, collectionRef.parent.id);
+          batch = db.batch();
+          batchCounter = 0;
+      }
+  }
+
+  if (batchCounter > 0) {
+      await commitBatch(batch, collectionRef.parent.id);
+  }
+}
+
+
+async function commitBatch(batch, logIdentifier) {
+  try {
+      await batch.commit();
+  } catch (error) {
+      console.error(`Failed to commit batch for ${logIdentifier}: ${error.message}`);
   }
 }
 
@@ -108,9 +143,6 @@ async function fetchProgramsForAllFaculties() {
 
 async function fetchBranchesByFacultyDoc(facultyDoc) {
   const URL = `${wtt_URL}/branchAllForProgrmmeYear`;
-
-  let batch = db.batch();
-  let batchCounter = 0;
   const faculty = facultyDoc.data();
   const programs = await facultyDoc.ref.collection('programs').get();
 
@@ -127,50 +159,20 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
       }
 
       const branches = await fetchFromApi(URL, params);
-
-      for (const branch of branches) {
-        if (!branch.branchName) {
-          continue;
-        }
-
-        const branchData = {
-          name: branch.branchName,
-          branchId: Number(branch.id),
-          year: index,
-          programRef: programDoc.ref,
-          programId: program.programId
-        };
-
-        const branchId = branch.id.toString();
-        const branchRef = facultyDoc.ref.collection('branches').doc(branchId);
-        batch.set(branchRef, branchData);
-        batchCounter += 1;
-      }
-    }
-
-    if (batchCounter >= 400) {
-      try {
-        await batch.commit();
-        console.log(`Added branches for faculty ${faculty.schoolCode}, with counter at ${batchCounter}`);
-        batchCounter = 0;
-        batch = db.batch();
-      }
-      catch (error) {
-        console.error(`Failed to add branches for faculty ${faculty.schoolCode}, counter at ${batchCounter}: ${error.message}`);
-      }
+      await processItemsInBatch(facultyDoc.ref.collection('branches'), branches, (branch)=> ({
+        id: branch.id.toString(),
+        name: branch.branchName,
+        branchId: Number(branch.id),
+        year: index,
+        programRef: programDoc.ref,
+        programId: program.programId
+      }));
     }
   }
 
-  try {
-    await batch.commit();
-    const log = `Added branches for faculty ${faculty.schoolCode}`;
-    console.log(log);
-    return log;
-  } catch (error) {
-    const log = `Failed to add branches for faculty ${faculty.schoolCode}: ${error.message}`;
-    console.log(log);
-    return log;
-  }
+  const log = `Added branches for faculty ${faculty.schoolCode}`;
+  console.log(log);
+  return log;
 }
 
 
@@ -180,52 +182,27 @@ async function fetchCoursesByFacultyDoc(facultyDoc) {
   const params = { "schoolCode": faculty.schoolCode, "language": "slo" }
 
   const courses = await fetchFromApi(URL, params);
-  let batch = db.batch();
-  let batchCounter = 0;
 
   const programLookups = courses.filter((_, index) => index % 20 === 0)
     .map(course => findProgramForBranch(facultyDoc.ref, course.branchId)
       .then(programId => ({
-        course,
-        programId
+        ...course,
+        programId: programId
       })));
 
   const resolvedCourses = await Promise.all(programLookups);
 
-  for (const { course, programId } of resolvedCourses) {
-    const courseData = {
-      courseId: Number(course.id),
-      course: course.course,
-      programId: programId,
-      branchId: Number(course.branchId)
-    };
-    const courseRef = facultyDoc.ref.collection('courses').doc(course.id);
-    batch.set(courseRef, courseData);
-    batchCounter += 1;
+  await processItemsInBatch(facultyDoc.ref.collection('courses'), resolvedCourses, (item) => ({
+    id: item.id.toString(),
+    courseId: Number(item.id),
+    course: item.course,
+    programId: item.programId,
+    branchId: Number(item.branchId)
+  }));
 
-    if (batchCounter >= 400) {
-      try {
-        await batch.commit();
-        console.log(`Added courses for faculty ${faculty.schoolCode}, with counter at ${batchCounter}`);
-        batchCounter = 0;
-        batch = db.batch();
-      }
-      catch (error) {
-        console.error(`Failed to add courses for faculty ${faculty.schoolCode}, counter at ${batchCounter}: ${error.message}`);
-      }
-    }
-  }
-
-  try {
-    await batch.commit();
-    const log = `Added courses for faculty ${faculty.schoolCode}`;
-    console.log(log);
-    return log;
-  } catch (error) {
-    const log = `Failed to add courses for faculty ${faculty.schoolCode}: ${error.message}`;
-    console.log(log);
-    return log;
-  }
+  const log = `Added courses for faculty ${faculty.schoolCode}`;
+  console.log(log);
+  return log;
 }
 
 
@@ -234,46 +211,18 @@ async function fetchTutorsByFacultyDoc(facultyDoc) {
   const URL = `${wtt_URL}/basicTutorAll`;
   const params = { "schoolCode": faculty.schoolCode, "language": "slo" }
 
-  let batch = db.batch();
-  let batchCounter = 0;
   const tutors = await fetchFromApi(URL, params);
 
-  for (const tutor of tutors) {
-    const tutorId = tutor.id;
+  await processItemsInBatch(facultyDoc.ref.collection('tutors'), tutors, (tutor) => ({
+    id: tutor.id.toString(),
+    tutorId: Number(tutor.id),
+    firstName: tutor.firstName,
+    lastName: tutor.lastName
+  }));
 
-    const tutorData = {
-      tutorId: Number(tutorId),
-      firstName: tutor.firstName,
-      lastName: tutor.lastName
-    }
-
-    const tutorRef = facultyDoc.ref.collection('tutors').doc(tutorId);
-    batch.set(tutorRef, tutorData);
-    batchCounter += 1;
-
-    if (batchCounter >= 400) {
-      try {
-        await batch.commit();
-        console.log(`Added courses for tutors ${faculty.schoolCode}, with counter at ${batchCounter}`);
-        batchCounter = 0;
-        batch = db.batch();
-      }
-      catch (error) {
-        console.error(`Failed to add tutors for faculty ${faculty.schoolCode}, counter at ${batchCounter}: ${error.message}`);
-      }
-    }
-  }
-
-  try {
-    const log = `Added tutors for faculty ${faculty.schoolCode}`;
-    console.log(log);
-    return log;
-    return log;
-  } catch (error) {
-    const log = `Failed to add tutors for faculty ${faculty.schoolCode}: ${error.message}`;
-    console.log(log);
-    return log;
-  }
+  const log = `Added tutors for faculty ${faculty.schoolCode}`;
+  console.log(log);
+  return log;
 }
 
 
@@ -288,7 +237,17 @@ async function fetchGroupsByFacultyDoc(facultyDoc) {
 
     const groups = await fetchFromApi(URL, params);
 
+    await processItemsInBatch(facultyDoc.ref.collection('groups'), groups, (group) => ({
+      id: group.id.toString(),
+      groupId: Number(group.id),
+      name: group.name,
+      branchId: branch.branchId,
+      programId: branch.programId
+    }));
   }
+  const log = `Added groups for faculty ${faculty.schoolCode}`;
+  console.log(log);
+  return log;
 }
 
 
@@ -312,6 +271,8 @@ async function fetchDataForFaculty(facultyParam, dataType) {
       return fetchCoursesByFacultyDoc(facultyDoc);
     case 'branches':
       return fetchBranchesByFacultyDoc(facultyDoc);
+    case 'groups':
+      return fetchGroupsByFacultyDoc(facultyDoc);
     default:
       console.error('Invalid data type specified');
       return null;

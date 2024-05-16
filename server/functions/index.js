@@ -141,12 +141,12 @@ exports.addTutor = functions.region('europe-west3').https.onRequest(async (reque
     response.status(200).json({ result: result });
   } catch (error) {
     console.error('Error fetching branches for faculty:', error);
-    response.status(500).send('Failed to fetch branches');
+    response.status(500).send('Failed to fetch tutors');
   }
 });
 
 
-exports.addTutors = functions.region('europe-west3  ').https.onRequest(async (request, response) => {
+exports.addTutors = functions.region('europe-west3').https.onRequest(async (request, response) => {
   response.set('Access-Control-Allow-Origin', '*');
 
   if (!checkBasicAuth(request)) {
@@ -160,5 +160,46 @@ exports.addTutors = functions.region('europe-west3  ').https.onRequest(async (re
   } catch (error) {
     console.error('Error adding programs:', error);
     response.status(500).send('Failed to add programs');
+  }
+});
+
+
+exports.addGroup = functions.region('europe-west3').https.onRequest(async (request, response) => {
+  response.set('Access-Control-Allow-Origin', '*');
+
+  if (!checkBasicAuth(request)) {
+    response.status(401).send('Unauthorized');
+    return;
+  }
+
+  const id = request.query.id;
+  if (!id) {
+    response.status(400).send('No ID provided');
+    return;
+  }
+  try {
+    const result = await fetchDataByFacultyId(id, "groups");
+    response.status(200).json({ result: result });
+  } catch (error) {
+    console.error('Error fetching branches for faculty:', error);
+    response.status(500).send('Failed to fetch groups');
+  }
+});
+
+
+exports.addGroupsForAll = functions.region('europe-west3').https.onRequest(async (request, response) => {
+  response.set('Access-Control-Allow-Origin', '*');
+
+  if (!checkBasicAuth(request)) {
+    response.status(401).send('Unauthorized');
+    return;
+  }
+
+  try {
+    const result = await fetchDataForAllFaculties("groups");
+    response.status(200).json({ result: result });
+  } catch (error) {
+    console.error('Error adding programs:', error);
+    response.status(500).send('Failed to add groups');
   }
 });
