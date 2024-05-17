@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
     "@fullcalendar/core": "^6.1.11",
     "@fullcalendar/daygrid": "^6.1.11",
     "@fullcalendar/react": "^6.1.11",
     "@fullcalendar/timegrid": "^6.1.11",
+    "@mui/material": "^5.15.18",
     "@nextui-org/button": "^2.0.31",
     "@nextui-org/react": "^2.3.6",
     "@nextui-org/system": "^2.1.2",
@@ -40,11 +43,14 @@
     "framer-motion": "^11.1.7",
     "lucide-react": "^0.376.0",
     "react": "^18.2.0",
+    "react-bootstrap-daterangepicker": "^8.0.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.2.0",
     "react-icons": "^5.2.1",
+    "react-popper": "^2.3.0",
     "react-router-dom": "^6.23.0",
     "react-scripts": "5.0.1",
+    "reactstrap": "^9.2.2",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^4.9.5",
@@ -75,6 +81,7 @@
     ]
   },
   "devDependencies": {
+    "@types/reactstrap": "^8.7.2",
     "tailwindcss": "^3.4.3"
   }
 }

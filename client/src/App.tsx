@@ -32,7 +32,7 @@ const App = () => {
         <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} />
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/" element={<Timetable timetableData={[]} />} />
+          <Route path="/" element={<Timetable />} />
           <Route path="/signin" element={<Signin onSignin={handleSignin} />} />
           <Route path="/forgot" element={<ForgotPassword />} />
         </Routes>
