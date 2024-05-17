@@ -1,11 +1,11 @@
-const axios = require('axios');
+const axios = require("axios");
 
-const { db, admin } = require('./firebaseAdmin');
-const { wtt_URL, credentials } = require('./constants');
-const faculties = require('./faculties.json');
-const { response } = require('express');
-const { findProgramForBranch, processLectureData, processFacultyData, processProgramData, processBranchData, processCourseData, processTutorData,
-  processGroupData, processRoomData } = require('./utility');
+const { db } = require("./firebaseAdmin");
+const { wttUrl, bufferedCredentials } = require("./constants");
+const faculties = require("./faculties.json");
+const { findProgramForBranch, processLectureData, processFacultyData, processProgramData,
+  processBranchData, processCourseData, processTutorData,
+  processGroupData, processRoomData, } = require("./utility");
 
 
 async function fetchFromApi(URL, params = null, headers = null) {
@@ -16,7 +16,7 @@ async function fetchFromApi(URL, params = null, headers = null) {
   try {
     const response = await axios.get(URL, {
       params: params,
-      headers: headers
+      headers: headers,
     });
     return response.data;
   } catch (error) {
@@ -26,7 +26,12 @@ async function fetchFromApi(URL, params = null, headers = null) {
 }
 
 
-async function processItemsInBatch(collectionRef, items, processData, batchLimit = 400) {
+async function processItemsInBatch(
+  collectionRef,
+  items,
+  processData,
+  batchLimit = 400
+) {
   let batch = db.batch();
   let batchCounter = 0;
 
@@ -61,25 +66,30 @@ async function commitBatch(batch) {
 
 
 async function getHeadersWithToken() {
-  const URL = `${wtt_URL}/login`;
+  const URL = `${wttUrl}/login`;
+  const credentials = bufferedCredentials.toString("base64");
   const headers = {
-    Authorization: `Basic ${credentials}`,
-    'Content-Type': 'application/json'
+    "Authorization": `Basic ${credentials}`,
+    "Content-Type": "application/json",
   };
 
   const data = await fetchFromApi(URL, undefined, headers);
   const token = data.token;
 
   const headersWithToken = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
   }
   return headersWithToken;
 }
 
 
 async function addFacultyDocumentsFromList() {
-  await processItemsInBatch(db.collection('faculties'), faculties, processFacultyData);
+  await processItemsInBatch(
+    db.collection("faculties"),
+    faculties,
+    processFacultyData
+  );
 
   const log = `All faculties added or updated successfully`;
   console.log(log);
@@ -88,20 +98,20 @@ async function addFacultyDocumentsFromList() {
 
 
 async function fetchProgramsForAllFaculties() {
-  const faculties = await db.collection('faculties').get();
+  const faculties = await db.collection("faculties").get();
 
   for (const facultyDoc of faculties.docs) {
     const faculty = facultyDoc.data();
 
-    const URL = `${wtt_URL}/basicProgrammeAll`;
+    const URL = `${wttUrl}/basicProgrammeAll`;
     const params = {
       "schoolCode": faculty.schoolCode,
-      "language": "slo"
-    }
+      "language": "slo",
+    };
 
     const programs = await fetchFromApi(URL, params);
 
-    await processItemsInBatch(facultyDoc.ref.collection('programs'), programs, processProgramData);
+    await processItemsInBatch(facultyDoc.ref.collection("programs"), programs, processProgramData);
   }
 
   const log = "Added programs for all faculties";
@@ -111,11 +121,11 @@ async function fetchProgramsForAllFaculties() {
 
 
 async function fetchBranchesByFacultyDoc(facultyDoc) {
-  const URL = `${wtt_URL}/branchAllForProgrmmeYear`;
+  const URL = `${wttUrl}/branchAllForProgrmmeYear`;
   const faculty = facultyDoc.data();
-  const programs = await facultyDoc.ref.collection('programs').get();
+  const programs = await facultyDoc.ref.collection("programs").get();
 
-  const numberOfPrograms = programs.size;     // Added for courses filter
+  const numberOfPrograms = programs.size; // Added for courses filter
   await facultyDoc.ref.update({
     numberOfPrograms: numberOfPrograms
   });
@@ -129,11 +139,14 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
         "schoolCode": faculty.schoolCode,
         "language": "slo",
         "programmeId": program.programId,
-        "year": index
-      }
+        "year": index,
+      };
 
       const branches = await fetchFromApi(URL, params);
-      await processItemsInBatch(facultyDoc.ref.collection('branches'), branches, (branch) => processBranchData(branch, program.programId, index));
+      await processItemsInBatch(
+        facultyDoc.ref.collection("branches"),
+        branches,
+        (branch) => processBranchData(branch, program.programId, index));
     }
   }
 
@@ -145,21 +158,28 @@ async function fetchBranchesByFacultyDoc(facultyDoc) {
 
 async function fetchCoursesByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
-  const URL = `${wtt_URL}/courseAll`;
-  const params = { "schoolCode": faculty.schoolCode, "language": "slo" }
+  const URL = `${wttUrl}/courseAll`;
+  const params = {
+    "schoolCode": faculty.schoolCode,
+    "language": "slo"
+  };
 
   const courses = await fetchFromApi(URL, params);
 
   const programLookups = courses.filter((_, index) => index % faculty.numberOfPrograms === 0)
     .map(course => findProgramForBranch(facultyDoc.ref, course.branchId)
-      .then(programId => ({
+      .then((programId) => ({
         ...course,
-        programId: programId
+        programId: programId,
       })));
 
   const resolvedCourses = await Promise.all(programLookups);
 
-  await processItemsInBatch(facultyDoc.ref.collection('courses'), resolvedCourses, (course) => processCourseData(course));
+  await processItemsInBatch(
+    facultyDoc.ref.collection("courses"),
+    resolvedCourses,
+    (course) => processCourseData(course)
+  );
 
   const log = `Added courses for faculty ${faculty.schoolCode}`;
   console.log(log);
@@ -169,12 +189,12 @@ async function fetchCoursesByFacultyDoc(facultyDoc) {
 
 async function fetchTutorsByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
-  const URL = `${wtt_URL}/basicTutorAll`;
+  const URL = `${wttUrl}/basicTutorAll`;
   const params = { "schoolCode": faculty.schoolCode, "language": "slo" }
 
   const tutors = await fetchFromApi(URL, params);
 
-  await processItemsInBatch(facultyDoc.ref.collection('tutors'), tutors, (tutor) => processTutorData(tutor));
+  await processItemsInBatch(facultyDoc.ref.collection("tutors"), tutors, (tutor) => processTutorData(tutor));
 
   const log = `Added tutors for faculty ${faculty.schoolCode}`;
   console.log(log);
@@ -184,16 +204,24 @@ async function fetchTutorsByFacultyDoc(facultyDoc) {
 
 async function fetchGroupsByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
-  const URL = `${wtt_URL}/groupAllForBranch`;
+  const URL = `${wttUrl}/groupAllForBranch`;
 
-  const branches = await facultyDoc.ref.collection('branches').get();
+  const branches = await facultyDoc.ref.collection("branches").get();
   for (const branchDoc of branches.docs) {
     const branch = branchDoc.data();
-    const params = { "schoolCode": faculty.schoolCode, "language": "slo", "branchId": branch.branchId }
+    const params = {
+      "schoolCode": faculty.schoolCode,
+      "language": "slo",
+      "branchId": branch.branchId,
+    };
 
     const groups = await fetchFromApi(URL, params);
 
-    await processItemsInBatch(facultyDoc.ref.collection('groups'), groups, (group) => processGroupData(group, branch));
+    await processItemsInBatch(
+      facultyDoc.ref.collection("groups"),
+      groups,
+      (group) => processGroupData(group, branch)
+    );
   }
   const log = `Added groups for faculty ${faculty.schoolCode}`;
   console.log(log);
@@ -203,18 +231,22 @@ async function fetchGroupsByFacultyDoc(facultyDoc) {
 
 async function fetchLecturesByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
-  const URL = `${wtt_URL}/scheduleAll`;
+  const URL = `${wttUrl}/scheduleAll`;
 
   const params = {
     "schoolCode": faculty.schoolCode,
     "language": "slo",
     "dateFrom": "2024-02-26",
-    "dateTo": "2024-06-14"
-  }
+    "dateTo": "2024-06-14",
+  };
 
   const lectures = await fetchFromApi(URL, params);
 
-  await processItemsInBatch(facultyDoc.ref.collection("lectures"), lectures, processLectureData);
+  await processItemsInBatch(
+    facultyDoc.ref.collection("lectures"),
+    lectures,
+    processLectureData
+  );
 
   const log = `Added lectures for faculty ${faculty.schoolCode}`;
   console.log(log);
@@ -224,22 +256,27 @@ async function fetchLecturesByFacultyDoc(facultyDoc) {
 
 async function fetchRoomsByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
-  const lectures = await facultyDoc.ref.collection('lectures').get();
+  const lectures = await facultyDoc.ref.collection("lectures").get();
   const uniqueRooms = new Map();
 
   for (const lectureDoc of lectures.docs) {
     const lecture = lectureDoc.data();
 
     for (const room of lecture.rooms) {
-      if (!room.id)
+      if (!room.id) {
         continue;
+      }
       uniqueRooms.set(room.id, { id: room.id, name: room.name });
     }
   }
 
   const uniqueRoomsArray = Array.from(uniqueRooms.values());
 
-  await processItemsInBatch(facultyDoc.ref.collection("rooms"), uniqueRoomsArray, (room) => processRoomData(room));
+  await processItemsInBatch(
+    facultyDoc.ref.collection("rooms"),
+    uniqueRoomsArray,
+    (room) => processRoomData(room)
+  );
 
   const log = `Added rooms for faculty ${faculty.schoolCode}`;
   console.log(log);
@@ -250,39 +287,39 @@ async function fetchRoomsByFacultyDoc(facultyDoc) {
 async function fetchDataForFaculty(facultyParam, dataType) {
   let facultyDoc;
 
-  if (typeof facultyParam === 'string') {
-    let facultyRef = db.collection('faculties').doc(facultyParam);
+  if (typeof facultyParam === "string") {
+    const facultyRef = db.collection("faculties").doc(facultyParam);
     facultyDoc = await facultyRef.get();
     if (!facultyDoc) {
       return "Faculty with this ID could not be found";
     }
   } else {
-    facultyDoc = facultyParam;   // If facultyParam is a DocumentSnapshot
+    facultyDoc = facultyParam; // If facultyParam is a DocumentSnapshot
   }
 
   switch (dataType) {
-    case 'tutors':
+    case "tutors":
       return fetchTutorsByFacultyDoc(facultyDoc);
-    case 'courses':
+    case "courses":
       return fetchCoursesByFacultyDoc(facultyDoc);
-    case 'branches':
+    case "branches":
       return fetchBranchesByFacultyDoc(facultyDoc);
-    case 'groups':
+    case "groups":
       return fetchGroupsByFacultyDoc(facultyDoc);
-    case 'lectures':
+    case "lectures":
       return fetchLecturesByFacultyDoc(facultyDoc);
-    case 'rooms':
+    case "rooms":
       return fetchRoomsByFacultyDoc(facultyDoc);
     default:
-      console.error('Invalid data type specified');
+      console.error("Invalid data type specified");
       return null;
   }
 }
 
 
 async function fetchDataForAllFaculties(dataType) {
-  const faculties = await db.collection('faculties').get();
-  const promises = faculties.docs.map(facultyDoc => {
+  const faculties = await db.collection("faculties").get();
+  const promises = faculties.docs.map((facultyDoc) => {
     return fetchDataForFaculty(facultyDoc, dataType);
   });
 
@@ -303,11 +340,12 @@ async function fetchData(id, collectionName) {
     return result;
   } else {
     result = await fetchDataByFacultyId(id, collectionName);
-    return result
+    return result;
   }
 }
 
 
 module.exports = {
-  addFacultyDocumentsFromList, fetchProgramsForAllFaculties, fetchDataByFacultyId, fetchDataForAllFaculties, fetchData
+  addFacultyDocumentsFromList, fetchProgramsForAllFaculties,
+  fetchDataByFacultyId, fetchDataForAllFaculties, fetchData,
 };
