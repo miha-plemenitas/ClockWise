@@ -2,28 +2,22 @@ import React, { useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { Button } from "../../Components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../Components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../../Components/ui/dropdown-menu";
 import { FaChevronDown } from "react-icons/fa";
 
-interface TimetableProps {
-  timetableData: string[][];
-}
+import CustomModal from "../../Components/Modal/CustomModal";
+import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 
-const events = [{ title: "Meeting", start: new Date() }];
+const events = [
+  { id: "1", title: "Praktikum", start: '2024-05-17T10:00:00', end: '2024-05-17T13:00:00', extendedProps: { tip: "Predavanja", izvajalec: "Janez Novak", prostor: "Alfa" } },
+  { id: "2", title: "Statistika", start: '2024-05-15T07:00:00', end: '2024-05-15T10:00:00', extendedProps: { tip: "Vaje", izvajalec: "Jana Novak", prostor: "Gama" } }
+];
 
-function renderEventContent(eventInfo: { timeText: any; event: any }) {
+function renderEventContent(eventInfo: EventContentArg) {
   return (
     <>
-      <b>{eventInfo.timeText}</b>
-      <i>{eventInfo.event.title}</i>
+      <b>{eventInfo.event.title}</b>
+      <p>{eventInfo.event.extendedProps.prostor}</p>
     </>
   );
 }
@@ -262,9 +256,23 @@ export function DropdownMenuUniversity() {
   );
 }
 
-const Timetable: React.FC<TimetableProps> = ({ timetableData }) => {
+const Timetable = () => {
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [open, setOpen] = React.useState(false);
+
+  const handleEventClick = (clickInfo: EventClickArg) => {
+    const event = events.find(event => event.id === clickInfo.event.id);
+    setSelectedEvent(event);
+    setOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedEvent(null);
+    setOpen(false);
+  };
+
   return (
-    <div className="container mx-auto p-5">
+    <div className="w-full p-5">
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
       <div className="flex flex-col items-start mb-4">
         <div className="flex space-x-4">
@@ -275,6 +283,9 @@ const Timetable: React.FC<TimetableProps> = ({ timetableData }) => {
         </div>
         <div className="mt-4 w-full bg-white rounded-lg p-4">
           <FullCalendar
+            height={"auto"}
+            slotMinTime={"7:00"}
+            slotMaxTime={"21:00"}
             plugins={[timeGridPlugin]}
             initialView="timeGridWeek"
             weekends={false}
@@ -288,9 +299,16 @@ const Timetable: React.FC<TimetableProps> = ({ timetableData }) => {
             titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
             dayHeaderClassNames="font-bold text-lg"
             dayHeaderFormat={{ weekday: "short" }}
+            eventClick={handleEventClick}
           />
         </div>
       </div>
+
+      <CustomModal
+        isOpen={open}
+        toggle={handleCloseModal}
+        event={selectedEvent} // Prenos izbranega dogodka v modalno okno
+      />
     </div>
   );
 };

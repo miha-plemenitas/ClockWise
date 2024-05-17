@@ -1,10 +1,12 @@
+import React, { useEffect, useState } from "react";
 import {
   NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
-  NavigationMenuTrigger,
   NavigationMenuLink,
+  NavigationMenuTrigger,
 } from "../ui/navigation-menu";
+import Customize from "../../screens/Customize/Customize";
 import logo from "../../Assets/SVG_dodatno/calendar.svg";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../../Config/firebase";
@@ -19,6 +21,23 @@ const Navigation: React.FC<NavigationProps> = ({
   onLogout,
 }) => {
   const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
+  const [userPhotoURL, setUserPhotoURL] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const user = auth.currentUser;
+      if (user) {
+        const name = user.displayName || "";
+        const photoURL = user.photoURL || "";
+        const email = user.email || "";
+        setUserName(name);
+        setUserPhotoURL(photoURL);
+        setUserEmail(email);
+      }
+    }
+  }, [isAuthenticated]);
 
   const handleLogout = async () => {
     try {
@@ -27,6 +46,20 @@ const Navigation: React.FC<NavigationProps> = ({
       navigate("/signin");
     } catch (error) {
       console.error("Error signing out: ", error);
+    }
+  };
+
+  const getInitials = (name: string, email: string) => {
+    if (name) {
+      const initials = name
+        .split(" ")
+        .map((n) => n[0])
+        .join("");
+      return initials.toUpperCase();
+    } else if (email) {
+      return email[0].toUpperCase();
+    } else {
+      return "";
     }
   };
 
@@ -52,12 +85,13 @@ const Navigation: React.FC<NavigationProps> = ({
       <NavigationMenuList className="flex items-center">
         {isAuthenticated ? (
           <NavigationMenuItem>
-            <NavigationMenuTrigger
-              className="text-red-600"
-              onClick={handleLogout}
-            >
-              Sign Out
-            </NavigationMenuTrigger>
+            <Customize
+              userName={userName}
+              userEmail={userEmail}
+              userPhotoURL={userPhotoURL}
+              handleLogout={handleLogout}
+              getInitials={getInitials}
+            />
           </NavigationMenuItem>
         ) : (
           <NavigationMenuItem>
