@@ -9,8 +9,8 @@ import CustomModal from "../../Components/Modal/CustomModal";
 import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 
 const events = [
-  { id: "1", title: "Praktikum", start: '2024-05-17T10:00:00', end: '2024-05-17T13:00:00', extendedProps: { tip: "Predavanja", izvajalec: "Janez Novak", prostor: "Alfa" } },
-  { id: "2", title: "Statistika", start: '2024-05-15T07:00:00', end: '2024-05-15T10:00:00', extendedProps: { tip: "Vaje", izvajalec: "Jana Novak", prostor: "Gama" } }
+  { id: "1", title: "Praktikum", start: '2024-05-17T10:00:00', end: '2024-05-17T13:00:00', extendedProps: { tip: "Predavanja", skupina: "RV1", izvajalec: "Janez Novak", prostor: "Alfa" } },
+  { id: "2", title: "Statistika", start: '2024-05-15T07:00:00', end: '2024-05-15T10:00:00', extendedProps: { tip: "Vaje", skupina: "RV1", izvajalec: "Jana Novak", prostor: "Gama" } }
 ];
 
 function renderEventContent(eventInfo: EventContentArg) {
@@ -298,7 +298,7 @@ const Timetable = () => {
             }}
             titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
             dayHeaderClassNames="font-bold text-lg"
-            dayHeaderFormat={{ weekday: "short" }}
+            dayHeaderFormat={{ weekday: 'short', month: 'short', day: 'numeric' }}
             eventClick={handleEventClick}
           />
         </div>
@@ -307,7 +307,7 @@ const Timetable = () => {
       <CustomModal
         isOpen={open}
         toggle={handleCloseModal}
-        event={selectedEvent} // Prenos izbranega dogodka v modalno okno
+        event={selectedEvent}
       />
     </div>
   );
