@@ -1,6 +1,14 @@
 const { processRoomData } = require('../utils/dataProcessors');
 const { processItemsInBatch } = require('../utils/batchOperations');
 
+/**
+ * Fetches unique rooms from lectures for a given faculty document.
+ * Processes and stores the unique rooms in the Firestore collection.
+ *
+ * @param {firebase.firestore.DocumentSnapshot} facultyDoc - The Firestore document snapshot of the faculty.
+ * @returns {Promise<string>} A log message indicating the completion of room addition or if no lectures were found.
+ * @throws {Error} If there is an issue with fetching data from Firestore, processing rooms, or updating Firestore.
+ */
 async function fetchRoomsByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
   const lectures = await facultyDoc.ref.collection("lectures").get();

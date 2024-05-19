@@ -5,6 +5,14 @@ const { jwtDecode } = require('jwt-decode');
 let token;
 let tokenExpiry;
 
+
+/**
+ * Retrieves headers with a Bearer token for authentication.
+ * If the token is not present or has expired, it fetches a new token from the login endpoint.
+ *
+ * @returns {Promise<Object>} A promise that resolves to an object containing headers with the Bearer token.
+ * @throws {Error} If there is an issue with fetching a new token from the login endpoint.
+ */
 async function getHeadersWithToken() {
   if (!token || (tokenExpiry && Date.now() >= tokenExpiry * 1000)) {
     const URL = "/login";
@@ -29,6 +37,17 @@ async function getHeadersWithToken() {
   return headersWithToken;
 }
 
+
+/**
+ * Fetches data from a specified API endpoint with optional query parameters and headers.
+ * If headers are not provided, it retrieves headers with a token.
+ *
+ * @param {string} endpointName - The endpoint name to fetch data from.
+ * @param {Object} [params=null] - Optional query parameters to include in the API request.
+ * @param {Object} [headers=null] - Optional headers to include in the API request.
+ * @returns {Promise<Object>} A promise that resolves to the data fetched from the API.
+ * @throws {Error} If there is an issue with fetching data from the API.
+ */
 async function fetchFromApi(endpointName, params = null, headers = null) {
   const URL = wttUrl + endpointName;
   if (!headers) {

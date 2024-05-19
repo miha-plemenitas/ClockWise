@@ -3,6 +3,14 @@ const { processCourseData } = require('../utils/dataProcessors');
 const { processItemsInBatch } = require('../utils/batchOperations');
 const { fetchFromApi } = require('../utils/apiHelpers');
 
+/**
+ * Fetches courses for a given faculty document.
+ * Filters and processes the courses, associates them with programs, and stores the processed data in Firestore.
+ *
+ * @param {firebase.firestore.DocumentSnapshot} facultyDoc - The Firestore document snapshot of the faculty.
+ * @returns {Promise<string>} A log message indicating the completion of course addition.
+ * @throws {Error} If there is an issue with fetching data from the API, processing courses, or updating Firestore.
+ */
 async function fetchCoursesByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
   const URL = "/courseAll";

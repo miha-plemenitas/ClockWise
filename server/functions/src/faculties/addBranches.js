@@ -2,6 +2,15 @@ const { processBranchData } = require('../utils/dataProcessors');
 const { processItemsInBatch } = require('../utils/batchOperations');
 const { fetchFromApi } = require('../utils/apiHelpers');
 
+/**
+ * Fetches branches for each program and year of a given faculty document.
+ * Updates the faculty document with the number of programs.
+ * Processes each branch and stores the processed data in the Firestore.
+ *
+ * @param {firebase.firestore.DocumentSnapshot} facultyDoc - The Firestore document snapshot of the faculty.
+ * @returns {Promise<string>} A log message indicating the completion of branch addition.
+ * @throws {Error} If there is an issue with fetching data from the API or updating Firestore.
+ */
 async function fetchBranchesByFacultyDoc(facultyDoc) {
   const URL = "/branchAllForProgrmmeYear";
   const faculty = facultyDoc.data();

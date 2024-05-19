@@ -2,6 +2,14 @@ const { processGroupData } = require('../utils/dataProcessors');
 const { processItemsInBatch } = require('../utils/batchOperations');
 const { fetchFromApi } = require('../utils/apiHelpers');
 
+/**
+ * Fetches groups for each branch of a given faculty document.
+ * Processes and stores the groups in the Firestore collection.
+ *
+ * @param {firebase.firestore.DocumentSnapshot} facultyDoc - The Firestore document snapshot of the faculty.
+ * @returns {Promise<string>} A log message indicating the completion of group addition.
+ * @throws {Error} If there is an issue with fetching data from the API, processing groups, or updating Firestore.
+ */
 async function fetchGroupsByFacultyDoc(facultyDoc) {
   const faculty = facultyDoc.data();
   const URL = "/groupAllForBranch";

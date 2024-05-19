@@ -3,6 +3,13 @@ const { processProgramData } = require('../utils/dataProcessors');
 const { processItemsInBatch } = require('../utils/batchOperations');
 const { fetchFromApi } = require('../utils/apiHelpers');
 
+/**
+ * Fetches programs for all faculties in the Firestore collection.
+ * Processes and stores the programs for each faculty in their respective Firestore sub-collections.
+ *
+ * @returns {Promise<string>} A log message indicating the completion of program addition for all faculties.
+ * @throws {Error} If there is an issue with fetching data from the API, processing programs, or updating Firestore.
+ */
 async function fetchProgramsForAllFaculties() {
   const faculties = await db.collection("faculties").get();
 
