@@ -1,16 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { Button } from "../../Components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../../Components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../../Components/ui/dropdown-menu";
 import { FaChevronDown } from "react-icons/fa";
-
 import CustomModal from "../../Components/Modal/CustomModal";
 import { EventClickArg, EventContentArg } from "@fullcalendar/core";
+import useFaculties from "../../Components/Hooks/useFaculties";
+import usePrograms from "../../Components/Hooks/usePrograms";
+import useBranches from "../../Components/Hooks/useBranches";
 
 const events = [
-  { id: "1", title: "Praktikum", start: '2024-05-17T10:00:00', end: '2024-05-17T13:00:00', extendedProps: { tip: "Predavanja", skupina: "RV1", izvajalec: "Janez Novak", prostor: "Alfa" } },
-  { id: "2", title: "Statistika", start: '2024-05-15T07:00:00', end: '2024-05-15T10:00:00', extendedProps: { tip: "Vaje", skupina: "RV1", izvajalec: "Jana Novak", prostor: "Gama" } }
+  {
+    id: "1",
+    title: "Praktikum",
+    start: "2024-05-17T10:00:00",
+    end: "2024-05-17T13:00:00",
+    extendedProps: {
+      tip: "Predavanja",
+      skupina: "RV1",
+      izvajalec: "Janez Novak",
+      prostor: "Alfa",
+    },
+  },
+  {
+    id: "2",
+    title: "Statistika",
+    start: "2024-05-15T07:00:00",
+    end: "2024-05-15T10:00:00",
+    extendedProps: {
+      tip: "Vaje",
+      skupina: "RV1",
+      izvajalec: "Jana Novak",
+      prostor: "Gama",
+    },
+  },
 ];
 
 function renderEventContent(eventInfo: EventContentArg) {
@@ -22,11 +54,96 @@ function renderEventContent(eventInfo: EventContentArg) {
   );
 }
 
-export function DropdownMenuProgram() {
-  const [selectedOption, setSelectedOption] = useState(
-    "ELEKTROTEHNIKA UN (BU10)"
-  );
+interface DropdownMenuFacultiesProps {
+  onSelectFaculty: (facultyId: string) => void;
+}
+
+const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
+  onSelectFaculty,
+}) => {
+  const [selectedFaculties, setSelectedFaculties] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const { faculties, loading, error } = useFaculties();
+
+  if (loading) {
+    return <p>Loading faculties...</p>;
+  }
+
+  if (error) {
+    return <p>Error loading faculties: {error}</p>;
+  }
+
+  const handleSelect = (value: string) => {
+    setSelectedFaculties(value);
+    const selectedFaculty = faculties.find((faculty) => faculty.name === value);
+    if (selectedFaculty) {
+      onSelectFaculty(selectedFaculty.id);
+    }
+  };
+
+  return (
+    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
+      <DropdownMenuTrigger asChild>
+        <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
+          <span>Faculties</span>
+          <FaChevronDown
+            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="min-w-max max-w-sm">
+        <DropdownMenuLabel className="text-modra">
+          Select Faculty
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup
+          value={selectedFaculties}
+          onValueChange={handleSelect}
+        >
+          {faculties.map((faculty) => (
+            <DropdownMenuRadioItem key={faculty.id} value={faculty.name}>
+              {faculty.name}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+interface DropdownMenuProgramsProps {
+  facultyId: string;
+  onSelectProgram: (programId: string, programDuration: number | null) => void;
+}
+
+const DropdownMenuPrograms: React.FC<DropdownMenuProgramsProps> = ({
+  facultyId,
+  onSelectProgram,
+}) => {
+  const [selectedPrograms, setSelectedPrograms] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const { programs, loading, error } = usePrograms(facultyId);
+
+  if (loading) {
+    return <p>Loading programs...</p>;
+  }
+
+  if (error) {
+    return <p>Error loading programs: {error}</p>;
+  }
+
+  const handleSelect = (value: string) => {
+    setSelectedPrograms(value);
+    const selectedProgram = programs.find((program) => program.name === value);
+    if (selectedProgram) {
+      onSelectProgram(
+        selectedProgram.id,
+        Number(selectedProgram.programDuration)
+      );
+    } else {
+      onSelectProgram("", null);
+    }
+  };
 
   return (
     <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
@@ -38,78 +155,59 @@ export function DropdownMenuProgram() {
           />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64">
+      <DropdownMenuContent className="min-w-max max-w-sm">
         <DropdownMenuLabel className="text-modra">
           Select Study Program
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
-          value={selectedOption}
-          onValueChange={setSelectedOption}
+          value={selectedPrograms}
+          onValueChange={handleSelect}
         >
-          <DropdownMenuRadioItem value="ELEKTROTEHNIKA UN (BU10)">
-            ELEKTROTEHNIKA UN (BU10)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="ELEKTROTEHNIKA VS (BV10)">
-            ELEKTROTEHNIKA VS (BV10)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="INFORMATIKA IN TEHNOLOGIJE KOMUNICIRANJA UN (BU30)">
-            INFORMATIKA IN TEHNOLOGIJE KOMUNICIRANJA UN (BU30)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="INFORMATIKA IN PODATKOVNE TEHNOLOGIJE (BU80)">
-            INFORMATIKA IN PODATKOVNE TEHNOLOGIJE (BU80)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="INFORMATIKA IN TEHNOLOGIJE KOMUNICIRANJA VS (BV30)">
-            INFORMATIKA IN TEHNOLOGIJE KOMUNICIRANJA VS (BV30)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="MEDIJSKE KOMUNIKACIJE (BU50)">
-            MEDIJSKE KOMUNIKACIJE (BU50)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="RAČUNALNIŠTVO IN INFORMACIJSKE TEHNOLOGIJE UN (BU20)">
-            RAČUNALNIŠTVO IN INFORMACIJSKE TEHNOLOGIJE UN (BU20)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="RAČUNALNIŠTVO IN INFORMACIJSKE TEHNOLOGIJE VS (BV20)">
-            RAČUNALNIŠTVO IN INFORMACIJSKE TEHNOLOGIJE VS (BV20)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="TELEKOMUNIKACIJE (BU40)">
-            TELEKOMUNIKACIJE (BU40)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="MEHATRONIKA (BU70)">
-            MEHATRONIKA (BU70)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="MEHATRONIKA (BV70)">
-            MEHATRONIKA (BV70)
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="ELEKTROTEHNIKA (BM10) - 2. stopnja">
-            ELEKTROTEHNIKA (BM10) - 2. stopnja
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="INFORMATIKA IN PODATKOVNE TEHNOLOGIJE (BM80) - 2. stopnja">
-            INFORMATIKA IN PODATKOVNE TEHNOLOGIJE (BM80) - 2. stopnja
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="MEDIJSKE KOMUNIKACIJE (BM50) - 2. stopnja">
-            MEDIJSKE KOMUNIKACIJE (BM50) - 2. stopnja
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="RAČUNALNIŠTVO IN INFORMACIJSKE TEHNOLOGIJE (BM20) - 2. stopnja">
-            RAČUNALNIŠTVO IN INFORMACIJSKE TEHNOLOGIJE (BM20) - 2. stopnja
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="TELEKOMUNIKACIJE (BM40) - 2. stopnja">
-            TELEKOMUNIKACIJE (BM40) - 2. stopnja
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="MEHATRONIKA (BMM7) - 2. stopnja">
-            MEHATRONIKA (BMM7) - 2. stopnja
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="ERASMUS">ERASMUS</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="ATHENA">ATHENA</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="KOOD">KOOD</DropdownMenuRadioItem>
+          {programs.map((program) => (
+            <DropdownMenuRadioItem key={program.id} value={program.name}>
+              {program.name}
+            </DropdownMenuRadioItem>
+          ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
+};
+
+interface DropdownMenuYearProps {
+  programDuration: number | null;
+  onSelectYear: (year: number | null) => void;
 }
 
-export function DropdownMenuYear() {
-  const [selectedYear, setSelectedYear] = useState("1");
+const DropdownMenuYear: React.FC<DropdownMenuYearProps> = ({
+  programDuration,
+  onSelectYear,
+}) => {
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [years, setYears] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (programDuration) {
+      const generateYears = () => {
+        const yearOptions = [];
+        for (let i = 1; i <= programDuration; i++) {
+          yearOptions.push(i);
+        }
+        setYears(yearOptions);
+      };
+      generateYears();
+    } else {
+      setYears([]);
+      setSelectedYear(null);
+    }
+  }, [programDuration]);
+
+  const handleSelect = (value: string) => {
+    setSelectedYear(value);
+    onSelectYear(Number(value));
+  };
 
   return (
     <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
@@ -121,147 +219,97 @@ export function DropdownMenuYear() {
           />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-32">
+      <DropdownMenuContent className="min-w-max max-w-sm">
         <DropdownMenuLabel className="text-modra">
           Select Year
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
-          value={selectedYear}
-          onValueChange={setSelectedYear}
+          value={selectedYear || ""}
+          onValueChange={handleSelect}
         >
-          <DropdownMenuRadioItem value="1">1</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="2">2</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="3">3</DropdownMenuRadioItem>
+          {years.map((year) => (
+            <DropdownMenuRadioItem key={year} value={year.toString()}>
+              {year}
+            </DropdownMenuRadioItem>
+          ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
+};
+
+interface DropdownMenuBranchesProps {
+  facultyId: string;
+  programId: string;
+  selectedYear: number | null;
 }
 
-export function DropdownMenuField() {
-  const [selectedField, setSelectedField] = useState("Option 1");
+const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
+  facultyId,
+  programId,
+  selectedYear,
+}) => {
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const { branches, loading, error } = useBranches(
+    facultyId,
+    programId,
+    selectedYear
+  );
+
+  if (loading) {
+    return <p>Loading branches...</p>;
+  }
+
+  if (error) {
+    return <p>Error loading branches: {error}</p>;
+  }
+
+  const handleSelect = (value: string) => {
+    setSelectedBranch(value);
+  };
 
   return (
     <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
       <DropdownMenuTrigger asChild>
         <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
-          <span>Field</span>
+          <span>Branch</span>
           <FaChevronDown
             className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
           />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-32">
+      <DropdownMenuContent className="min-w-max max-w-sm">
         <DropdownMenuLabel className="text-modra">
-          Select Field
+          Select Branch
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
-          value={selectedField}
-          onValueChange={setSelectedField}
+          value={selectedBranch || ""}
+          onValueChange={handleSelect}
         >
-          <DropdownMenuRadioItem value="Option 1">
-            Option 1
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Option 2">
-            Option 2
-          </DropdownMenuRadioItem>
+          {branches.map((branch) => (
+            <DropdownMenuRadioItem key={branch.id} value={branch.name}>
+              {branch.name}
+            </DropdownMenuRadioItem>
+          ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-export function DropdownMenuUniversity() {
-  const [selectedUniversity, setSelectedUniversity] = useState(
-    "Ekonomsko-poslovna fakulteta"
-  );
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-      <DropdownMenuTrigger asChild>
-        <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
-          <span>University</span>
-          <FaChevronDown
-            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64">
-        <DropdownMenuLabel className="text-modra">
-          Select University
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          value={selectedUniversity}
-          onValueChange={setSelectedUniversity}
-        >
-          <DropdownMenuRadioItem value="Ekonomsko-poslovna fakulteta">
-            Ekonomsko-poslovna fakulteta
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za elektrotehniko, računalništvo in informatiko">
-            Fakulteta za elektrotehniko, računalništvo in informatiko
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za energetiko">
-            Fakulteta za energetiko
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za gradbeništvo, prometno inženirstvo in arhitekturo">
-            Fakulteta za gradbeništvo, prometno inženirstvo in arhitekturo
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za kemijo in kemijsko tehnologijo">
-            Fakulteta za kemijo in kemijsko tehnologijo
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za kmetijstvo in biosistemske vede">
-            Fakulteta za kmetijstvo in biosistemske vede
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za logistiko">
-            Fakulteta za logistiko
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za naravoslovje in matematiko">
-            Fakulteta za naravoslovje in matematiko
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za organizacijske vede">
-            Fakulteta za organizacijske vede
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za strojništvo">
-            Fakulteta za strojništvo
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za turizem">
-            Fakulteta za turizem
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za varnostne vede">
-            Fakulteta za varnostne vede
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Fakulteta za zdravstvene vede">
-            Fakulteta za zdravstvene vede
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Filozofska fakulteta">
-            Filozofska fakulteta
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Medicinska fakulteta">
-            Medicinska fakulteta
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Pedagoška fakulteta">
-            Pedagoška fakulteta
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="Pravna fakulteta">
-            Pravna fakulteta
-          </DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
+};
 
 const Timetable = () => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = React.useState(false);
+  const [selectedFacultyId, setSelectedFacultyId] = useState("");
+  const [programId, setProgramId] = useState<string | null>(null);
+  const [programDuration, setProgramDuration] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = events.find(event => event.id === clickInfo.event.id);
+    const event = events.find((event) => event.id === clickInfo.event.id);
     setSelectedEvent(event);
     setOpen(true);
   };
@@ -276,10 +324,23 @@ const Timetable = () => {
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
       <div className="flex flex-col items-start mb-4">
         <div className="flex space-x-4">
-          <DropdownMenuUniversity />
-          <DropdownMenuProgram />
-          <DropdownMenuYear />
-          <DropdownMenuField />
+          <DropdownMenuFaculties onSelectFaculty={setSelectedFacultyId} />
+          <DropdownMenuPrograms
+            facultyId={selectedFacultyId}
+            onSelectProgram={(id, duration) => {
+              setProgramId(id);
+              setProgramDuration(duration);
+            }}
+          />
+          <DropdownMenuYear
+            programDuration={programDuration}
+            onSelectYear={setSelectedYear}
+          />
+          <DropdownMenuBranches
+            facultyId={selectedFacultyId}
+            programId={programId || ""}
+            selectedYear={selectedYear}
+          />
         </div>
         <div className="mt-4 w-full bg-white rounded-lg p-4">
           <FullCalendar
@@ -298,7 +359,11 @@ const Timetable = () => {
             }}
             titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
             dayHeaderClassNames="font-bold text-lg"
-            dayHeaderFormat={{ weekday: 'short', month: 'short', day: 'numeric' }}
+            dayHeaderFormat={{
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            }}
             eventClick={handleEventClick}
           />
         </div>
