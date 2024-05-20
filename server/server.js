@@ -26,6 +26,30 @@ const firebaseConfig = {
 
 const clientApp = initializeApp(firebaseConfig);
 const auth = getAuth(clientApp);
+const db = admin.firestore();
+
+app.post('/signin', async (req, res) => {
+  const { uid } = req.body;
+  
+  if (!uid) {
+    return res.status(400).send({ error: 'UID is required' });
+  }
+
+  try {
+    const userRef = db.collection('users').doc(uid);
+    const doc = await userRef.get();
+
+    if (doc.exists) {
+      return res.status(200).send({ message: 'User already exists' });
+    } else {
+      await userRef.set({ uid });
+      return res.status(201).send({ message: 'User added successfully' });
+    }
+  } catch (error) {
+    console.error('Error checking or saving user: ', error);
+    return res.status(500).send({ error: 'Internal Server Error' });
+  }
+});
 
 
 app.listen(4000, () => {

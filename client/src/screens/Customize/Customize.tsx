@@ -13,7 +13,6 @@ import {
   SelectItem,
 } from "../../Components/ui/select";
 import { RadioGroup, RadioGroupItem } from "../../Components/ui/radio-group";
-import { auth } from "../../Config/firebase";
 
 interface CustomizeProps {
   userName: string;

@@ -4,6 +4,7 @@ import { Input } from "../../Components/ui/input";
 import { Button } from "../../Components/ui/button";
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, Providers } from '../../Config/firebase';
+import { BASE_URL } from "../../api";
 
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.5 },
@@ -55,13 +56,33 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
 
   const signInWithGoogle = async () => {
     try {
-      await auth.signInWithPopup(Providers.google);
-      onSignin();
-      navigate('/dashboard');
+      const result = await auth.signInWithPopup(Providers.google);
+      const user = result.user;
+      if (user) {
+        const uid = user.uid;
+  
+        const response = await fetch(`${BASE_URL}/signin`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ uid })
+        });
+  
+        const data = await response.json();
+        if (response.ok) {
+          onSignin();
+          navigate('/dashboard');
+        } else {
+          console.error('Server error: ', data.error);
+          setError("An error occurred with Google sign-in. Please try again.");
+        }
+      }
     } catch (error) {
       setError("An error occurred with Google sign-in. Please try again.");
+      console.error("Google sign-in error: ", error);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 flex justify-center items-center">
