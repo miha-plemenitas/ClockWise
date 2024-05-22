@@ -51,6 +51,31 @@ app.post('/signin', async (req, res) => {
   }
 });
 
+app.post('/add', async (req, res) => {
+  const event = req.body;
+
+  try {
+    const userRef = db.collection('users').doc(event.uid);
+    const eventRef = await userRef.collection('events').add({
+      title: event.title,
+      start: event.startTime,
+      end: event.endTime,
+      extendedProps: {
+        type: event.extendedProps.type,
+        groups: event.extendedProps.groups,
+        teacher: event.extendedProps.teacher,
+        location: event.extendedProps.location,
+        editable: event.extendedProps.editable
+      }
+    });
+    res.status(201).send({ id: eventRef.id });
+  } catch (error) {
+    console.error('Error adding event:', error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+
+});
+
 
 app.listen(4000, () => {
   console.log("Listening on port 4000");

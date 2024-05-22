@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from '@fullcalendar/interaction';
 import { Button } from "../../Components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
 import useBranches from "../../Components/Hooks/useBranches";
+import { BASE_URL } from "../../api";
 
 const events = [
   {
@@ -29,6 +31,7 @@ const events = [
       skupina: "RV1",
       izvajalec: "Janez Novak",
       prostor: "Alfa",
+      editable: true
     },
   },
   {
@@ -41,6 +44,7 @@ const events = [
       skupina: "RV1",
       izvajalec: "Jana Novak",
       prostor: "Gama",
+      editable: false
     },
   },
 ];
@@ -300,24 +304,79 @@ const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
   );
 };
 
-const Timetable = () => {
+interface TimetableProps {
+  isAuthenticated: boolean;
+  uid: string | null;
+}
+
+const Timetable: React.FC<TimetableProps> = ({
+  isAuthenticated,
+  uid
+}) => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = React.useState(false);
+  const [mode, setMode] = useState<'view' | 'edit' | 'add'>('add');
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
   const [programId, setProgramId] = useState<string | null>(null);
   const [programDuration, setProgramDuration] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
+
+  // Klik na predmet na urniku
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = events.find((event) => event.id === clickInfo.event.id);
-    setSelectedEvent(event);
-    setOpen(true);
+    if (event) {
+      setSelectedEvent(event);
+      if (event.extendedProps.editable) {
+        setMode('edit');
+      } else {
+        setMode('view');
+      }
+      setOpen(true);
+    } else {
+      // Handle case when event is not found
+      console.error("Event not found");
+    }
   };
 
   const handleCloseModal = () => {
     setSelectedEvent(null);
     setOpen(false);
   };
+
+  // Klik na prazno polje na urniku
+  const handleDateSelect = () => {
+    if (isAuthenticated) {
+      setMode('add');
+      setOpen(true);
+    }
+  };
+
+  const handleAddEvent = (eventInfo: any) => {
+    fetch(`${BASE_URL}/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...eventInfo,
+        uid: uid
+      }),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to add event');
+      }
+      return response.json();
+    })
+    .then(data => {
+      setOpen(false);
+    })
+    .catch(error => {
+      console.error('Error saving event:', error);
+    });
+  };
+
 
   return (
     <div className="w-full p-5">
@@ -347,7 +406,7 @@ const Timetable = () => {
             height={"auto"}
             slotMinTime={"7:00"}
             slotMaxTime={"21:00"}
-            plugins={[timeGridPlugin]}
+            plugins={[timeGridPlugin, interactionPlugin]}
             initialView="timeGridWeek"
             weekends={false}
             events={events}
@@ -364,7 +423,12 @@ const Timetable = () => {
               month: "short",
               day: "numeric",
             }}
+            selectable={true}
+            selectMirror={true}
+            unselectAuto={true}
             eventClick={handleEventClick}
+            select={handleDateSelect}
+
           />
         </div>
       </div>
@@ -372,8 +436,11 @@ const Timetable = () => {
       <CustomModal
         isOpen={open}
         toggle={handleCloseModal}
+        mode={mode}
+        onSave={handleAddEvent}
         event={selectedEvent}
       />
+
     </div>
   );
 };
