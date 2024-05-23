@@ -19,37 +19,9 @@ import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
 import useBranches from "../../Components/Hooks/useBranches";
 import { BASE_URL } from "../../api";
+import { firestore } from "../../Config/firebase";
+import dayjs, { Dayjs } from "dayjs";
 
-/*
-const events = [
-  {
-    id: "1",
-    title: "Praktikum",
-    start: "2024-05-17T10:00:00",
-    end: "2024-05-17T13:00:00",
-    extendedProps: {
-      tip: "Predavanja",
-      skupina: "RV1",
-      izvajalec: "Janez Novak",
-      prostor: "Alfa",
-      editable: true
-    },
-  },
-  {
-    id: "2",
-    title: "Statistika",
-    start: "2024-05-15T07:00:00",
-    end: "2024-05-15T10:00:00",
-    extendedProps: {
-      tip: "Vaje",
-      skupina: "RV1",
-      izvajalec: "Jana Novak",
-      prostor: "Gama",
-      editable: false
-    },
-  },
-];
-*/
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -318,6 +290,7 @@ interface Event {
   start: string;
   end: string;
   extendedProps: {
+    date: Dayjs;
     type: string;
     groups: string;
     teacher: string;
@@ -339,31 +312,30 @@ const Timetable: React.FC<TimetableProps> = ({
   const [programDuration, setProgramDuration] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
-
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}/events?uid=${uid}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+    if(isAuthenticated && uid) {
+    const unsubscribe = firestore.collection('users').doc(uid).collection('events')
+      .onSnapshot(snapshot => {
+        const updatedEvents: Event[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          title: doc.data().title,
+          start: doc.data().start,
+          end: doc.data().end,
+          extendedProps: {
+            date: dayjs(doc.data().extendedProps.date),
+            type: doc.data().extendedProps.type,
+            groups: doc.data().extendedProps.groups,
+            teacher: doc.data().extendedProps.teacher,
+            location: doc.data().extendedProps.location,
+            editable: doc.data().extendedProps.editable
+          }
+        }));
+        setEvents(updatedEvents);
+      });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch events');
-        }
-
-        const data = await response.json();
-        setEvents(data);
-      } catch (error) {
-        console.error('Error fetching events:', error);
-      }
-    };
-
-    fetchEvents();
+    return () => unsubscribe(); 
+  }
   }, [uid]);
-
 
   // Klik na predmet na urniku
   const handleEventClick = (clickInfo: EventClickArg) => {
@@ -413,6 +385,31 @@ const Timetable: React.FC<TimetableProps> = ({
       })
       .catch(error => {
         console.error('Error saving event:', error);
+      });
+  };
+
+  const handleUpdateEvent = (eventInfo: any) => {
+    fetch(`${BASE_URL}/update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...eventInfo,
+        uid: uid
+      }),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to update event');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setOpen(false);
+      })
+      .catch(error => {
+        console.error('Error updating event:', error);
       });
   };
 
@@ -477,6 +474,7 @@ const Timetable: React.FC<TimetableProps> = ({
         toggle={handleCloseModal}
         mode={mode}
         onSave={handleAddEvent}
+        onUpdate={handleUpdateEvent}
         event={selectedEvent}
       />
 

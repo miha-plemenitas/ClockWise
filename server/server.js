@@ -30,7 +30,7 @@ const db = admin.firestore();
 
 app.post('/signin', async (req, res) => {
   const { uid } = req.body;
-  
+
   if (!uid) {
     return res.status(400).send({ error: 'UID is required' });
   }
@@ -61,6 +61,7 @@ app.post('/add', async (req, res) => {
       start: event.startTime,
       end: event.endTime,
       extendedProps: {
+        date: event.extendedProps.date,
         type: event.extendedProps.type,
         groups: event.extendedProps.groups,
         teacher: event.extendedProps.teacher,
@@ -76,32 +77,36 @@ app.post('/add', async (req, res) => {
 
 });
 
-app.get('/events', async (req, res) => {
-  const uid = req.query.uid;
-
-  if (!uid) {
-    return res.status(400).send({ message: 'Missing uid parameter' });
-  }
-
+app.post('/update', async (req, res) => {
+  const event = req.body;
   try {
-    const userRef = db.collection('users').doc(uid);
-    const eventsSnapshot = await userRef.collection('events').get();
+    const userRef = db.collection('users').doc(event.uid);
+    const eventRef = userRef.collection('events').doc(event.id);
 
-    if (eventsSnapshot.empty) {
-      return res.status(404).send({ message: 'No events found' });
+    const doc = await eventRef.get();
+    if (!doc.exists) {
+      return res.status(404).send({ message: 'Event not found' });
     }
 
-    const events = eventsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    await eventRef.update({
+      title: event.title,
+      start: event.startTime,
+      end: event.endTime,
+      extendedProps: {
+        date: event.extendedProps.date,
+        type: event.extendedProps.type,
+        groups: event.extendedProps.groups,
+        teacher: event.extendedProps.teacher,
+        location: event.extendedProps.location,
+        editable: event.extendedProps.editable
+      }
+    });
 
-    res.status(200).json(events);
+    res.status(200).send({ message: 'Event updated successfully' });
   } catch (error) {
-    console.error('Error fetching events:', error);
+    console.error('Error updating event:', error);
     res.status(500).send({ message: 'Internal Server Error' });
   }
-
 });
 
 

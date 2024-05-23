@@ -5,14 +5,14 @@ import { Button } from "../../Components/ui/button";
 import TextField from '@mui/material/TextField';
 import { SxProps } from '@mui/system';
 import { format } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { sl } from 'date-fns/locale';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { useState } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
-import 'dayjs/locale/de';
+import 'dayjs/locale/sl';
 
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -38,12 +38,14 @@ interface CustomModalProps {
     toggle: () => void;
     mode: 'view' | 'edit' | 'add';
     onSave: (eventInfo: any) => void;
-    event?: {
+    onUpdate: (eventInfo: any) => void;
+    event: {
         id: string;
         title: string;
         start: string;
         end: string;
         extendedProps: {
+            date: Dayjs;
             type: string;
             groups: string;
             teacher: string;
@@ -58,6 +60,7 @@ export default function CustomModal({
     toggle,
     mode,
     onSave,
+    onUpdate,
     event,
 }: CustomModalProps) {
     const [title, setTitle] = useState('');
@@ -70,7 +73,7 @@ export default function CustomModal({
     const [prostor, setProstor] = useState('');
 
 
-    const formatDate = (dateString: string) => format(new Date(dateString), 'EEEE, d. M. yyyy', { locale: enUS });
+    const formatDate = (dateString: string) => format(new Date(dateString), 'EEEE, d. M. yyyy', { locale: sl });
     const formatTime = (startString: string, endString: string) => {
         const startTime = format(new Date(startString), 'HH:mm');
         const endTime = format(new Date(endString), 'HH:mm');
@@ -87,6 +90,7 @@ export default function CustomModal({
             startTime: updatedStartTime ? updatedStartTime.format('YYYY-MM-DDTHH:mm:ss') : null,
             endTime: updatedEndTime ? updatedEndTime.format('YYYY-MM-DDTHH:mm:ss') : null,
             extendedProps: {
+                date: date,
                 type: tip,
                 groups: skupina,
                 teacher: izvajalec,
@@ -100,12 +104,51 @@ export default function CustomModal({
         setDate(null);
         setStartTime(null);
         setEndTime(null);
-        setIzvajalec(''); 
+        setIzvajalec('');
         setSkupina('');
         setTip('');
         setProstor('');
     }
 
+    const handleUpdateEvent = () => {
+
+        const newdate = date || dayjs(event.start);
+
+        const newStart = dayjs(event.start);
+        const newEnd = dayjs(event.end);
+
+        const updatedStartTime = startTime ? startTime.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date()) : newStart.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date());
+        const updatedEndTime = endTime ? endTime.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date()) : newEnd.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date());
+        const eventDetails = {
+            id: event.id,
+            title: title || event.title,
+            startTime: updatedStartTime.format('YYYY-MM-DDTHH:mm:ss'),
+            endTime: updatedEndTime.format('YYYY-MM-DDTHH:mm:ss'),
+            extendedProps: {
+                date: newdate,
+                type: tip || event.extendedProps.type,
+                groups: skupina || event.extendedProps.groups,
+                teacher: izvajalec || event.extendedProps.teacher,
+                location: prostor || event.extendedProps.location,
+                editable: true
+            }
+        };
+
+        onUpdate(eventDetails);
+        setTitle('');
+        setDate(null);
+        setStartTime(null);
+        setEndTime(null);
+        setIzvajalec('');
+        setSkupina('');
+        setTip('');
+        setProstor('');
+    }
+
+    const handleDeleteEvent = () => {
+
+
+    }
     return (
         <Modal
             open={isOpen}
@@ -134,6 +177,7 @@ export default function CustomModal({
                                         WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
                                     },
                                 }}
+                           
                             />
                             <TextField
                                 fullWidth
@@ -226,32 +270,48 @@ export default function CustomModal({
                             margin="normal"
                             label="Title"
                             defaultValue={event.title}
+                            onChange={(e) => setTitle(e.target.value)}
+
                         />
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <TextField
-                                fullWidth
-                                margin="normal"
-                                label="Date"
-                                defaultValue={formatDate(event.start)}
-                            />
-                            <TextField
-                                fullWidth
-                                margin="normal"
-                                label="Time"
-                                defaultValue={formatTime(event.start, event.end)}
-                            />
+                        <Box sx={{ marginTop: 1 }}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="sl">
+                                <DatePicker
+                                    label="Date"
+                                    value={dayjs(event.start)}
+                                    onChange={(newValue) => setDate(newValue)}
+                                    sx={{ width: '100%' }}
+                                />
+                            </LocalizationProvider>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 2, marginTop: 2 }}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="sl">
+                                <TimePicker
+                                    label="Start time"
+                                    value={dayjs(event.start)}
+                                    onChange={(newValue) => setStartTime(newValue)}
+                                />
+                            </LocalizationProvider>
+                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="sl">
+                                <TimePicker
+                                    label="End time"
+                                    value={dayjs(event.end)}
+                                    onChange={(newValue) => setEndTime(newValue)}
+                                />
+                            </LocalizationProvider>
                         </Box>
                         <TextField
                             fullWidth
                             margin="normal"
                             label="Teacher"
                             defaultValue={event.extendedProps.teacher}
+                            onChange={(e) => setIzvajalec(e.target.value)}
                         />
                         <TextField
                             fullWidth
                             margin="normal"
                             label="Groups"
                             defaultValue={event.extendedProps.groups}
+                            onChange={(e) => setSkupina(e.target.value)}
                         />
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <TextField
@@ -259,12 +319,14 @@ export default function CustomModal({
                                 margin="normal"
                                 label="Type"
                                 defaultValue={event.extendedProps.type}
+                                onChange={(e) => setTip(e.target.value)}
                             />
                             <TextField
                                 fullWidth
                                 margin="normal"
                                 label="Location"
                                 defaultValue={event.extendedProps.location}
+                                onChange={(e) => setProstor(e.target.value)}
                             />
                         </Box>
                     </>
@@ -285,23 +347,24 @@ export default function CustomModal({
                             onChange={(e) => setTitle(e.target.value)}
                         />
                         <Box sx={{ marginTop: 1 }}>
-                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="de">
+                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="sl">
                                 <DatePicker
                                     label="Date"
                                     value={date}
                                     onChange={(newValue) => setDate(newValue)}
+                                    sx={{ width: '100%' }}
                                 />
                             </LocalizationProvider>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 2, marginTop: 2 }}>
-                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="de">
+                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="sl">
                                 <TimePicker
                                     label="Start time"
                                     value={startTime}
                                     onChange={(newValue) => setStartTime(newValue)}
                                 />
                             </LocalizationProvider>
-                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="de">
+                            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="sl">
                                 <TimePicker
                                     label="End time"
                                     value={endTime}
@@ -356,12 +419,23 @@ export default function CustomModal({
                     </Button>
                     {mode === 'edit' && (
                         <Button
-                            onClick={() => {/* Handle save action */ }}
+                            onClick={handleDeleteEvent}
+                            className="bg-modra text-white mr-2 hover:bg-modra-700 items-center space-x-2"
+                        >
+                            <span>Delete</span>
+                        </Button>
+                        
+                        
+                    )}
+                    {mode === 'edit' && (
+                        <Button
+                            onClick={handleUpdateEvent}
                             className="bg-modra text-white hover:bg-modra-700 items-center space-x-2"
                         >
                             <span>Save</span>
                         </Button>
                     )}
+
                     {mode === 'add' && (
                         <Button
                             onClick={handleAddEvent}
