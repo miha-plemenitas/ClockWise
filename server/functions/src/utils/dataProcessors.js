@@ -1,3 +1,5 @@
+const { Timestamp } = require('firebase-admin/firestore');
+
 /**
  * Processes lecture data and returns a formatted object.
  *
@@ -12,10 +14,13 @@ function processLectureData(lecture) {
     executionType = "99";
   }
 
+  const startTime = lecture.start_time ? Timestamp.fromDate(new Date(lecture.start_time)) : null;
+  const endTime = lecture.end_time ? Timestamp.fromDate(new Date(lecture.end_time)) : null;
+
   return {
     id: `${lecture.id} ${lecture.start_time}`,
-    startTime: lecture.start_time,
-    endTime: lecture.end_time,
+    startTime: startTime,
+    endTime: endTime,
     courseId: lecture.courseId,
     course: lecture.course,
     executionTypeId: executionTypeId,

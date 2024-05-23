@@ -1,2 +1,9 @@
 exports.integration = require('./src/functions');
-exports.university = require('./src/functions/facultyController');
+exports.faculty = require('./src/functions/facultyController');
+exports.program = require('./src/functions/programController');
+exports.branch = require('./src/functions/branchesController');
+exports.group = require('./src/functions/groupController');
+exports.tutor = require('./src/functions/tutorController');
+exports.room = require('./src/functions/roomController');
+exports.course = require('./src/functions/courseContoller');
+exports.lecture = require('./src/functions/lectureContoller');
