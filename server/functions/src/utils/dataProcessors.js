@@ -17,6 +17,9 @@ function processLectureData(lecture) {
   const startTime = lecture.start_time ? Timestamp.fromDate(new Date(lecture.start_time)) : null;
   const endTime = lecture.end_time ? Timestamp.fromDate(new Date(lecture.end_time)) : null;
 
+  const extractIds = (items) => items.map(item => item.id);
+
+
   return {
     id: `${lecture.id} ${lecture.start_time}`,
     startTime: startTime,
@@ -25,10 +28,10 @@ function processLectureData(lecture) {
     course: lecture.course,
     executionTypeId: executionTypeId,
     executionType: executionType,
-    branches: lecture.branches,
-    rooms: lecture.rooms,
-    groups: lecture.groups,
-    tutors: lecture.lecturers,
+    branches: lecture.branches ? extractIds(lecture.branches) : [],
+    rooms: lecture.rooms ? extractIds(lecture.rooms) : [],
+    groups: lecture.groups ? extractIds(lecture.groups) : [],
+    tutors: lecture.lecturers ? extractIds(lecture.lecturers) : [],
   };
 }
 
