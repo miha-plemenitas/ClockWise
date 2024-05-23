@@ -16,7 +16,6 @@ import 'dayjs/locale/de';
 
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { isNull } from 'util';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -40,14 +39,15 @@ interface CustomModalProps {
     mode: 'view' | 'edit' | 'add';
     onSave: (eventInfo: any) => void;
     event?: {
+        id: string;
         title: string;
         start: string;
         end: string;
         extendedProps: {
-            tip: string;
-            skupina: string;
-            izvajalec: string;
-            prostor: string;
+            type: string;
+            groups: string;
+            teacher: string;
+            location: string;
             editable: boolean;
         };
     };
@@ -155,7 +155,7 @@ export default function CustomModal({
                             fullWidth
                             margin="normal"
                             label="Teacher"
-                            defaultValue={event.extendedProps.izvajalec}
+                            defaultValue={event.extendedProps.teacher}
                             InputProps={{
                                 readOnly: true,
                             }}
@@ -170,7 +170,7 @@ export default function CustomModal({
                             fullWidth
                             margin="normal"
                             label="Groups"
-                            defaultValue={event.extendedProps.skupina}
+                            defaultValue={event.extendedProps.groups}
                             InputProps={{
                                 readOnly: true,
                             }}
@@ -186,7 +186,7 @@ export default function CustomModal({
                                 fullWidth
                                 margin="normal"
                                 label="Type"
-                                defaultValue={event.extendedProps.tip}
+                                defaultValue={event.extendedProps.type}
                                 InputProps={{
                                     readOnly: true,
                                 }}
@@ -201,7 +201,7 @@ export default function CustomModal({
                                 fullWidth
                                 margin="normal"
                                 label="Location"
-                                defaultValue={event.extendedProps.prostor}
+                                defaultValue={event.extendedProps.location}
                                 InputProps={{
                                     readOnly: true,
                                 }}
@@ -245,26 +245,26 @@ export default function CustomModal({
                             fullWidth
                             margin="normal"
                             label="Teacher"
-                            defaultValue={event.extendedProps.izvajalec}
+                            defaultValue={event.extendedProps.teacher}
                         />
                         <TextField
                             fullWidth
                             margin="normal"
                             label="Groups"
-                            defaultValue={event.extendedProps.skupina}
+                            defaultValue={event.extendedProps.groups}
                         />
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <TextField
                                 fullWidth
                                 margin="normal"
                                 label="Type"
-                                defaultValue={event.extendedProps.tip}
+                                defaultValue={event.extendedProps.type}
                             />
                             <TextField
                                 fullWidth
                                 margin="normal"
                                 label="Location"
-                                defaultValue={event.extendedProps.prostor}
+                                defaultValue={event.extendedProps.location}
                             />
                         </Box>
                     </>

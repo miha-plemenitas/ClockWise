@@ -76,6 +76,34 @@ app.post('/add', async (req, res) => {
 
 });
 
+app.get('/events', async (req, res) => {
+  const uid = req.query.uid;
+
+  if (!uid) {
+    return res.status(400).send({ message: 'Missing uid parameter' });
+  }
+
+  try {
+    const userRef = db.collection('users').doc(uid);
+    const eventsSnapshot = await userRef.collection('events').get();
+
+    if (eventsSnapshot.empty) {
+      return res.status(404).send({ message: 'No events found' });
+    }
+
+    const events = eventsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+
+});
+
 
 app.listen(4000, () => {
   console.log("Listening on port 4000");

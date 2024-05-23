@@ -20,6 +20,7 @@ import usePrograms from "../../Components/Hooks/usePrograms";
 import useBranches from "../../Components/Hooks/useBranches";
 import { BASE_URL } from "../../api";
 
+/*
 const events = [
   {
     id: "1",
@@ -48,6 +49,7 @@ const events = [
     },
   },
 ];
+*/
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -309,10 +311,26 @@ interface TimetableProps {
   uid: string | null;
 }
 
+
+interface Event {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  extendedProps: {
+    type: string;
+    groups: string;
+    teacher: string;
+    location: string;
+    editable: boolean;
+  };
+}
+
 const Timetable: React.FC<TimetableProps> = ({
   isAuthenticated,
   uid
 }) => {
+  const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = React.useState(false);
   const [mode, setMode] = useState<'view' | 'edit' | 'add'>('add');
@@ -322,20 +340,41 @@ const Timetable: React.FC<TimetableProps> = ({
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
 
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/events?uid=${uid}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch events');
+        }
+
+        const data = await response.json();
+        setEvents(data);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+    };
+
+    fetchEvents();
+  }, [uid]);
+
+
   // Klik na predmet na urniku
   const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = events.find((event) => event.id === clickInfo.event.id);
+    const event = events.find((event: Event) => event.id === clickInfo.event.id);
     if (event) {
       setSelectedEvent(event);
-      if (event.extendedProps.editable) {
-        setMode('edit');
-      } else {
-        setMode('view');
-      }
+      setMode(event.extendedProps.editable ? 'edit' : 'view');
       setOpen(true);
     } else {
-      // Handle case when event is not found
       console.error("Event not found");
+      alert("Event not found. Please try again.");
     }
   };
 
@@ -363,18 +402,18 @@ const Timetable: React.FC<TimetableProps> = ({
         uid: uid
       }),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to add event');
-      }
-      return response.json();
-    })
-    .then(data => {
-      setOpen(false);
-    })
-    .catch(error => {
-      console.error('Error saving event:', error);
-    });
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to add event');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setOpen(false);
+      })
+      .catch(error => {
+        console.error('Error saving event:', error);
+      });
   };
 
 
