@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from '@fullcalendar/interaction';
 import { Button } from "../../Components/ui/button";
 import {
   DropdownMenu,
@@ -17,33 +18,10 @@ import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
 import useBranches from "../../Components/Hooks/useBranches";
+import { BASE_URL } from "../../api";
+import { firestore } from "../../Config/firebase";
+import dayjs, { Dayjs } from "dayjs";
 
-const events = [
-  {
-    id: "1",
-    title: "Praktikum",
-    start: "2024-05-17T10:00:00",
-    end: "2024-05-17T13:00:00",
-    extendedProps: {
-      tip: "Predavanja",
-      skupina: "RV1",
-      izvajalec: "Janez Novak",
-      prostor: "Alfa",
-    },
-  },
-  {
-    id: "2",
-    title: "Statistika",
-    start: "2024-05-15T07:00:00",
-    end: "2024-05-15T10:00:00",
-    extendedProps: {
-      tip: "Vaje",
-      skupina: "RV1",
-      izvajalec: "Jana Novak",
-      prostor: "Gama",
-    },
-  },
-];
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -300,24 +278,141 @@ const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
   );
 };
 
-const Timetable = () => {
+interface TimetableProps {
+  isAuthenticated: boolean;
+  uid: string | null;
+}
+
+
+interface Event {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  extendedProps: {
+    date: Dayjs;
+    type: string;
+    groups: string;
+    teacher: string;
+    location: string;
+    editable: boolean;
+  };
+}
+
+const Timetable: React.FC<TimetableProps> = ({
+  isAuthenticated,
+  uid
+}) => {
+  const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = React.useState(false);
+  const [mode, setMode] = useState<'view' | 'edit' | 'add'>('add');
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
   const [programId, setProgramId] = useState<string | null>(null);
   const [programDuration, setProgramDuration] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
+  useEffect(() => {
+    if(isAuthenticated && uid) {
+    const unsubscribe = firestore.collection('users').doc(uid).collection('events')
+      .onSnapshot(snapshot => {
+        const updatedEvents: Event[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          title: doc.data().title,
+          start: doc.data().start,
+          end: doc.data().end,
+          extendedProps: {
+            date: dayjs(doc.data().extendedProps.date),
+            type: doc.data().extendedProps.type,
+            groups: doc.data().extendedProps.groups,
+            teacher: doc.data().extendedProps.teacher,
+            location: doc.data().extendedProps.location,
+            editable: doc.data().extendedProps.editable
+          }
+        }));
+        setEvents(updatedEvents);
+      });
+
+    return () => unsubscribe(); 
+  }
+  }, [uid]);
+
+  // Klik na predmet na urniku
   const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = events.find((event) => event.id === clickInfo.event.id);
-    setSelectedEvent(event);
-    setOpen(true);
+    const event = events.find((event: Event) => event.id === clickInfo.event.id);
+    if (event) {
+      setSelectedEvent(event);
+      setMode(event.extendedProps.editable ? 'edit' : 'view');
+      setOpen(true);
+    } else {
+      console.error("Event not found");
+      alert("Event not found. Please try again.");
+    }
   };
 
   const handleCloseModal = () => {
     setSelectedEvent(null);
     setOpen(false);
   };
+
+  // Klik na prazno polje na urniku
+  const handleDateSelect = () => {
+    if (isAuthenticated) {
+      setMode('add');
+      setOpen(true);
+    }
+  };
+
+  const handleAddEvent = (eventInfo: any) => {
+    fetch(`${BASE_URL}/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...eventInfo,
+        uid: uid
+      }),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to add event');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setOpen(false);
+      })
+      .catch(error => {
+        console.error('Error saving event:', error);
+      });
+  };
+
+  const handleUpdateEvent = (eventInfo: any) => {
+    fetch(`${BASE_URL}/update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...eventInfo,
+        uid: uid
+      }),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to update event');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setOpen(false);
+      })
+      .catch(error => {
+        console.error('Error updating event:', error);
+      });
+  };
+
 
   return (
     <div className="w-full p-5">
@@ -347,7 +442,7 @@ const Timetable = () => {
             height={"auto"}
             slotMinTime={"7:00"}
             slotMaxTime={"21:00"}
-            plugins={[timeGridPlugin]}
+            plugins={[timeGridPlugin, interactionPlugin]}
             initialView="timeGridWeek"
             weekends={false}
             events={events}
@@ -364,7 +459,12 @@ const Timetable = () => {
               month: "short",
               day: "numeric",
             }}
+            selectable={true}
+            selectMirror={true}
+            unselectAuto={true}
             eventClick={handleEventClick}
+            select={handleDateSelect}
+
           />
         </div>
       </div>
@@ -372,8 +472,12 @@ const Timetable = () => {
       <CustomModal
         isOpen={open}
         toggle={handleCloseModal}
+        mode={mode}
+        onSave={handleAddEvent}
+        onUpdate={handleUpdateEvent}
         event={selectedEvent}
       />
+
     </div>
   );
 };

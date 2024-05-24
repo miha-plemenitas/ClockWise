@@ -10,10 +10,17 @@ import { auth } from "./Config/firebase";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [uid, setUid] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      setIsAuthenticated(!!user);
+      if (user) {
+        setIsAuthenticated(true);
+        setUid(user.uid);
+      } else {
+        setIsAuthenticated(false);
+        setUid(null);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -32,7 +39,7 @@ const App = () => {
         <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} />
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/" element={<Timetable />} />
+          <Route path="/" element={<Timetable isAuthenticated={isAuthenticated} uid={uid}/>} />
           <Route path="/signin" element={<Signin onSignin={handleSignin} />} />
           <Route path="/forgot" element={<ForgotPassword />} />
         </Routes>
