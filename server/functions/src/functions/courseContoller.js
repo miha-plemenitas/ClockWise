@@ -7,11 +7,23 @@ const {
 } = require('../service/facultyCollections');
 
 
+/**
+ * Google Cloud Function to retrieve a specific course by ID from within a specified faculty's "courses" collection.
+ * This function is an HTTP-triggered endpoint that requires both the faculty ID and the course ID to be provided
+ * in the query parameters. It handles CORS, uses basic authentication, and addresses potential errors related
+ * to missing parameters, unauthorized access, or issues during data retrieval.
+ *
+ * Query Parameters:
+ * - facultyId: The ID of the faculty to which the course belongs.
+ * - courseId: The ID of the course to retrieve.
+ *
+ * @param {functions.Request} request - The HTTP request object, containing the query parameters.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getOneById = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -43,11 +55,22 @@ exports.getOneById = functions
   });
 
 
+/**
+* Google Cloud Function to retrieve all courses from the "courses" collection for a specified faculty.
+* This function is an HTTP-triggered endpoint that requires the faculty ID to be provided in the query parameters.
+* It handles CORS, employs basic authentication, and manages potential errors related to missing parameters,
+* unauthorized access, or issues during data retrieval.
+*
+* Query Parameters:
+* - facultyId: The ID of the faculty whose courses are to be fetched.
+*
+* @param {functions.Request} request - The HTTP request object, containing the query parameters.
+* @param {functions.Response} response - The HTTP response object used to send back data or errors.
+*/
 exports.getAllForFaculty = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -75,11 +98,23 @@ exports.getAllForFaculty = functions
   });
 
 
+/**
+* Google Cloud Function to retrieve all courses associated with a specific program from a faculty's "courses" collection.
+* This function is an HTTP-triggered endpoint that requires both the faculty ID and the program ID to be provided in the query parameters.
+* It handles CORS, uses basic authentication, and manages potential errors related to missing parameters, unauthorized access, or 
+* issues during data retrieval.
+*
+* Query Parameters:
+* - facultyId: The ID of the faculty associated with the program.
+* - programId: The ID of the program whose courses are to be fetched.
+*
+* @param {functions.Request} request - The HTTP request object, containing the query parameters.
+* @param {functions.Response} response - The HTTP response object used to send back data or errors.
+*/
 exports.getAllForProgram = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -111,11 +146,23 @@ exports.getAllForProgram = functions
   });
 
 
+/**
+ * Google Cloud Function to retrieve all courses associated with a specific branch from a faculty's "courses" collection.
+ * This function is an HTTP-triggered endpoint that requires both the faculty ID and the branch ID to be provided in the query parameters.
+ * It handles CORS, uses basic authentication, and manages potential errors related to missing parameters, unauthorized access, or 
+ * issues during data retrieval.
+ *
+ * Query Parameters:
+ * - facultyId: The ID of the faculty associated with the branch.
+ * - branchId: The ID of the branch whose courses are to be fetched.
+ *
+ * @param {functions.Request} request - The HTTP request object, containing the query parameters.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getAllForBranch = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {

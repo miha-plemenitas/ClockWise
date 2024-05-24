@@ -5,11 +5,25 @@ const {
 } = require('../service/lectureService');
 
 
+/**
+ * Google Cloud Function to retrieve all lectures for a specific course from a faculty's "lectures" collection.
+ * This function is an HTTP-triggered endpoint that requires faculty ID and course ID to be provided in the query parameters,
+ * with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+ * related to missing parameters, unauthorized access, or issues during data retrieval.
+ *
+ * Query Parameters:
+ * - facultyId: The ID of the faculty associated with the course.
+ * - courseId: The ID of the course whose lectures are to be fetched.
+ * - startTime: The optional start time for the date filtering, as a string.
+ * - endTime: The optional end time for the date filtering, as a string.
+ *
+ * @param {functions.Request} request - The HTTP request object, containing the query parameters.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getAllForCourse = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -43,11 +57,25 @@ exports.getAllForCourse = functions
   });
 
 
+/**
+* Google Cloud Function to retrieve all lectures for a specific branch from a faculty's "lectures" collection.
+* This function is an HTTP-triggered endpoint that requires faculty ID and branch ID to be provided in the query parameters,
+* with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+* related to missing parameters, unauthorized access, or issues during data retrieval.
+*
+* Query Parameters:
+* - facultyId: The ID of the faculty associated with the branch.
+* - branchId: The ID of the branch whose lectures are to be fetched.
+* - startTime: The optional start time for the date filtering, as a string.
+* - endTime: The optional end time for the date filtering, as a string.
+*
+* @param {functions.Request} request - The HTTP request object, containing the query parameters.
+* @param {functions.Response} response - The HTTP response object used to send back data or errors.
+*/
 exports.getAllForBranch = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -81,11 +109,25 @@ exports.getAllForBranch = functions
   });
 
 
+/**
+ * Google Cloud Function to retrieve all lectures for a specific group from a faculty's "lectures" collection.
+ * This function is an HTTP-triggered endpoint that requires faculty ID and group ID to be provided in the query parameters,
+ * with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+ * related to missing parameters, unauthorized access, or issues during data retrieval.
+ *
+ * Query Parameters:
+ * - facultyId: The ID of the faculty associated with the group.
+ * - groupId: The ID of the group whose lectures are to be fetched.
+ * - startTime: The optional start time for the date filtering, as a string.
+ * - endTime: The optional end time for the date filtering, as a string.
+ *
+ * @param {functions.Request} request - The HTTP request object, containing the query parameters.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getAllForGroup = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -119,11 +161,25 @@ exports.getAllForGroup = functions
   });
 
 
+/**
+* Google Cloud Function to retrieve all lectures for a specific room from a faculty's "lectures" collection.
+* This function is an HTTP-triggered endpoint that requires faculty ID and room ID to be provided in the query parameters,
+* with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+* related to missing parameters, unauthorized access, or issues during data retrieval.
+*
+* Query Parameters:
+* - facultyId: The ID of the faculty associated with the room.
+* - roomId: The ID of the room whose lectures are to be fetched.
+* - startTime: The optional start time for the date filtering, as a string.
+* - endTime: The optional end time for the date filtering, as a string.
+*
+* @param {functions.Request} request - The HTTP request object, containing the query parameters.
+* @param {functions.Response} response - The HTTP response object used to send back data or errors.
+*/
 exports.getAllForRoom = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -157,11 +213,25 @@ exports.getAllForRoom = functions
   });
 
 
+/**
+* Google Cloud Function to retrieve all lectures for a specific tutor from a faculty's "lectures" collection.
+* This function is an HTTP-triggered endpoint that requires faculty ID and tutor ID to be provided in the query parameters,
+* with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+* related to missing parameters, unauthorized access, or issues during data retrieval.
+*
+* Query Parameters:
+* - facultyId: The ID of the faculty associated with the tutor.
+* - tutorId: The ID of the tutor whose lectures are to be fetched.
+* - startTime: The optional start time for the date filtering, as a string.
+* - endTime: The optional end time for the date filtering, as a string.
+*
+* @param {functions.Request} request - The HTTP request object, containing the query parameters.
+* @param {functions.Response} response - The HTTP response object used to send back data or errors.
+*/
 exports.getAllForTutor = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {

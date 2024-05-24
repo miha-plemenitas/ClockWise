@@ -6,11 +6,18 @@ const {
 } = require('../service/facultyService');
 
 
+/**
+ * Google Cloud Function to retrieve all faculties from the database.
+ * This function is an HTTP-triggered endpoint that handles CORS and uses basic authentication.
+ * It addresses potential errors related to unauthorized access or issues during data retrieval.
+ *
+ * @param {functions.Request} request - The HTTP request object, which includes authentication details.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getAll = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -32,11 +39,22 @@ exports.getAll = functions
   });
 
 
+/**
+* Google Cloud Function to retrieve a specific faculty by its ID from the "faculties" collection.
+* This function is an HTTP-triggered endpoint that requires the faculty ID to be provided in the query parameters.
+* It handles CORS, uses basic authentication, and manages potential errors related to missing parameters,
+* unauthorized access, or issues during data retrieval.
+*
+* Query Parameters:
+* - facultyId: The ID of the faculty to retrieve.
+*
+* @param {functions.Request} request - The HTTP request object, containing the query parameters.
+* @param {functions.Response} response - The HTTP response object used to send back data or errors.
+*/
 exports.getById = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {

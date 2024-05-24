@@ -6,11 +6,23 @@ const {
 } = require('../service/facultyCollections');
 
 
+/**
+ * Google Cloud Function to retrieve a specific program by ID from within a specified faculty's "programs" collection.
+ * This function is an HTTP-triggered endpoint that requires both the faculty ID and the program ID to be provided
+ * in the query parameters. It handles CORS, uses basic authentication, and addresses potential errors related
+ * to missing parameters, unauthorized access, or issues during data retrieval.
+ *
+ * Query Parameters:
+ * - facultyId: The ID of the faculty to which the program belongs.
+ * - programId: The ID of the program to retrieve.
+ *
+ * @param {functions.Request} request - The HTTP request object, containing the query parameters.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getOneById = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -42,11 +54,22 @@ exports.getOneById = functions
   });
 
 
+/**
+ * Google Cloud Function to retrieve all programs from the "programs" collection for a specified faculty.
+ * This function is an HTTP-triggered endpoint that requires the faculty ID to be provided in the query parameters.
+ * It handles CORS, employs basic authentication, and manages potential errors related to missing parameters,
+ * unauthorized access, or issues during data retrieval.
+ *
+ * Query Parameters:
+ * - facultyId: The ID of the faculty whose programs are to be fetched.
+ *
+ * @param {functions.Request} request - The HTTP request object, containing the query parameters.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getAllForFaculty = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {

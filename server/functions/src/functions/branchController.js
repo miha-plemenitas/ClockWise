@@ -5,11 +5,24 @@ const {
   getItemByFacultyAndCollectionAndFilterById
 } = require('../service/facultyCollections');
 
+
+/**
+ * Google Cloud Function to retrieve a specific branch by ID from within a specified faculty's "branches" collection.
+ * This function is an HTTP-triggered endpoint that requires both the faculty ID and the branch ID to be provided
+ * in the query parameters. It handles CORS, uses basic authentication, and addresses potential errors related
+ * to missing parameters, unauthorized access, or issues during data retrieval.
+ *
+ * Query Parameters:
+ * - facultyId: The ID of the faculty to which the branch belongs.
+ * - branchId: The ID of the branch to retrieve.
+ *
+ * @param {functions.Request} request - The HTTP request object, containing the query parameters.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getOneById = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -41,11 +54,23 @@ exports.getOneById = functions
   });
 
 
+/**
+ * Google Cloud Function to retrieve all branches associated with a specific program from a faculty's "branches" collection.
+ * This function is an HTTP-triggered endpoint that requires both the faculty ID and the program ID to be provided in the query parameters.
+ * It handles CORS, uses basic authentication, and manages potential errors related to missing parameters, unauthorized access, or 
+ * issues during data retrieval.
+ *
+ * Query Parameters:
+ * - facultyId: The ID of the faculty associated with the program.
+ * - programId: The ID of the program whose branches are to be fetched.
+ *
+ * @param {functions.Request} request - The HTTP request object, containing the query parameters.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getAllForProgram = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
@@ -77,11 +102,24 @@ exports.getAllForProgram = functions
   });
 
 
+/**
+ * Google Cloud Function to retrieve all branches associated with a specific program and year from a faculty's "branches" collection.
+ * This function is an HTTP-triggered endpoint that requires the faculty ID, program ID, and year to be provided in the query parameters.
+ * It handles CORS, uses basic authentication, and manages potential errors related to missing parameters, unauthorized access, or 
+ * issues during data retrieval.
+ *
+ * Query Parameters:
+ * - facultyId: The ID of the faculty associated with the program.
+ * - programId: The ID of the program whose branches are to be fetched.
+ * - year: The year for which the branches are to be fetched.
+ *
+ * @param {functions.Request} request - The HTTP request object, containing the query parameters.
+ * @param {functions.Response} response - The HTTP response object used to send back data or errors.
+ */
 exports.getAllForProgramYear = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {

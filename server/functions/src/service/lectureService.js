@@ -18,6 +18,15 @@ function convertToDate(dateString, endOfDay = false) {
 }
 
 
+/**
+ * Constructs a Firestore query with specified filtering criteria based on the field type.
+ * If the field is an array, it uses "array-contains" for filtering, otherwise it uses equality comparison.
+ * 
+ * @param {firebase.firestore.CollectionReference} lectureRef - The Firestore collection reference to query.
+ * @param {string} filterFieldName - The name of the field to filter by.
+ * @param {*} filterValue - The value to filter the field by.
+ * @returns {firebase.firestore.Query} A Firestore query with the applied filter.
+ */
 function buildFilteredQuery(lectureRef, filterFieldName, filterValue) {
   const arrayFields = ["tutors", "rooms", "groups", "branches"];
 
@@ -29,6 +38,16 @@ function buildFilteredQuery(lectureRef, filterFieldName, filterValue) {
 }
 
 
+/**
+ * Applies date filters to a Firestore query based on provided start and/or end times.
+ * Filters range from the beginning of today to the specified end time, or between
+ * provided start and end times. If no times are provided, it defaults to the entire current day.
+ *
+ * @param {firebase.firestore.Query} query - The Firestore query to which the date filters will be applied.
+ * @param {string} [startTime] - The start time for the filtering, as a string which can be converted to a Date.
+ * @param {string} [endTime] - The end time for the filtering, as a string which can be converted to a Date.
+ * @returns {firebase.firestore.Query} A Firestore query with the applied date range filters.
+ */
 function applyDateFilters(query, startTime, endTime) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -55,6 +74,19 @@ function applyDateFilters(query, startTime, endTime) {
 }
 
 
+/**
+ * Retrieves lectures from a Firestore collection filtered by a specific field and optionally
+ * filtered by date range. It queries within a specified faculty based on its ID.
+ * The function throws an error if the faculty does not exist.
+ *
+ * @param {string} facultyId - The ID of the faculty whose lectures are to be fetched.
+ * @param {string} filterFieldName - The name of the field to filter the lectures by.
+ * @param {*} filterValue - The value to filter by for the specified field.
+ * @param {string} [startTime] - The optional start time for the date filtering, as a string.
+ * @param {string} [endTime] - The optional end time for the date filtering, as a string.
+ * @returns {Promise<Array>} A promise that resolves to an array of lecture objects.
+ * @throws {Error} If the specified faculty does not exist.
+ */
 async function getLecturesByFilterAndOptionallyDate(
   facultyId,
   filterFieldName,
