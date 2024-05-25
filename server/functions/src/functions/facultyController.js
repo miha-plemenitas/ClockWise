@@ -1,4 +1,4 @@
-const { checkBasicAuth } = require('../utils/auth');
+const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getAllFaculties,
@@ -8,7 +8,7 @@ const {
 
 /**
  * Google Cloud Function to retrieve all faculties from the database.
- * This function is an HTTP-triggered endpoint that handles CORS and uses basic authentication.
+ * This function is an HTTP-triggered endpoint that handles CORS and checks for JWT token.
  * It addresses potential errors related to unauthorized access or issues during data retrieval.
  *
  * @param {functions.Request} request - The HTTP request object, which includes authentication details.
@@ -23,18 +23,21 @@ exports.getAll = functions
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+
       const result = await getAllFaculties();
       console.log("Found and sent all faculties");
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error finding faculties:", error);
-      response.status(500).send("Error finding faculties: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error getting faculties:", error);
+        response.status(500).send("Error getting faculties");
+      }
     }
   });
 
@@ -42,7 +45,7 @@ exports.getAll = functions
 /**
 * Google Cloud Function to retrieve a specific faculty by its ID from the "faculties" collection.
 * This function is an HTTP-triggered endpoint that requires the faculty ID to be provided in the query parameters.
-* It handles CORS, uses basic authentication, and manages potential errors related to missing parameters,
+* It handles CORS, checks if the JWT token is valid, and manages potential errors related to missing parameters,
 * unauthorized access, or issues during data retrieval.
 *
 * Query Parameters:
@@ -66,17 +69,20 @@ exports.getById = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+
       const result = await getFacultyById(facultyId);
       console.log(`Found and sent faculty with id ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Failed to find faculty:", error);
-      response.status(500).send("Failed to find faculty: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error getting faculty:", error);
+        response.status(500).send("Failed to get faculty");
+      }
     }
   });

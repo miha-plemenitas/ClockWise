@@ -1,4 +1,4 @@
-const { checkBasicAuth } = require('../utils/auth');
+const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getItemByFacultyAndCollectionAndFilterById,
@@ -9,7 +9,7 @@ const {
 /**
  * Google Cloud Function to retrieve a specific group by ID from within a specified faculty's "groups" collection.
  * This function is an HTTP-triggered endpoint that requires both the faculty ID and the group ID to be provided
- * in the query parameters. It handles CORS, uses basic authentication, and addresses potential errors related
+ * in the query parameters. It handles CORS, checks if the JWT token is valid, and addresses potential errors related
  * to missing parameters, unauthorized access, or issues during data retrieval.
  *
  * Query Parameters:
@@ -38,18 +38,21 @@ exports.getOneById = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "groups", groupId);
       console.log(`Found and sent group with id ${groupId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error finding group:", error);
-      response.status(500).send("Failed to find group: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error finding group:", error);
+        response.status(500).send("Failed to find group: " + error.message);
+      }
     }
   });
 
@@ -57,7 +60,7 @@ exports.getOneById = functions
   /**
  * Google Cloud Function to retrieve all groups associated with a specific branch from a faculty's "groups" collection.
  * This function is an HTTP-triggered endpoint that requires both the faculty ID and the branch ID to be provided in the query parameters.
- * It handles CORS, uses basic authentication, and manages potential errors related to missing parameters, unauthorized access, or 
+ * It handles CORS, checks if the JWT token is valid, and manages potential errors related to missing parameters, unauthorized access, or 
  * issues during data retrieval.
  *
  * Query Parameters:
@@ -86,17 +89,20 @@ exports.getAllForBranch = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "groups", "branchId", Number(branchId));
       console.log(`Found and sent all groups by faculty with faculty ${facultyId} and branch ${branchId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Failed to find groups: ", error);
-      response.status(500).send("Failed to find groups: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Failed to find groups: ", error);
+        response.status(500).send("Failed to find groups: " + error.message);
+      }
     }
   });

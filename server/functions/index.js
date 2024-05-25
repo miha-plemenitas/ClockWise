@@ -1,4 +1,4 @@
-exports.integration = require('./src/functions');
+exports.integration = require('./src/functions/integration');
 exports.faculty = require('./src/functions/facultyController');
 exports.program = require('./src/functions/programController');
 exports.branch = require('./src/functions/branchController');
@@ -7,3 +7,4 @@ exports.tutor = require('./src/functions/tutorController');
 exports.room = require('./src/functions/roomController');
 exports.course = require('./src/functions/courseContoller');
 exports.lecture = require('./src/functions/lectureContoller');
+exports.auth = require('./src/functions/authenticationController');

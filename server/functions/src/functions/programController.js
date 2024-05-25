@@ -1,4 +1,4 @@
-const { checkBasicAuth } = require('../utils/auth');
+const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getAllFacultyCollectionItems,
@@ -9,7 +9,7 @@ const {
 /**
  * Google Cloud Function to retrieve a specific program by ID from within a specified faculty's "programs" collection.
  * This function is an HTTP-triggered endpoint that requires both the faculty ID and the program ID to be provided
- * in the query parameters. It handles CORS, uses basic authentication, and addresses potential errors related
+ * in the query parameters. It handles CORS, checks if the JWT token is valid, and addresses potential errors related
  * to missing parameters, unauthorized access, or issues during data retrieval.
  *
  * Query Parameters:
@@ -38,18 +38,21 @@ exports.getOneById = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "programs", programId);
       console.log(`Found and sent program with id ${programId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Failed to find program: ", error);
-      response.status(500).send("Failed to find program: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Failed to find program: ", error);
+        response.status(500).send("Failed to find program: " + error.message);
+      }
     }
   });
 
@@ -81,17 +84,20 @@ exports.getAllForFaculty = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getAllFacultyCollectionItems(facultyId, "programs");
       console.log(`Found and sent all programs by faculty with id ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Failed to find programs for faculty: ", error);
-      response.status(500).send("Failed to find programs for faculty: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Failed to find programs for faculty: ", error);
+        response.status(500).send("Failed to find programs for faculty: " + error.message);
+      }
     }
   });

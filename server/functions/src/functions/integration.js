@@ -3,13 +3,13 @@ const {
   fetchProgramsForAllFaculties
 } = require('../faculties');
 const { fetchData } = require('../faculties/fetchDataForFaculty');
-const { checkBasicAuth } = require('../utils/auth');
+const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 
 /**
  * Cloud Function to add faculty documents from a list.
  * This function runs with a specified timeout and memory allocation, and is triggered via an HTTP request.
- * The function sets CORS headers, checks for basic authentication, and attempts to add faculties.
+ * The function sets CORS headers, checks if the JWT token is valid, and attempts to add faculties.
  * On success, it returns a JSON response with the result. On failure, it returns an error response.
  *
  * @param {functions.https.Request} request - The HTTP request object.
@@ -17,26 +17,28 @@ const functions = require("firebase-functions");
  * @returns {Promise<void>} A promise that resolves when the response is sent.
  */
 exports.addFaculties = functions
- .region("europe-west3")
- .runWith({
-    timeoutSeconds: 540,
-    memory: '2GB'
+  .region("europe-west3")
+  .runWith({
+    timeoutSeconds: 540
   })
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await addFacultyDocumentsFromList();
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error adding faculties:", error);
-      response.status(500).send("Failed to add faculties");
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error adding faculties:", error);
+        response.status(500).send("Failed to add faculties");
+      }
     }
   });
 
@@ -44,7 +46,7 @@ exports.addFaculties = functions
 /**
  * Cloud Function to fetch and add programs for all faculties.
  * This function runs with a specified timeout and memory allocation, and is triggered via an HTTP request.
- * The function sets CORS headers, checks for basic authentication, and attempts to fetch and add programs for all faculties.
+ * The function sets CORS headers, checks if the JWT token is valid, and attempts to fetch and add programs for all faculties.
  * On success, it returns a JSON response with the result. On failure, it returns an error response.
  *
  * @param {functions.https.Request} request - The HTTP request object.
@@ -52,26 +54,29 @@ exports.addFaculties = functions
  * @returns {Promise<void>} A promise that resolves when the response is sent.
  */
 exports.addPrograms = functions
- .region("europe-west3")
- .runWith({
+  .region("europe-west3")
+  .runWith({
     timeoutSeconds: 540,
     memory: '2GB'
   })
- .https
- .onRequest(async (request, response) => {
+  .https
+  .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await fetchProgramsForAllFaculties();
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error adding programs:", error);
-      response.status(500).send("Failed to add programs");
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error adding programs:", error);
+        response.status(500).send("Failed to add programs");
+      }
     }
   });
 
@@ -79,7 +84,7 @@ exports.addPrograms = functions
 /**
  * Cloud Function to fetch and add branches for a specific faculty or all faculties.
  * This function runs with a specified timeout and memory allocation, and is triggered via an HTTP request.
- * The function sets CORS headers, checks for basic authentication, and attempts to fetch and add branches.
+ * The function sets CORS headers, checks if the JWT token is valid, and attempts to fetch and add branches.
  * If a faculty ID is provided via query parameters, it fetches and adds branches for that specific faculty.
  * If no faculty ID is provided, it fetches and adds branches for all faculties.
  * On success, it returns a JSON response with the result. On failure, it returns an error response.
@@ -89,34 +94,37 @@ exports.addPrograms = functions
  * @returns {Promise<void>} A promise that resolves when the response is sent.
  */
 exports.addBranches = functions
- .region("europe-west3")
- .runWith({
+  .region("europe-west3")
+  .runWith({
     timeoutSeconds: 540,
     memory: '2GB'
   })
- .https
- .onRequest(async (request, response) => {
+  .https
+  .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
     const id = request.query.id;
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await fetchData(id, "branches");
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error adding programs:", error);
-      response.status(500).send("Failed to add programs");
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error adding programs:", error);
+        response.status(500).send("Failed to add programs");
+      }
     }
   });
 
 /**
  * Cloud Function to fetch and add courses for a specific faculty or all faculties.
  * This function runs with a specified timeout and memory allocation, and is triggered via an HTTP request.
- * The function sets CORS headers, checks for basic authentication, and attempts to fetch and add courses.
+ * The function sets CORS headers, checks if the JWT token is valid, and attempts to fetch and add courses.
  * If a faculty ID is provided via query parameters, it fetches and adds courses for that specific faculty.
  * If no faculty ID is provided, it fetches and adds courses for all faculties.
  * On success, it returns a JSON response with the result. On failure, it returns an error response.
@@ -126,27 +134,30 @@ exports.addBranches = functions
  * @returns {Promise<void>} A promise that resolves when the response is sent.
  */
 exports.addCourses = functions
- .region("europe-west3")
- .runWith({
+  .region("europe-west3")
+  .runWith({
     timeoutSeconds: 540,
     memory: '2GB'
   })
- .https
- .onRequest(async (request, response) => {
+  .https
+  .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
     const id = request.query.id;
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await fetchData(id, "courses");
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error adding programs:", error);
-      response.status(500).send("Failed to add programs");
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error adding programs:", error);
+        response.status(500).send("Failed to add programs");
+      }
     }
   });
 
@@ -154,7 +165,7 @@ exports.addCourses = functions
 /**
  * Cloud Function to fetch and add tutors for a specific faculty or all faculties.
  * This function runs with a specified timeout and memory allocation, and is triggered via an HTTP request.
- * The function sets CORS headers, checks for basic authentication, and attempts to fetch and add tutors.
+ * The function sets CORS headers, checks if the JWT token is valid, and attempts to fetch and add tutors.
  * If a faculty ID is provided via query parameters, it fetches and adds tutors for that specific faculty.
  * If no faculty ID is provided, it fetches and adds tutors for all faculties.
  * On success, it returns a JSON response with the result. On failure, it returns an error response.
@@ -164,27 +175,30 @@ exports.addCourses = functions
  * @returns {Promise<void>} A promise that resolves when the response is sent.
  */
 exports.addTutors = functions
- .region("europe-west3")
- .runWith({
+  .region("europe-west3")
+  .runWith({
     timeoutSeconds: 540,
     memory: '2GB'
   })
- .https
- .onRequest(async (request, response) => {
+  .https
+  .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
     const id = request.query.id;
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await fetchData(id, "tutors");
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error adding programs:", error);
-      response.status(500).send("Failed to add programs");
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error adding programs:", error);
+        response.status(500).send("Failed to add programs");
+      }
     }
   });
 
@@ -192,7 +206,7 @@ exports.addTutors = functions
 /**
  * Cloud Function to fetch and add groups for a specific faculty or all faculties.
  * This function runs with a specified timeout and memory allocation, and is triggered via an HTTP request.
- * The function sets CORS headers, checks for basic authentication, and attempts to fetch and add groups.
+ * The function sets CORS headers, checks if the JWT token is valid, and attempts to fetch and add groups.
  * If a faculty ID is provided via query parameters, it fetches and adds groups for that specific faculty.
  * If no faculty ID is provided, it fetches and adds groups for all faculties.
  * On success, it returns a JSON response with the result. On failure, it returns an error response.
@@ -202,27 +216,30 @@ exports.addTutors = functions
  * @returns {Promise<void>} A promise that resolves when the response is sent.
  */
 exports.addGroups = functions
- .region("europe-west3")
- .runWith({
+  .region("europe-west3")
+  .runWith({
     timeoutSeconds: 540,
     memory: '2GB'
   })
- .https
- .onRequest(async (request, response) => {
+  .https
+  .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
     const id = request.query.id;
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await fetchData(id, "groups");
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error adding programs:", error);
-      response.status(500).send("Failed to add groups");
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error adding programs:", error);
+        response.status(500).send("Failed to add groups");
+      }
     }
   });
 
@@ -230,7 +247,7 @@ exports.addGroups = functions
 /**
  * Cloud Function to fetch and add lectures for a specific faculty or all faculties.
  * This function runs with a specified timeout and memory allocation, and is triggered via an HTTP request.
- * The function sets CORS headers, checks for basic authentication, and attempts to fetch and add lectures.
+ * The function sets CORS headers, checks if the JWT token is valid, and attempts to fetch and add lectures.
  * If a faculty ID is provided via query parameters, it fetches and adds lectures for that specific faculty.
  * If no faculty ID is provided, it fetches and adds lectures for all faculties.
  * On success, it returns a JSON response with the result. On failure, it returns an error response.
@@ -240,27 +257,30 @@ exports.addGroups = functions
  * @returns {Promise<void>} A promise that resolves when the response is sent.
  */
 exports.addLectures = functions
- .region("europe-west3")
- .runWith({
+  .region("europe-west3")
+  .runWith({
     timeoutSeconds: 540,
     memory: '2GB'
   })
- .https
- .onRequest(async (request, response) => {
+  .https
+  .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
     const id = request.query.id;
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await fetchData(id, "lectures");
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error adding programs:", error);
-      response.status(500).send("Failed to add lectures");
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error adding programs:", error);
+        response.status(500).send("Failed to add lectures");
+      }
     }
   });
 
@@ -268,7 +288,7 @@ exports.addLectures = functions
 /**
  * Cloud Function to fetch and add rooms for a specific faculty or all faculties.
  * This function runs in the "europe-west3" region and is triggered via an HTTP request.
- * The function sets CORS headers, checks for basic authentication, and attempts to fetch and add rooms.
+ * The function sets CORS headers, checks if the JWT token is valid, and attempts to fetch and add rooms.
  * If a faculty ID is provided via query parameters, it fetches and adds rooms for that specific faculty.
  * If no faculty ID is provided, it fetches and adds rooms for all faculties.
  * On success, it returns a JSON response with the result. On failure, it returns an error response.
@@ -284,16 +304,19 @@ exports.addRooms = functions
     response.set("Access-Control-Allow-Origin", "*");
     const id = request.query.id;
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await fetchData(id, "rooms");
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error adding programs:", error);
-      response.status(500).send("Failed to add rooms");
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error adding programs:", error);
+        response.status(500).send("Failed to add rooms");
+      }
     }
   });

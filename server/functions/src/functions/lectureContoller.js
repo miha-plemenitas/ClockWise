@@ -1,4 +1,4 @@
-const { checkBasicAuth } = require('../utils/auth');
+const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getLecturesByFilterAndOptionallyDate
@@ -8,7 +8,7 @@ const {
 /**
  * Google Cloud Function to retrieve all lectures for a specific course from a faculty's "lectures" collection.
  * This function is an HTTP-triggered endpoint that requires faculty ID and course ID to be provided in the query parameters,
- * with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+ * with optional start and end times for date filtering. It handles CORS, checks if the JWT token is valid, and manages potential errors 
  * related to missing parameters, unauthorized access, or issues during data retrieval.
  *
  * Query Parameters:
@@ -41,18 +41,21 @@ exports.getAllForCourse = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "courseId", courseId, startTime, endTime);
       console.log(`Found and sent lectures for course ${courseId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error finding lectures:", error);
-      response.status(500).send("Failed to find lectures: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error finding lectures:", error);
+        response.status(500).send("Failed to find lectures: " + error.message);
+      }
     }
   });
 
@@ -60,7 +63,7 @@ exports.getAllForCourse = functions
 /**
 * Google Cloud Function to retrieve all lectures for a specific branch from a faculty's "lectures" collection.
 * This function is an HTTP-triggered endpoint that requires faculty ID and branch ID to be provided in the query parameters,
-* with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+* with optional start and end times for date filtering. It handles CORS, checks if the JWT token is valid, and manages potential errors 
 * related to missing parameters, unauthorized access, or issues during data retrieval.
 *
 * Query Parameters:
@@ -93,18 +96,21 @@ exports.getAllForBranch = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "branches", Number(branchId), startTime, endTime);
       console.log(`Found and sent lectures for branch ${branchId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error finding lectures:", error);
-      response.status(500).send("Failed to find lectures: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error finding lectures:", error);
+        response.status(500).send("Failed to find lectures: " + error.message);
+      }
     }
   });
 
@@ -112,7 +118,7 @@ exports.getAllForBranch = functions
 /**
  * Google Cloud Function to retrieve all lectures for a specific group from a faculty's "lectures" collection.
  * This function is an HTTP-triggered endpoint that requires faculty ID and group ID to be provided in the query parameters,
- * with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+ * with optional start and end times for date filtering. It handles CORS, checks if the JWT token is valid, and manages potential errors 
  * related to missing parameters, unauthorized access, or issues during data retrieval.
  *
  * Query Parameters:
@@ -145,18 +151,21 @@ exports.getAllForGroup = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "groups", Number(groupId), startTime, endTime);
       console.log(`Found and sent lectures for group ${groupId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error finding lectures:", error);
-      response.status(500).send("Failed to find lectures: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error finding lectures:", error);
+        response.status(500).send("Failed to find lectures: " + error.message);
+      }
     }
   });
 
@@ -164,7 +173,7 @@ exports.getAllForGroup = functions
 /**
 * Google Cloud Function to retrieve all lectures for a specific room from a faculty's "lectures" collection.
 * This function is an HTTP-triggered endpoint that requires faculty ID and room ID to be provided in the query parameters,
-* with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+* with optional start and end times for date filtering. It handles CORS, checks if the JWT token is valid, and manages potential errors 
 * related to missing parameters, unauthorized access, or issues during data retrieval.
 *
 * Query Parameters:
@@ -197,18 +206,21 @@ exports.getAllForRoom = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "rooms", Number(roomId), startTime, endTime);
       console.log(`Found and sent lectures for course ${roomId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error finding lectures:", error);
-      response.status(500).send("Failed to find lectures: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error finding lectures:", error);
+        response.status(500).send("Failed to find lectures: " + error.message);
+      }
     }
   });
 
@@ -216,7 +228,7 @@ exports.getAllForRoom = functions
 /**
 * Google Cloud Function to retrieve all lectures for a specific tutor from a faculty's "lectures" collection.
 * This function is an HTTP-triggered endpoint that requires faculty ID and tutor ID to be provided in the query parameters,
-* with optional start and end times for date filtering. It handles CORS, uses basic authentication, and manages potential errors 
+* with optional start and end times for date filtering. It handles CORS, checks if the JWT token is valid, and manages potential errors 
 * related to missing parameters, unauthorized access, or issues during data retrieval.
 *
 * Query Parameters:
@@ -249,17 +261,20 @@ exports.getAllForTutor = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "tutors", Number(tutorId), startTime, endTime);
       console.log(`Found and sent lectures for tutor ${tutorId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Error finding lectures:", error);
-      response.status(500).send("Failed to find lectures: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Error finding lectures:", error);
+        response.status(500).send("Failed to find lectures: " + error.message);
+      }
     }
   });

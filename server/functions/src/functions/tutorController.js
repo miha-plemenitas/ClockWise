@@ -1,4 +1,4 @@
-const { checkBasicAuth } = require('../utils/auth');
+const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getAllFacultyCollectionItems,
@@ -9,7 +9,7 @@ const {
 /**
  * Google Cloud Function to retrieve a specific tutor by ID from within a specified faculty's "tutors" collection.
  * This function is an HTTP-triggered endpoint that requires the faculty ID and tutor ID to be provided in the query parameters.
- * It handles CORS and uses basic authentication. Errors are handled for missing parameters, authentication failure, or retrieval issues.
+ * It handles CORS and checks if the JWT token is valid. Errors are handled for missing parameters, authentication failure, or retrieval issues.
  *
  * Query Parameters:
  * - facultyId: The ID of the faculty to which the tutor belongs.
@@ -37,18 +37,21 @@ exports.getOneById = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "tutors", tutorId);
       console.log(`Found and sent tutor with id ${tutorId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Failed to find tutor: ", error);
-      response.status(500).send("Failed to find tutor: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Failed to find tutor: ", error);
+        response.status(500).send("Failed to find tutor: " + error.message);
+      }
     }
   });
 
@@ -56,7 +59,7 @@ exports.getOneById = functions
 /**
 * Google Cloud Function to retrieve all tutors from the "tutors" collection for a specified faculty.
 * This function is an HTTP-triggered endpoint that requires the faculty ID to be provided in the query parameters.
-* It handles CORS, employs basic authentication, and manages potential errors related to missing parameters,
+* It handles CORS, checks if the JWT token is valid, and manages potential errors related to missing parameters,
 * unauthorized access, or issues during data retrieval.
 *
 * Query Parameters:
@@ -80,17 +83,20 @@ exports.getAllForFaculty = functions
       return;
     }
 
-    if (!checkBasicAuth(request)) {
-      response.status(401).send("Unauthorized");
-      return;
-    }
-
     try {
+      await checkJwt(request);
+      
       const result = await getAllFacultyCollectionItems(facultyId, "tutors");
       console.log(`Found and sent all tutors by faculty with id ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      console.error("Failed to find tutors for faculty: ", error);
-      response.status(500).send("Failed to find tutors for faculty: " + error.message);
+      if (error === 'TokenExpired') {
+        response.status(401).send("Token has expired");
+      } else if (error === 'Unauthorized') {
+        response.status(401).send("Unauthorized");
+      } else {
+        console.error("Failed to find tutors for faculty: ", error);
+        response.status(500).send("Failed to find tutors for faculty: " + error.message);
+      }
     }
   });
