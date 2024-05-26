@@ -13,6 +13,11 @@ exports.login = functions
   })
   .https
   .onRequest(async (request, response) => {
+    if (request.method !== 'POST') {
+      response.status(405).send('Method Not Allowed');
+      return;
+    }
+    
     const authHeader = request.headers.authorization;
     const { uid } = request.body;
 
