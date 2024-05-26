@@ -1,6 +1,7 @@
 const { processLectureData } = require('../utils/dataProcessors');
 const { processItemsInBatch } = require('../utils/batchOperations');
 const { fetchFromApi } = require('../utils/apiHelpers');
+const { deleteAllDocumentsInCollection } = require("../utils/firebaseHelpers");
 
 /**
  * Fetches lectures for a given faculty document within a specified date range.
@@ -24,7 +25,7 @@ async function fetchLecturesByFacultyDoc(facultyDoc) {
   const lectures = await fetchFromApi(URL, params);
 
   await processItemsInBatch(
-    facultyDoc.ref.collection("lectures"),
+    facultyDoc.ref.collection("original_lectures"),
     lectures,
     processLectureData
   );
@@ -34,6 +35,40 @@ async function fetchLecturesByFacultyDoc(facultyDoc) {
   return log;
 }
 
+
+async function duplicateLecturesByFacultyDoc(facultyDoc) {
+  const originalLecturesRef = facultyDoc.ref.collection("original_lectures");
+  const lecturesRef = facultyDoc.ref.collection("lectures");
+  const faculty = facultyDoc.data();
+
+  try {
+    await deleteAllDocumentsInCollection(lecturesRef);
+  } catch (error) {
+    console.log("Error when deleting lectures" + error.message);
+  }
+
+  const originalLectures = await originalLecturesRef.get();
+
+  if (originalLectures.empty) {
+    const log = `The lectures were not duplicated for ${faculty.schoolCode} due to no original lectures.`;
+    console.log(log);
+    return log;
+  }
+
+  function processData(lecture) {
+    if (!lecture.exists) return null;
+    return lecture.data();
+  }
+
+  await processItemsInBatch(lecturesRef, originalLectures.docs, processData);
+
+  const log = `The lectures were duplicated for ${faculty.schoolCode}`;
+  console.log(log);
+  return log;
+}
+
+
 module.exports = {
   fetchLecturesByFacultyDoc,
+  duplicateLecturesByFacultyDoc,
 }

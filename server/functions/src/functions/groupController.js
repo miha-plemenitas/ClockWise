@@ -4,6 +4,7 @@ const {
   getItemByFacultyAndCollectionAndFilterById,
   getItemByFacultyAndCollectionAndItemId
 } = require('../service/facultyCollections');
+const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
 
 
 /**
@@ -27,32 +28,17 @@ exports.getOneById = functions
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
-    const facultyId = request.query.facultyId;
-    const groupId = request.query.groupId;
-
-    if (!facultyId) {
-      response.status(400).send("No faculty ID sent");
-      return;
-    } if (!groupId) {
-      response.status(400).send("No group sent");
-      return;
-    }
 
     try {
+      const { facultyId, groupId } = request.query;
+      validateRequestParams({ facultyId, groupId });
       await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "groups", groupId);
       console.log(`Found and sent group with id ${groupId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error finding group:", error);
-        response.status(500).send("Failed to find group: " + error.message);
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -78,31 +64,16 @@ exports.getAllForBranch = functions
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
-    const facultyId = request.query.facultyId;
-    const branchId = request.query.branchId;
-
-    if (!facultyId) {
-      response.status(400).send("No faculty ID sent");
-      return;
-    } if (!branchId) {
-      response.status(400).send("No branch sent");
-      return;
-    }
 
     try {
+      const { facultyId, branchId } = request.query;
+      validateRequestParams({ facultyId, branchId });
       await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "groups", "branchId", Number(branchId));
       console.log(`Found and sent all groups by faculty with faculty ${facultyId} and branch ${branchId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Failed to find groups: ", error);
-        response.status(500).send("Failed to find groups: " + error.message);
-      }
+      handleErrors(error, response);
     }
   });

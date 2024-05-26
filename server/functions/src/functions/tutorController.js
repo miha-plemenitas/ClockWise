@@ -4,6 +4,7 @@ const {
   getAllFacultyCollectionItems,
   getItemByFacultyAndCollectionAndItemId
 } = require('../service/facultyCollections');
+const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
 
 
 /**
@@ -26,32 +27,17 @@ exports.getOneById = functions
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
-    const facultyId = request.query.facultyId;
-    const tutorId = request.query.tutorId;
-
-    if (!facultyId) {
-      response.status(400).send("No faculty ID sent");
-      return;
-    } if (!tutorId) {
-      response.status(400).send("No tutor ID sent");
-      return;
-    }
 
     try {
+      const { facultyId, tutorId } = request.query;
+      validateRequestParams({ facultyId, tutorId })
       await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "tutors", tutorId);
       console.log(`Found and sent tutor with id ${tutorId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Failed to find tutor: ", error);
-        response.status(500).send("Failed to find tutor: " + error.message);
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -76,27 +62,16 @@ exports.getAllForFaculty = functions
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
-    const facultyId = request.query.facultyId;
-
-    if (!facultyId) {
-      response.status(400).send("No faculty ID sent");
-      return;
-    }
 
     try {
+      const { facultyId } = request.query;
+      validateRequestParams({ facultyId })
       await checkJwt(request);
       
       const result = await getAllFacultyCollectionItems(facultyId, "tutors");
       console.log(`Found and sent all tutors by faculty with id ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Failed to find tutors for faculty: ", error);
-        response.status(500).send("Failed to find tutors for faculty: " + error.message);
-      }
+      handleErrors(error, response);
     }
   });

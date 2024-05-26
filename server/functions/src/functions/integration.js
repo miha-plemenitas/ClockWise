@@ -5,6 +5,7 @@ const {
 const { fetchData } = require('../faculties/fetchDataForFaculty');
 const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
+const { handleErrors } = require("../utils/endpointHelpers");
 
 /**
  * Cloud Function to add faculty documents from a list.
@@ -27,18 +28,11 @@ exports.addFaculties = functions
 
     try {
       await checkJwt(request);
-      
+
       const result = await addFacultyDocumentsFromList();
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error adding faculties:", error);
-        response.status(500).send("Failed to add faculties");
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -65,18 +59,11 @@ exports.addPrograms = functions
 
     try {
       await checkJwt(request);
-      
+
       const result = await fetchProgramsForAllFaculties();
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error adding programs:", error);
-        response.status(500).send("Failed to add programs");
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -106,18 +93,11 @@ exports.addBranches = functions
 
     try {
       await checkJwt(request);
-      
+
       const result = await fetchData(id, "branches");
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error adding programs:", error);
-        response.status(500).send("Failed to add programs");
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -146,18 +126,11 @@ exports.addCourses = functions
 
     try {
       await checkJwt(request);
-      
+
       const result = await fetchData(id, "courses");
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error adding programs:", error);
-        response.status(500).send("Failed to add programs");
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -187,18 +160,11 @@ exports.addTutors = functions
 
     try {
       await checkJwt(request);
-      
+
       const result = await fetchData(id, "tutors");
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error adding programs:", error);
-        response.status(500).send("Failed to add programs");
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -228,18 +194,11 @@ exports.addGroups = functions
 
     try {
       await checkJwt(request);
-      
+
       const result = await fetchData(id, "groups");
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error adding programs:", error);
-        response.status(500).send("Failed to add groups");
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -269,18 +228,11 @@ exports.addLectures = functions
 
     try {
       await checkJwt(request);
-      
-      const result = await fetchData(id, "lectures");
+
+      const result = await fetchData(id, "original_lectures");
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error adding programs:", error);
-        response.status(500).send("Failed to add lectures");
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -306,17 +258,28 @@ exports.addRooms = functions
 
     try {
       await checkJwt(request);
-      
+
       const result = await fetchData(id, "rooms");
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error adding programs:", error);
-        response.status(500).send("Failed to add rooms");
-      }
+      handleErrors(error, response);
+    }
+  });
+
+
+exports.duplicateLectures = functions
+  .region("europe-west3")
+  .https
+  .onRequest(async (request, response) => {
+    response.set("Access-Control-Allow-Origin", "*");
+    const id = request.query.id;
+
+    try {
+      await checkJwt(request);
+
+      const result = await fetchData(id, "lectures");
+      response.status(200).json({ result: result });
+    } catch (error) {
+      handleErrors(error, response);
     }
   });

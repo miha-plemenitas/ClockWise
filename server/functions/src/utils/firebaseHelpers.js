@@ -23,6 +23,19 @@ async function findProgramForBranch(facultyRef, branchId) {
   return null;
 }
 
+async function deleteAllDocumentsInCollection(collectionRef) {
+  const snapshot = await collectionRef.get();
+  const batch = db.batch();
+
+  snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+  });
+
+  await batch.commit();
+}
+
+
 module.exports = {
   findProgramForBranch,
+  deleteAllDocumentsInCollection,
 }

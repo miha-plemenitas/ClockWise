@@ -5,6 +5,7 @@ const {
   fetchGroupsByFacultyDoc,
   fetchLecturesByFacultyDoc,
   fetchRoomsByFacultyDoc,
+  duplicateLecturesByFacultyDoc,
 } = require('./');
 const { db } = require('../utils/firebaseAdmin');
 
@@ -39,8 +40,10 @@ async function fetchDataForFaculty(facultyParam, dataType) {
       return fetchBranchesByFacultyDoc(facultyDoc);
     case "groups":
       return fetchGroupsByFacultyDoc(facultyDoc);
-    case "lectures":
+    case "original_lectures":
       return fetchLecturesByFacultyDoc(facultyDoc);
+    case "lectures":
+      return duplicateLecturesByFacultyDoc(facultyDoc);
     case "rooms":
       return fetchRoomsByFacultyDoc(facultyDoc);
     default:

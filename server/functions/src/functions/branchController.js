@@ -4,6 +4,7 @@ const {
   getItemByFacultyAndCollectionAndItemId,
   getItemByFacultyAndCollectionAndFilterById
 } = require('../service/facultyCollections');
+const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
 
 
 /**
@@ -27,32 +28,17 @@ exports.getOneById = functions
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
-    const facultyId = request.query.facultyId;
-    const branchId = request.query.branchId;
-
-    if (!facultyId) {
-      response.status(400).send("No faculty ID sent");
-      return;
-    } if (!branchId) {
-      response.status(400).send("No branch sent");
-      return;
-    }
 
     try {
+      const { facultyId, branchId } = request.query;
+      validateRequestParams({ facultyId, branchId });
       await checkJwt(request);
 
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "branches", branchId);
       console.log(`Found and sent branch with id ${branchId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Failed to find branch: ", error);
-        response.status(500).send("Failed to find branch: " + error.message);
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -78,32 +64,17 @@ exports.getAllForProgram = functions
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
-    const facultyId = request.query.facultyId;
-    const programId = request.query.programId;
-
-    if (!facultyId) {
-      response.status(400).send("No faculty ID sent");
-      return;
-    } if (!programId) {
-      response.status(400).send("No program sent");
-      return;
-    }
 
     try {
+      const { facultyId, programId } = request.query;
+      validateRequestParams({ facultyId, programId });
       await checkJwt(request);
 
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "branches", "programId", Number(programId));
       console.log(`Found and sent all branches by faculty with faculty id ${facultyId} and program id ${programId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Failed to find branches: ", error);
-        response.status(500).send("Failed to find branches: " + error.message);
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -130,35 +101,16 @@ exports.getAllForProgramYear = functions
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
-    const facultyId = request.query.facultyId;
-    const programId = request.query.programId;
-    const year = request.query.year;
-
-    if (!facultyId) {
-      response.status(400).send("No faculty ID sent");
-      return;
-    } if (!programId) {
-      response.status(400).send("No program sent");
-      return;
-    } if (!year) {
-      response.status(400).send("No year sent");
-      return;
-    }
 
     try {
+      const { facultyId, programId, year } = request.query;
+      validateRequestParams({ facultyId, programId, year });
       await checkJwt(request);
 
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "branches", "programId", Number(programId), year);
       console.log(`Found and sent all branches by faculty with faculty id ${facultyId}, program id ${programId} and year ${year}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Failed to find branches: ", error);
-        response.status(500).send("Failed to find branches: " + error.message);
-      }
+      handleErrors(error, response);
     }
   });

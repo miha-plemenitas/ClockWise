@@ -4,7 +4,7 @@ const { fetchBranchesByFacultyDoc } = require('./addBranches');
 const { fetchCoursesByFacultyDoc } = require('./addCourses');
 const { fetchTutorsByFacultyDoc } = require('./addTutors');
 const { fetchGroupsByFacultyDoc } = require('./addGroups');
-const { fetchLecturesByFacultyDoc } = require('./addLectures');
+const { fetchLecturesByFacultyDoc, duplicateLecturesByFacultyDoc } = require('./addLectures');
 const { fetchRoomsByFacultyDoc } = require('./addRooms');
 
 
@@ -17,4 +17,5 @@ module.exports = {
   fetchGroupsByFacultyDoc,
   fetchLecturesByFacultyDoc,
   fetchRoomsByFacultyDoc,
+  duplicateLecturesByFacultyDoc,
 };

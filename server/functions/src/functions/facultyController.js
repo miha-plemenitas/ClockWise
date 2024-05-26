@@ -4,6 +4,7 @@ const {
   getAllFaculties,
   getFacultyById
 } = require('../service/facultyService');
+const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
 
 
 /**
@@ -30,14 +31,7 @@ exports.getAll = functions
       console.log("Found and sent all faculties");
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error getting faculties:", error);
-        response.status(500).send("Error getting faculties");
-      }
+      handleErrors(error, response);
     }
   });
 
@@ -62,27 +56,16 @@ exports.getById = functions
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
-    const facultyId = request.query.facultyId;
-
-    if (!facultyId) {
-      response.status(400).send("No faculty ID sent");
-      return;
-    }
 
     try {
+      const { facultyId } = request.query;
+      validateRequestParams({ facultyId });
       await checkJwt(request);
 
       const result = await getFacultyById(facultyId);
       console.log(`Found and sent faculty with id ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
-      if (error === 'TokenExpired') {
-        response.status(401).send("Token has expired");
-      } else if (error === 'Unauthorized') {
-        response.status(401).send("Unauthorized");
-      } else {
-        console.error("Error getting faculty:", error);
-        response.status(500).send("Failed to get faculty");
-      }
+      handleErrors(error, response);
     }
   });

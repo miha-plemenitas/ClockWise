@@ -32,6 +32,7 @@ function processLectureData(lecture) {
     rooms: lecture.rooms ? extractIds(lecture.rooms) : [],
     groups: lecture.groups ? extractIds(lecture.groups) : [],
     tutors: lecture.lecturers ? extractIds(lecture.lecturers) : [],
+    rooms_full: lecture.rooms,
   };
 }
 

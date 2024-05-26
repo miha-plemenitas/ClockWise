@@ -3,31 +3,34 @@ const jwt = require('jsonwebtoken');
 
 const secretKey = functions.config().auth.secret_key;
 
-const checkJwt = (request) => {
+
+const checkJwt = async (request) => {
+  const cookies = request.headers.cookie;
+  if (!cookies) {
+    throw new Error('Unauthorized');
+  }
+
+  const token = cookies.split(';').find(cookie => cookie.trim().startsWith('token='));
+  if (!token) {
+    throw new Error('Unauthorized');
+  }
+
+  const tokenValue = token.split('=')[1];
+
   return new Promise((resolve, reject) => {
-    const cookies = request.headers.cookie;
-    if (!cookies) {
-      return reject('Unauthorized');
-    }
-
-    const token = cookies.split(';').find(cookie => cookie.trim().startsWith('token='));
-    if (!token) {
-      return reject('Unauthorized');
-    }
-
-    const tokenValue = token.split('=')[1];
     jwt.verify(tokenValue, secretKey, (err, decoded) => {
       if (err) {
         if (err.name === 'TokenExpiredError') {
-          return reject('TokenExpired');
+          throw new Error('TokenExpired');
         }
-        return reject('Unauthorized');
+        throw new Error('Unauthorized');
       }
       request.user = decoded;
-      return resolve(true);
+      resolve(true);
     });
   });
 };
+
 
 
 module.exports = {
