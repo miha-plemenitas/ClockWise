@@ -33,10 +33,12 @@ function renderEventContent(eventInfo: EventContentArg) {
 
 interface DropdownMenuFacultiesProps {
   onSelectFaculty: (facultyId: string) => void;
+  selectedFacultyName: string | null;
 }
 
 const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
   onSelectFaculty,
+  selectedFacultyName,
 }) => {
   const [selectedFaculties, setSelectedFaculties] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -74,43 +76,52 @@ const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
   };
 
   return (
-    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-      <DropdownMenuTrigger asChild>
-        <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
-          <span>Faculties</span>
-          <FaChevronDown
-            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-max max-w-sm">
-        <DropdownMenuLabel className="text-modra">
-          Select Faculty
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          value={selectedFaculties}
-          onValueChange={handleSelect}
-        >
-          {faculties.map((faculty) => (
-            <DropdownMenuRadioItem key={faculty.id} value={faculty.name}>
-              {faculty.name}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="mb-4">
+      <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
+        <DropdownMenuTrigger asChild>
+          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
+            <span>Faculties</span>
+            <FaChevronDown
+              className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+            />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="min-w-max max-w-sm">
+          <DropdownMenuLabel className="text-modra">
+            Select Faculty
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={selectedFaculties}
+            onValueChange={handleSelect}
+          >
+            {faculties.map((faculty) => (
+              <DropdownMenuRadioItem key={faculty.id} value={faculty.name}>
+                {faculty.name}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {selectedFacultyName && (
+        <p className="mt-2 text-sm text-gray-700 font-medium">
+          Selected: {selectedFacultyName}
+        </p>
+      )}
+    </div>
   );
 };
 
 interface DropdownMenuProgramsProps {
   facultyId: string;
   onSelectProgram: (programId: string, programDuration: number | null) => void;
+  selectedProgramName: string | null;
 }
 
 const DropdownMenuPrograms: React.FC<DropdownMenuProgramsProps> = ({
   facultyId,
   onSelectProgram,
+  selectedProgramName,
 }) => {
   const [selectedPrograms, setSelectedPrograms] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -153,45 +164,56 @@ const DropdownMenuPrograms: React.FC<DropdownMenuProgramsProps> = ({
   };
 
   return (
-    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-      <DropdownMenuTrigger asChild>
-        <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
-          <span>Study Program</span>
-          <FaChevronDown
-            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-max max-w-sm">
-        <DropdownMenuLabel className="text-modra">
-          Select Study Program
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          value={selectedPrograms}
-          onValueChange={handleSelect}
-        >
-          {programs.map((program) => (
-            <DropdownMenuRadioItem key={program.id} value={program.name}>
-              {program.name}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="mb-4">
+      <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
+        <DropdownMenuTrigger asChild>
+          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
+            <span>Study Program</span>
+            <FaChevronDown
+              className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+            />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="min-w-max max-w-sm">
+          <DropdownMenuLabel className="text-modra">
+            Select Study Program
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={selectedPrograms}
+            onValueChange={handleSelect}
+          >
+            {programs.map((program) => (
+              <DropdownMenuRadioItem key={program.id} value={program.name}>
+                {program.name}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {selectedProgramName && (
+        <p className="mt-2 text-sm text-gray-700 font-medium">
+          Selected: {selectedProgramName}
+        </p>
+      )}
+    </div>
   );
 };
 
 interface DropdownMenuYearProps {
   programDuration: number | null;
   onSelectYear: (year: number | null) => void;
+  selectedYear: string | null;
 }
 
 const DropdownMenuYear: React.FC<DropdownMenuYearProps> = ({
   programDuration,
   onSelectYear,
+  selectedYear,
 }) => {
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [selectedYearState, setSelectedYearState] = useState<string | null>(
+    null
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [years, setYears] = useState<number[]>([]);
 
@@ -207,51 +229,58 @@ const DropdownMenuYear: React.FC<DropdownMenuYearProps> = ({
       generateYears();
     } else {
       setYears([]);
-      setSelectedYear(null);
+      setSelectedYearState(null);
     }
   }, [programDuration]);
 
   useEffect(() => {
     const storedYearId = localStorage.getItem("selectedYearId");
     if (storedYearId) {
-      setSelectedYear(storedYearId);
+      setSelectedYearState(storedYearId);
       onSelectYear(Number(storedYearId));
     }
   }, [onSelectYear]);
 
   const handleSelect = (value: string) => {
-    setSelectedYear(value);
+    setSelectedYearState(value);
     onSelectYear(Number(value));
     localStorage.setItem("selectedYearId", value);
   };
 
   return (
-    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-      <DropdownMenuTrigger asChild>
-        <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
-          <span>Year</span>
-          <FaChevronDown
-            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-max max-w-sm">
-        <DropdownMenuLabel className="text-modra">
-          Select Year
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          value={selectedYear || ""}
-          onValueChange={handleSelect}
-        >
-          {years.map((year) => (
-            <DropdownMenuRadioItem key={year} value={year.toString()}>
-              {year}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="mb-4">
+      <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
+        <DropdownMenuTrigger asChild>
+          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
+            <span>Year</span>
+            <FaChevronDown
+              className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+            />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="min-w-max max-w-sm">
+          <DropdownMenuLabel className="text-modra">
+            Select Year
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={selectedYearState || ""}
+            onValueChange={handleSelect}
+          >
+            {years.map((year) => (
+              <DropdownMenuRadioItem key={year} value={year.toString()}>
+                {year}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {selectedYear && (
+        <p className="mt-2 text-sm text-gray-700 font-medium">
+          Selected: {selectedYear}
+        </p>
+      )}
+    </div>
   );
 };
 
@@ -260,6 +289,7 @@ interface DropdownMenuBranchesProps {
   programId: string;
   selectedYear: number | null;
   onSelectBranch: (branchId: string | null) => void;
+  selectedBranchName: string | null;
 }
 
 const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
@@ -267,6 +297,7 @@ const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
   programId,
   selectedYear,
   onSelectBranch,
+  selectedBranchName,
 }) => {
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -299,32 +330,39 @@ const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
   };
 
   return (
-    <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-      <DropdownMenuTrigger asChild>
-        <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
-          <span>Branch</span>
-          <FaChevronDown
-            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-max max-w-sm">
-        <DropdownMenuLabel className="text-modra">
-          Select Branch
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          value={selectedBranch || ""}
-          onValueChange={handleSelect}
-        >
-          {branches.map((branch) => (
-            <DropdownMenuRadioItem key={branch.id} value={branch.id}>
-              {branch.name}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="mb-4">
+      <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
+        <DropdownMenuTrigger asChild>
+          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
+            <span>Branch</span>
+            <FaChevronDown
+              className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+            />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="min-w-max max-w-sm">
+          <DropdownMenuLabel className="text-modra">
+            Select Branch
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuRadioGroup
+            value={selectedBranch || ""}
+            onValueChange={handleSelect}
+          >
+            {branches.map((branch) => (
+              <DropdownMenuRadioItem key={branch.id} value={branch.id}>
+                {branch.name}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {selectedBranchName && (
+        <p className="mt-2 text-sm text-gray-700 font-medium">
+          Selected: {selectedBranchName}
+        </p>
+      )}
+    </div>
   );
 };
 
@@ -356,16 +394,33 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedFacultyId, setSelectedFacultyId] = useState(
     () => localStorage.getItem("selectedFacultyId") || ""
   );
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
+    null
+  );
+  const { faculties } = useFaculties(); // Make sure this is defined to use faculties
   const [programId, setProgramId] = useState<string | null>(
     () => localStorage.getItem("selectedProgramId") || null
   );
+  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
+    null
+  );
+  const { programs } = usePrograms(selectedFacultyId); // Make sure this is defined to use programs
   const [programDuration, setProgramDuration] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(
     () => Number(localStorage.getItem("selectedYearId")) || null
   );
+  const [selectedYearName, setSelectedYearName] = useState<string | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(
     () => localStorage.getItem("selectedBranchId") || null
   );
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
+    null
+  );
+  const { branches } = useBranches(
+    selectedFacultyId,
+    programId || "",
+    selectedYear
+  ); // Make sure this is defined to use branches
 
   useEffect(() => {
     if (isAuthenticated && uid) {
@@ -476,23 +531,54 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
       <div className="flex flex-col items-start mb-4">
         <div className="flex space-x-4">
-          <DropdownMenuFaculties onSelectFaculty={setSelectedFacultyId} />
+          <DropdownMenuFaculties
+            onSelectFaculty={(id) => {
+              setSelectedFacultyId(id);
+              const selectedFaculty = faculties.find(
+                (faculty) => faculty.id === id
+              );
+              setSelectedFacultyName(
+                selectedFaculty ? selectedFaculty.name : null
+              );
+            }}
+            selectedFacultyName={selectedFacultyName}
+          />
           <DropdownMenuPrograms
             facultyId={selectedFacultyId}
             onSelectProgram={(id, duration) => {
               setProgramId(id);
               setProgramDuration(duration);
+              const selectedProgram = programs.find(
+                (program) => program.id === id
+              );
+              setSelectedProgramName(
+                selectedProgram ? selectedProgram.name : null
+              );
             }}
+            selectedProgramName={selectedProgramName}
           />
           <DropdownMenuYear
             programDuration={programDuration}
-            onSelectYear={setSelectedYear}
+            onSelectYear={(year) => {
+              setSelectedYear(year);
+              setSelectedYearName(year ? year.toString() : null);
+            }}
+            selectedYear={selectedYearName}
           />
           <DropdownMenuBranches
             facultyId={selectedFacultyId}
             programId={programId || ""}
             selectedYear={selectedYear}
-            onSelectBranch={setSelectedBranch}
+            onSelectBranch={(id) => {
+              setSelectedBranch(id);
+              const selectedBranch = branches.find(
+                (branch) => branch.id === id
+              );
+              setSelectedBranchName(
+                selectedBranch ? selectedBranch.name : null
+              );
+            }}
+            selectedBranchName={selectedBranchName}
           />
         </div>
         <div className="mt-4 w-full bg-white rounded-lg p-4">
