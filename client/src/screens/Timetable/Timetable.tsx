@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from '@fullcalendar/interaction';
+import interactionPlugin from "@fullcalendar/interaction";
 import { Button } from "../../Components/ui/button";
 import {
   DropdownMenu,
@@ -21,7 +21,6 @@ import useBranches from "../../Components/Hooks/useBranches";
 import { BASE_URL } from "../../api";
 import { firestore } from "../../Config/firebase";
 import dayjs, { Dayjs } from "dayjs";
-
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -43,6 +42,20 @@ const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const { faculties, loading, error } = useFaculties();
 
+  useEffect(() => {
+    // Retrieve the facultyId from local storage on component mount
+    const storedFacultyId = localStorage.getItem("selectedFacultyId");
+    if (storedFacultyId) {
+      const selectedFaculty = faculties.find(
+        (faculty) => faculty.id === storedFacultyId
+      );
+      if (selectedFaculty) {
+        setSelectedFaculties(selectedFaculty.name);
+        onSelectFaculty(selectedFaculty.id);
+      }
+    }
+  }, [faculties, onSelectFaculty]);
+
   if (loading) {
     return <p>Loading faculties...</p>;
   }
@@ -56,6 +69,7 @@ const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
     const selectedFaculty = faculties.find((faculty) => faculty.name === value);
     if (selectedFaculty) {
       onSelectFaculty(selectedFaculty.id);
+      localStorage.setItem("selectedFacultyId", selectedFaculty.id); // Store the selected facultyId in local storage
     }
   };
 
@@ -102,6 +116,22 @@ const DropdownMenuPrograms: React.FC<DropdownMenuProgramsProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const { programs, loading, error } = usePrograms(facultyId);
 
+  useEffect(() => {
+    const storedProgramId = localStorage.getItem("selectedProgramId");
+    if (storedProgramId) {
+      const selectedProgram = programs.find(
+        (program) => program.id === storedProgramId
+      );
+      if (selectedProgram) {
+        setSelectedPrograms(selectedProgram.name);
+        onSelectProgram(
+          selectedProgram.id,
+          Number(selectedProgram.programDuration)
+        );
+      }
+    }
+  }, [programs, onSelectProgram]);
+
   if (loading) {
     return <p>Loading programs...</p>;
   }
@@ -118,8 +148,7 @@ const DropdownMenuPrograms: React.FC<DropdownMenuProgramsProps> = ({
         selectedProgram.id,
         Number(selectedProgram.programDuration)
       );
-    } else {
-      onSelectProgram("", null);
+      localStorage.setItem("selectedProgramId", selectedProgram.id);
     }
   };
 
@@ -182,9 +211,18 @@ const DropdownMenuYear: React.FC<DropdownMenuYearProps> = ({
     }
   }, [programDuration]);
 
+  useEffect(() => {
+    const storedYearId = localStorage.getItem("selectedYearId");
+    if (storedYearId) {
+      setSelectedYear(storedYearId);
+      onSelectYear(Number(storedYearId));
+    }
+  }, [onSelectYear]);
+
   const handleSelect = (value: string) => {
     setSelectedYear(value);
     onSelectYear(Number(value));
+    localStorage.setItem("selectedYearId", value);
   };
 
   return (
@@ -221,12 +259,14 @@ interface DropdownMenuBranchesProps {
   facultyId: string;
   programId: string;
   selectedYear: number | null;
+  onSelectBranch: (branchId: string | null) => void;
 }
 
 const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
   facultyId,
   programId,
   selectedYear,
+  onSelectBranch,
 }) => {
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -235,6 +275,14 @@ const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
     programId,
     selectedYear
   );
+
+  useEffect(() => {
+    const storedBranchId = localStorage.getItem("selectedBranchId");
+    if (storedBranchId) {
+      setSelectedBranch(storedBranchId);
+      onSelectBranch(storedBranchId);
+    }
+  }, [branches, onSelectBranch]);
 
   if (loading) {
     return <p>Loading branches...</p>;
@@ -246,6 +294,8 @@ const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
 
   const handleSelect = (value: string) => {
     setSelectedBranch(value);
+    onSelectBranch(value);
+    localStorage.setItem("selectedBranchId", value);
   };
 
   return (
@@ -268,7 +318,7 @@ const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
           onValueChange={handleSelect}
         >
           {branches.map((branch) => (
-            <DropdownMenuRadioItem key={branch.id} value={branch.name}>
+            <DropdownMenuRadioItem key={branch.id} value={branch.id}>
               {branch.name}
             </DropdownMenuRadioItem>
           ))}
@@ -282,7 +332,6 @@ interface TimetableProps {
   isAuthenticated: boolean;
   uid: string | null;
 }
-
 
 interface Event {
   id: string;
@@ -299,50 +348,60 @@ interface Event {
   };
 }
 
-const Timetable: React.FC<TimetableProps> = ({
-  isAuthenticated,
-  uid
-}) => {
+const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = React.useState(false);
-  const [mode, setMode] = useState<'view' | 'edit' | 'add'>('add');
-  const [selectedFacultyId, setSelectedFacultyId] = useState("");
-  const [programId, setProgramId] = useState<string | null>(null);
+  const [mode, setMode] = useState<"view" | "edit" | "add">("add");
+  const [selectedFacultyId, setSelectedFacultyId] = useState(
+    () => localStorage.getItem("selectedFacultyId") || ""
+  );
+  const [programId, setProgramId] = useState<string | null>(
+    () => localStorage.getItem("selectedProgramId") || null
+  );
   const [programDuration, setProgramDuration] = useState<number | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(
+    () => Number(localStorage.getItem("selectedYearId")) || null
+  );
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(
+    () => localStorage.getItem("selectedBranchId") || null
+  );
 
   useEffect(() => {
-    if(isAuthenticated && uid) {
-    const unsubscribe = firestore.collection('users').doc(uid).collection('events')
-      .onSnapshot(snapshot => {
-        const updatedEvents: Event[] = snapshot.docs.map(doc => ({
-          id: doc.id,
-          title: doc.data().title,
-          start: doc.data().start,
-          end: doc.data().end,
-          extendedProps: {
-            date: dayjs(doc.data().extendedProps.date),
-            type: doc.data().extendedProps.type,
-            groups: doc.data().extendedProps.groups,
-            teacher: doc.data().extendedProps.teacher,
-            location: doc.data().extendedProps.location,
-            editable: doc.data().extendedProps.editable
-          }
-        }));
-        setEvents(updatedEvents);
-      });
+    if (isAuthenticated && uid) {
+      const unsubscribe = firestore
+        .collection("users")
+        .doc(uid)
+        .collection("events")
+        .onSnapshot((snapshot) => {
+          const updatedEvents: Event[] = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            title: doc.data().title,
+            start: doc.data().start,
+            end: doc.data().end,
+            extendedProps: {
+              date: dayjs(doc.data().extendedProps.date),
+              type: doc.data().extendedProps.type,
+              groups: doc.data().extendedProps.groups,
+              teacher: doc.data().extendedProps.teacher,
+              location: doc.data().extendedProps.location,
+              editable: doc.data().extendedProps.editable,
+            },
+          }));
+          setEvents(updatedEvents);
+        });
 
-    return () => unsubscribe(); 
-  }
+      return () => unsubscribe();
+    }
   }, [uid]);
 
-  // Klik na predmet na urniku
   const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = events.find((event: Event) => event.id === clickInfo.event.id);
+    const event = events.find(
+      (event: Event) => event.id === clickInfo.event.id
+    );
     if (event) {
       setSelectedEvent(event);
-      setMode(event.extendedProps.editable ? 'edit' : 'view');
+      setMode(event.extendedProps.editable ? "edit" : "view");
       setOpen(true);
     } else {
       console.error("Event not found");
@@ -355,64 +414,62 @@ const Timetable: React.FC<TimetableProps> = ({
     setOpen(false);
   };
 
-  // Klik na prazno polje na urniku
   const handleDateSelect = () => {
     if (isAuthenticated) {
-      setMode('add');
+      setMode("add");
       setOpen(true);
     }
   };
 
   const handleAddEvent = (eventInfo: any) => {
     fetch(`${BASE_URL}/add`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         ...eventInfo,
-        uid: uid
+        uid: uid,
       }),
     })
-      .then(response => {
+      .then((response) => {
         if (!response.ok) {
-          throw new Error('Failed to add event');
+          throw new Error("Failed to add event");
         }
         return response.json();
       })
-      .then(data => {
+      .then((data) => {
         setOpen(false);
       })
-      .catch(error => {
-        console.error('Error saving event:', error);
+      .catch((error) => {
+        console.error("Error saving event:", error);
       });
   };
 
   const handleUpdateEvent = (eventInfo: any) => {
     fetch(`${BASE_URL}/update`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         ...eventInfo,
-        uid: uid
+        uid: uid,
       }),
     })
-      .then(response => {
+      .then((response) => {
         if (!response.ok) {
-          throw new Error('Failed to update event');
+          throw new Error("Failed to update event");
         }
         return response.json();
       })
-      .then(data => {
+      .then((data) => {
         setOpen(false);
       })
-      .catch(error => {
-        console.error('Error updating event:', error);
+      .catch((error) => {
+        console.error("Error updating event:", error);
       });
   };
-
 
   return (
     <div className="w-full p-5">
@@ -435,6 +492,7 @@ const Timetable: React.FC<TimetableProps> = ({
             facultyId={selectedFacultyId}
             programId={programId || ""}
             selectedYear={selectedYear}
+            onSelectBranch={setSelectedBranch}
           />
         </div>
         <div className="mt-4 w-full bg-white rounded-lg p-4">
@@ -464,7 +522,6 @@ const Timetable: React.FC<TimetableProps> = ({
             unselectAuto={true}
             eventClick={handleEventClick}
             select={handleDateSelect}
-
           />
         </div>
       </div>
@@ -477,7 +534,6 @@ const Timetable: React.FC<TimetableProps> = ({
         onUpdate={handleUpdateEvent}
         event={selectedEvent}
       />
-
     </div>
   );
 };
