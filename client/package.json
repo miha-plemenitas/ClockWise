@@ -42,6 +42,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.11",
+    "dotenv": "^16.4.5",
     "firebase": "^10.11.0",
     "framer-motion": "^11.1.7",
     "lucide-react": "^0.376.0",
