@@ -1,6 +1,6 @@
 const { db } = require('../utils/firebaseAdmin');
 const { filterForAllowedKeys } = require("../utils/batchOperations");
-const { all } = require('axios');
+const { userAllowedKeys } = require("../constants/constants");
 
 
 async function saveUser(uid) {
@@ -30,16 +30,13 @@ async function getUserById(uid) {
 async function updateUser(uid, updates) {
   const userRef = db.collection('users').doc(uid);
 
-  const allowedKeys = ["facultyId", "programId", "branchId", "groupId", "role"];
-  const filteredUpdates = filterForAllowedKeys(updates, allowedKeys);
+  const filteredUpdates = filterForAllowedKeys(updates, userAllowedKeys);
 
   const userDoc = await userRef.get();
   if (!userDoc.exists) {
     console.log(`No user found with ID: ${uid}`);
     throw new Error('User not found');
-  } else if (Object.keys(filteredUpdates).length === 0) {
-    throw new Error("No valid update fields provided");
-  }
+  } 
 
   await userRef.update(filteredUpdates);
 

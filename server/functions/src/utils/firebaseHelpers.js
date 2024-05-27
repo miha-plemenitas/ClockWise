@@ -1,3 +1,6 @@
+const { db } = require('../utils/firebaseAdmin');
+
+
 /**
  * Finds the program ID for a given branch within a faculty.
  * Looks up the branch document by its ID and returns the associated program ID.
@@ -35,7 +38,20 @@ async function deleteAllDocumentsInCollection(collectionRef) {
 }
 
 
+async function checkIfExistsByRefCollectionNameId(ref, collectionName, id) {
+  const foundRef = ref.collection(collectionName).doc(id);
+  const doc = await foundRef.get();
+
+  if(!doc.exists){
+    throw new Error(`${id} does not exist in ${collectionName}`);
+  } else {
+    return foundRef;
+  }
+}
+
+
 module.exports = {
   findProgramForBranch,
   deleteAllDocumentsInCollection,
+  checkIfExistsByRefCollectionNameId,
 }

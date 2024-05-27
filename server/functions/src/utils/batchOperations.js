@@ -1,4 +1,6 @@
 const { db } = require('./firebaseAdmin');
+const { Timestamp } = require('firebase-admin/firestore');
+
 
 /**
  * Processes items in batches and commits them to a Firestore collection.
@@ -60,18 +62,39 @@ async function commitBatch(batch) {
 
 function filterForAllowedKeys(object, allowedKeys) {
   const filteredObject = Object.keys(object)
-  .filter(key => allowedKeys.includes(key))
-  .reduce((obj, key) => {
+    .filter(key => allowedKeys.includes(key))
+    .reduce((obj, key) => {
       obj[key] = object[key];
       return obj;
-  }, {});
+    }, {});
+
+  if (Object.keys(filteredObject).length === 0) {
+    throw new Error("No valid update fields provided");
+  }
 
   return filteredObject;
 }
 
 
+function convertDatesToTimestamps(data) {
+  const dateFields = ['startTime', 'endTime'];
+  try {
+    dateFields.forEach(field => {
+      if (data[field]) {
+        data[field] = Timestamp.fromDate(new Date(data[field]));
+      }
+    });
+
+    return data;
+  } catch (error) {
+    throw new Error("Dates are not correctly formated, please use ISO 8601");
+  } 
+}
+
+
 module.exports = {
-  processItemsInBatch, 
+  processItemsInBatch,
   commitBatch,
   filterForAllowedKeys,
+  convertDatesToTimestamps
 }
