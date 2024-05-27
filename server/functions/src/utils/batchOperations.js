@@ -57,7 +57,21 @@ async function commitBatch(batch) {
   }
 }
 
+
+function filterForAllowedKeys(object, allowedKeys) {
+  const filteredObject = Object.keys(object)
+  .filter(key => allowedKeys.includes(key))
+  .reduce((obj, key) => {
+      obj[key] = object[key];
+      return obj;
+  }, {});
+
+  return filteredObject;
+}
+
+
 module.exports = {
   processItemsInBatch, 
   commitBatch,
+  filterForAllowedKeys,
 }

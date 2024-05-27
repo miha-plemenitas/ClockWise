@@ -8,3 +8,4 @@ exports.room = require('./src/functions/roomController');
 exports.course = require('./src/functions/courseContoller');
 exports.lecture = require('./src/functions/lectureContoller');
 exports.auth = require('./src/functions/authenticationController');
+exports.user = require('./src/functions/userController');
