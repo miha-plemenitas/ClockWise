@@ -18,7 +18,6 @@ async function login() {
     "Content-Type": "application/json",
   };
 
-  // Log the headers and request body to verify they are correct
   console.log("Request Headers:", headers);
   console.log("Request Body:", { uid: username });
 
@@ -28,11 +27,12 @@ async function login() {
       { uid: username },
       { headers: headers, withCredentials: true }
     );
-    const jwtToken = response.headers["set-cookie"][0];
+    const cookieHeader = response.headers["set-cookie"][0];
+    const token = cookieHeader.split(";")[0].split("=")[1]; // Extract the token value
     return {
       success: true,
       message: "Login successful",
-      token: jwtToken,
+      token: token,
     };
   } catch (error) {
     console.error(
@@ -49,7 +49,6 @@ async function login() {
 
 module.exports = { login };
 
-// For testing purposes, you can call the function and log the result:
 login()
   .then((result) => console.log(result))
   .catch((err) => console.error(err));
