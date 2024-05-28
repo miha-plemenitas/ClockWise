@@ -45,7 +45,6 @@ const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
   const { faculties, loading, error } = useFaculties();
 
   useEffect(() => {
-    // Retrieve the facultyId from local storage on component mount
     const storedFacultyId = localStorage.getItem("selectedFacultyId");
     if (storedFacultyId) {
       const selectedFaculty = faculties.find(
@@ -71,15 +70,19 @@ const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
     const selectedFaculty = faculties.find((faculty) => faculty.name === value);
     if (selectedFaculty) {
       onSelectFaculty(selectedFaculty.id);
-      localStorage.setItem("selectedFacultyId", selectedFaculty.id); // Store the selected facultyId in local storage
+      localStorage.setItem("selectedFacultyId", selectedFaculty.id);
+      // Clear subsequent selections
+      localStorage.removeItem("selectedProgramId");
+      localStorage.removeItem("selectedYearId");
+      localStorage.removeItem("selectedBranchId");
     }
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 w-48">
       <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
         <DropdownMenuTrigger asChild>
-          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
+          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
             <span>Faculties</span>
             <FaChevronDown
               className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -103,10 +106,10 @@ const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedFacultyName && (
-        <p className="mt-2 text-sm text-gray-700 font-medium">
-          Selected: {selectedFacultyName}
-        </p>
+      {selectedFacultyName && selectedFaculties && (
+        <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
+          {selectedFacultyName}
+        </div>
       )}
     </div>
   );
@@ -160,14 +163,17 @@ const DropdownMenuPrograms: React.FC<DropdownMenuProgramsProps> = ({
         Number(selectedProgram.programDuration)
       );
       localStorage.setItem("selectedProgramId", selectedProgram.id);
+      // Clear subsequent selections
+      localStorage.removeItem("selectedYearId");
+      localStorage.removeItem("selectedBranchId");
     }
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 w-48">
       <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
         <DropdownMenuTrigger asChild>
-          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
+          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
             <span>Study Program</span>
             <FaChevronDown
               className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -191,10 +197,10 @@ const DropdownMenuPrograms: React.FC<DropdownMenuProgramsProps> = ({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedProgramName && (
-        <p className="mt-2 text-sm text-gray-700 font-medium">
-          Selected: {selectedProgramName}
-        </p>
+      {selectedProgramName && selectedPrograms && (
+        <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
+          {selectedProgramName}
+        </div>
       )}
     </div>
   );
@@ -245,13 +251,15 @@ const DropdownMenuYear: React.FC<DropdownMenuYearProps> = ({
     setSelectedYearState(value);
     onSelectYear(Number(value));
     localStorage.setItem("selectedYearId", value);
+    // Clear subsequent selections
+    localStorage.removeItem("selectedBranchId");
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 w-48">
       <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
         <DropdownMenuTrigger asChild>
-          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
+          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
             <span>Year</span>
             <FaChevronDown
               className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -275,10 +283,10 @@ const DropdownMenuYear: React.FC<DropdownMenuYearProps> = ({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedYear && (
-        <p className="mt-2 text-sm text-gray-700 font-medium">
-          Selected: {selectedYear}
-        </p>
+      {selectedYear && selectedYearState && (
+        <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
+          {selectedYear}
+        </div>
       )}
     </div>
   );
@@ -330,10 +338,10 @@ const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 w-48">
       <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
         <DropdownMenuTrigger asChild>
-          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2">
+          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
             <span>Branch</span>
             <FaChevronDown
               className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -357,10 +365,10 @@ const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedBranchName && (
-        <p className="mt-2 text-sm text-gray-700 font-medium">
-          Selected: {selectedBranchName}
-        </p>
+      {selectedBranchName && selectedBranch && (
+        <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
+          {selectedBranchName}
+        </div>
       )}
     </div>
   );
@@ -540,6 +548,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               setSelectedFacultyName(
                 selectedFaculty ? selectedFaculty.name : null
               );
+              setSelectedProgramName(null); // Clear subsequent selections
+              setSelectedYearName(null);
+              setSelectedBranchName(null);
             }}
             selectedFacultyName={selectedFacultyName}
           />
@@ -554,6 +565,8 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               setSelectedProgramName(
                 selectedProgram ? selectedProgram.name : null
               );
+              setSelectedYearName(null); // Clear subsequent selections
+              setSelectedBranchName(null);
             }}
             selectedProgramName={selectedProgramName}
           />
@@ -562,6 +575,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
             onSelectYear={(year) => {
               setSelectedYear(year);
               setSelectedYearName(year ? year.toString() : null);
+              setSelectedBranchName(null); // Clear subsequent selections
             }}
             selectedYear={selectedYearName}
           />
