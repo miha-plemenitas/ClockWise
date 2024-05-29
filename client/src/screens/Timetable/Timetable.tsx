@@ -12,6 +12,7 @@ import DropdownMenuFaculties from "../../Components/Dropdowns/DropdownMenuFacult
 import DropdownMenuPrograms from "../../Components/Dropdowns/DropdownMenuPrograms";
 import DropdownMenuYear from "../../Components/Dropdowns/DropdownMenuYear";
 import DropdownMenuBranches from "../../Components/Dropdowns/DropdownMenuBranches";
+import DropdownMenuCourses from "../../Components/Dropdowns/DropdownMenuCourses";
 
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
@@ -74,6 +75,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     () => localStorage.getItem("selectedBranchId") || null
   );
   const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
+    null
+  );
+  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
     null
   );
   const { branches } = useBranches(
@@ -200,9 +204,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               setSelectedFacultyName(
                 selectedFaculty ? selectedFaculty.name : null
               );
-              setSelectedProgramName(null); // Clear subsequent selections
+              setSelectedProgramName(null);
               setSelectedYearName(null);
               setSelectedBranchName(null);
+              setSelectedCourseName(null);
             }}
             selectedFacultyName={selectedFacultyName}
           />
@@ -219,6 +224,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               );
               setSelectedYearName(null); // Clear subsequent selections
               setSelectedBranchName(null);
+              setSelectedCourseName(null);
             }}
             selectedProgramName={selectedProgramName}
           />
@@ -228,6 +234,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               setSelectedYear(year);
               setSelectedYearName(year ? year.toString() : null);
               setSelectedBranchName(null); // Clear subsequent selections
+              setSelectedCourseName(null);
             }}
             selectedYear={selectedYearName}
           />
@@ -243,8 +250,17 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               setSelectedBranchName(
                 selectedBranch ? selectedBranch.name : null
               );
+              setSelectedCourseName(null); // Clear subsequent selections
             }}
             selectedBranchName={selectedBranchName}
+          />
+          <DropdownMenuCourses
+            branchId={selectedBranch}
+            programId={programId}
+            onSelectCourse={(name) => {
+              setSelectedCourseName(name);
+            }}
+            selectedCourseName={selectedCourseName}
           />
         </div>
         <div className="mt-4 w-full bg-white rounded-lg p-4">
