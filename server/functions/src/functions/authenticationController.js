@@ -1,9 +1,5 @@
 const functions = require('firebase-functions');
 const jwt = require('jsonwebtoken');
-const admin = require("../utils/firebaseAdmin");
-const {
-  verifyValidateAndSetRole
-} = require("../service/authenticationService");
 
 const secretKey = functions.config().auth.secret_key;
 const adminPassword = functions.config().auth.password;
@@ -49,24 +45,3 @@ exports.login = functions
     }
   });
 
-
-exports.changeRole = functions
-  .region("europe-west3")
-  .runWith({
-    timeoutSeconds: 540
-  })
-  .https
-  .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
-    try {
-      await checkJWTandMethodForRequest(request, "POST");
-      const { requesterUid, targetUid, role } = request.body;
-      validateRequestParams({ requesterUid, targetUid, role });
-
-      await verifyValidateAndSetRole(requesterUid, targetUid, role);
-      response.status(200).json({ message: `Role for ${targetUid}, set successfuly.` });
-    } catch (error) {
-      handleErrors(error, response);
-    }
-  });
