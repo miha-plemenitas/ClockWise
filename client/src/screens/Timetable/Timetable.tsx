@@ -13,6 +13,7 @@ import DropdownMenuPrograms from "../../Components/Dropdowns/DropdownMenuProgram
 import DropdownMenuYear from "../../Components/Dropdowns/DropdownMenuYear";
 import DropdownMenuBranches from "../../Components/Dropdowns/DropdownMenuBranches";
 import DropdownMenuCourses from "../../Components/Dropdowns/DropdownMenuCourses";
+import DropdownMenuGroups from "../../Components/Dropdowns/DropdownMenuGroups";
 
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
@@ -58,14 +59,14 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
     null
   );
-  const { faculties } = useFaculties(); // Make sure this is defined to use faculties
+  const { faculties } = useFaculties();
   const [programId, setProgramId] = useState<string | null>(
     () => localStorage.getItem("selectedProgramId") || null
   );
   const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
     null
   );
-  const { programs } = usePrograms(selectedFacultyId); // Make sure this is defined to use programs
+  const { programs } = usePrograms(selectedFacultyId);
   const [programDuration, setProgramDuration] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(
     () => Number(localStorage.getItem("selectedYearId")) || null
@@ -80,11 +81,14 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
     null
   );
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
+    null
+  );
   const { branches } = useBranches(
     selectedFacultyId,
     programId || "",
     selectedYear
-  ); // Make sure this is defined to use branches
+  );
 
   useEffect(() => {
     if (isAuthenticated && uid) {
@@ -208,6 +212,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               setSelectedYearName(null);
               setSelectedBranchName(null);
               setSelectedCourseName(null);
+              setSelectedGroupName(null);
             }}
             selectedFacultyName={selectedFacultyName}
           />
@@ -222,9 +227,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               setSelectedProgramName(
                 selectedProgram ? selectedProgram.name : null
               );
-              setSelectedYearName(null); // Clear subsequent selections
+              setSelectedYearName(null);
               setSelectedBranchName(null);
               setSelectedCourseName(null);
+              setSelectedGroupName(null);
             }}
             selectedProgramName={selectedProgramName}
           />
@@ -233,8 +239,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
             onSelectYear={(year) => {
               setSelectedYear(year);
               setSelectedYearName(year ? year.toString() : null);
-              setSelectedBranchName(null); // Clear subsequent selections
+              setSelectedBranchName(null);
               setSelectedCourseName(null);
+              setSelectedGroupName(null);
             }}
             selectedYear={selectedYearName}
           />
@@ -250,7 +257,8 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               setSelectedBranchName(
                 selectedBranch ? selectedBranch.name : null
               );
-              setSelectedCourseName(null); // Clear subsequent selections
+              setSelectedCourseName(null);
+              setSelectedGroupName(null);
             }}
             selectedBranchName={selectedBranchName}
           />
@@ -261,6 +269,14 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               setSelectedCourseName(name);
             }}
             selectedCourseName={selectedCourseName}
+          />
+          <DropdownMenuGroups
+            branchId={selectedBranch}
+            programId={programId}
+            onSelectGroup={(id, name) => {
+              setSelectedGroupName(name);
+            }}
+            selectedGroupName={selectedGroupName}
           />
         </div>
         <div className="mt-4 w-full bg-white rounded-lg p-4">

@@ -12,7 +12,7 @@ async function fetchData() {
 
   try {
     const response = await axios.get(
-      "https://europe-west3-pameten-urnik.cloudfunctions.net/course-getAllForBranch?facultyId=13&branchId=146",
+      "https://europe-west3-pameten-urnik.cloudfunctions.net/group-getAllForBranch?facultyId=13&branchId=105",
       {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
