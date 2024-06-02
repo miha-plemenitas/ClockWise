@@ -14,6 +14,7 @@ import DropdownMenuYear from "../../Components/Dropdowns/DropdownMenuYear";
 import DropdownMenuBranches from "../../Components/Dropdowns/DropdownMenuBranches";
 import DropdownMenuCourses from "../../Components/Dropdowns/DropdownMenuCourses";
 import DropdownMenuGroups from "../../Components/Dropdowns/DropdownMenuGroups";
+import DropdownMenuRooms from "../../Components/Dropdowns/DropdownMenuRooms";
 
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
@@ -84,6 +85,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
     null
   );
+  const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
   const { branches } = useBranches(
     selectedFacultyId,
     programId || "",
@@ -197,117 +199,112 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   return (
     <div className="w-full p-5">
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
-      <div className="flex flex-col items-start mb-4">
-        <div className="flex space-x-4">
-          <DropdownMenuFaculties
-            onSelectFaculty={(id) => {
-              setSelectedFacultyId(id);
-              const selectedFaculty = faculties.find(
-                (faculty) => faculty.id === id
-              );
-              setSelectedFacultyName(
-                selectedFaculty ? selectedFaculty.name : null
-              );
-              setSelectedProgramName(null);
-              setSelectedYearName(null);
-              setSelectedBranchName(null);
-              setSelectedCourseName(null);
-              setSelectedGroupName(null);
-            }}
-            selectedFacultyName={selectedFacultyName}
-          />
-          <DropdownMenuPrograms
-            facultyId={selectedFacultyId}
-            onSelectProgram={(id, duration) => {
-              setProgramId(id);
-              setProgramDuration(duration);
-              const selectedProgram = programs.find(
-                (program) => program.id === id
-              );
-              setSelectedProgramName(
-                selectedProgram ? selectedProgram.name : null
-              );
-              setSelectedYearName(null);
-              setSelectedBranchName(null);
-              setSelectedCourseName(null);
-              setSelectedGroupName(null);
-            }}
-            selectedProgramName={selectedProgramName}
-          />
-          <DropdownMenuYear
-            programDuration={programDuration}
-            onSelectYear={(year) => {
-              setSelectedYear(year);
-              setSelectedYearName(year ? year.toString() : null);
-              setSelectedBranchName(null);
-              setSelectedCourseName(null);
-              setSelectedGroupName(null);
-            }}
-            selectedYear={selectedYearName}
-          />
-          <DropdownMenuBranches
-            facultyId={selectedFacultyId}
-            programId={programId || ""}
-            selectedYear={selectedYear}
-            onSelectBranch={(id) => {
-              setSelectedBranch(id);
-              const selectedBranch = branches.find(
-                (branch) => branch.id === id
-              );
-              setSelectedBranchName(
-                selectedBranch ? selectedBranch.name : null
-              );
-              setSelectedCourseName(null);
-              setSelectedGroupName(null);
-            }}
-            selectedBranchName={selectedBranchName}
-          />
-          <DropdownMenuCourses
-            branchId={selectedBranch}
-            programId={programId}
-            onSelectCourse={(name) => {
-              setSelectedCourseName(name);
-            }}
-            selectedCourseName={selectedCourseName}
-          />
-          <DropdownMenuGroups
-            branchId={selectedBranch}
-            programId={programId}
-            onSelectGroup={(id, name) => {
-              setSelectedGroupName(name);
-            }}
-            selectedGroupName={selectedGroupName}
-          />
-        </div>
-        <div className="mt-4 w-full bg-white rounded-lg p-4">
-          <FullCalendar
-            height={"auto"}
-            slotMinTime={"7:00"}
-            slotMaxTime={"21:00"}
-            plugins={[timeGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
-            weekends={false}
-            events={events}
-            eventContent={renderEventContent}
-            headerToolbar={{
-              left: "title",
-              center: "",
-              right: "prev,next today",
-            }}
-            titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
-            dayHeaderClassNames="font-bold text-lg"
-            dayHeaderFormat={{
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            }}
-            selectable={true}
-            selectMirror={true}
-            unselectAuto={true}
-            eventClick={handleEventClick}
-            select={handleDateSelect}
-          />
-        </div>
+      <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+        <DropdownMenuFaculties
+          onSelectFaculty={(id) => {
+            setSelectedFacultyId(id);
+            const selectedFaculty = faculties.find(
+              (faculty) => faculty.id === id
+            );
+            setSelectedFacultyName(
+              selectedFaculty ? selectedFaculty.name : null
+            );
+            setSelectedProgramName(null);
+            setSelectedYearName(null);
+            setSelectedBranchName(null);
+          }}
+          selectedFacultyName={selectedFacultyName}
+        />
+        <DropdownMenuPrograms
+          facultyId={selectedFacultyId}
+          onSelectProgram={(id, duration) => {
+            setProgramId(id);
+            setProgramDuration(duration);
+            const selectedProgram = programs.find(
+              (program) => program.id === id
+            );
+            setSelectedProgramName(
+              selectedProgram ? selectedProgram.name : null
+            );
+            setSelectedYearName(null);
+            setSelectedBranchName(null);
+          }}
+          selectedProgramName={selectedProgramName}
+        />
+        <DropdownMenuYear
+          programDuration={programDuration}
+          onSelectYear={(year) => {
+            setSelectedYear(year);
+            setSelectedYearName(year ? year.toString() : null);
+            setSelectedBranchName(null);
+          }}
+          selectedYear={selectedYearName}
+        />
+        <DropdownMenuBranches
+          facultyId={selectedFacultyId}
+          programId={programId || ""}
+          selectedYear={selectedYear}
+          onSelectBranch={(id) => {
+            setSelectedBranch(id);
+            const selectedBranch = branches.find((branch) => branch.id === id);
+            setSelectedBranchName(selectedBranch ? selectedBranch.name : null);
+          }}
+          selectedBranchName={selectedBranchName}
+        />
+      </div>
+      <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+        <DropdownMenuCourses
+          branchId={selectedBranch}
+          programId={programId}
+          onSelectCourse={(name) => {
+            setSelectedCourseName(name);
+          }}
+          selectedCourseName={selectedCourseName}
+        />
+        <DropdownMenuGroups
+          branchId={selectedBranch}
+          programId={programId}
+          onSelectGroup={(id, name) => {
+            setSelectedGroupName(name);
+          }}
+          selectedGroupName={selectedGroupName}
+        />
+        <DropdownMenuRooms
+          facultyId={selectedFacultyId}
+          onSelectRoom={(id, name) => {
+            setSelectedRoomName(name);
+          }}
+          selectedRoomName={selectedRoomName}
+        />
+      </div>
+      <div className="mt-4 w-full bg-white rounded-lg p-4">
+        <FullCalendar
+          height={"auto"}
+          slotMinTime={"7:00"}
+          slotMaxTime={"21:00"}
+          plugins={[timeGridPlugin, interactionPlugin]}
+          initialView="timeGridWeek"
+          weekends={false}
+          events={events}
+          eventContent={renderEventContent}
+          headerToolbar={{
+            left: "title",
+            center: "",
+            right: "prev,next today",
+          }}
+          titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
+          dayHeaderClassNames="font-bold text-lg"
+          dayHeaderFormat={{
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          }}
+          selectable={true}
+          selectMirror={true}
+          unselectAuto={true}
+          eventClick={handleEventClick}
+          select={handleDateSelect}
+        />
       </div>
 
       <CustomModal

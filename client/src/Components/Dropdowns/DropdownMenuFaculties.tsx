@@ -56,6 +56,9 @@ const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
       localStorage.removeItem("selectedProgramId");
       localStorage.removeItem("selectedYearId");
       localStorage.removeItem("selectedBranchId");
+      localStorage.removeItem("selectedCourseId");
+      localStorage.removeItem("selectedGroupId");
+      localStorage.removeItem("selectedRoomId");
     }
   };
 
