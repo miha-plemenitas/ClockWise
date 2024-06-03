@@ -2,25 +2,23 @@ import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { Button } from "../../Components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../Components/ui/dropdown-menu";
-import { FaChevronDown } from "react-icons/fa";
-import CustomModal from "../../Components/Modal/CustomModal";
 import { EventClickArg, EventContentArg } from "@fullcalendar/core";
-import useFaculties from "../../Components/Hooks/useFaculties";
-import usePrograms from "../../Components/Hooks/usePrograms";
-import useBranches from "../../Components/Hooks/useBranches";
+import CustomModal from "../../Components/Modal/CustomModal";
 import { BASE_URL } from "../../api";
 import { firestore } from "../../Config/firebase";
 import dayjs, { Dayjs } from "dayjs";
+
+import DropdownMenuFaculties from "../../Components/Dropdowns/DropdownMenuFaculties";
+import DropdownMenuPrograms from "../../Components/Dropdowns/DropdownMenuPrograms";
+import DropdownMenuYear from "../../Components/Dropdowns/DropdownMenuYear";
+import DropdownMenuBranches from "../../Components/Dropdowns/DropdownMenuBranches";
+import DropdownMenuCourses from "../../Components/Dropdowns/DropdownMenuCourses";
+import DropdownMenuGroups from "../../Components/Dropdowns/DropdownMenuGroups";
+import DropdownMenuRooms from "../../Components/Dropdowns/DropdownMenuRooms";
+
+import useFaculties from "../../Components/Hooks/useFaculties";
+import usePrograms from "../../Components/Hooks/usePrograms";
+import useBranches from "../../Components/Hooks/useBranches";
 import axios from "axios";
 import { Buffer } from "buffer";
 
@@ -32,349 +30,6 @@ function renderEventContent(eventInfo: EventContentArg) {
     </>
   );
 }
-
-interface DropdownMenuFacultiesProps {
-  onSelectFaculty: (facultyId: string) => void;
-  selectedFacultyName: string | null;
-}
-
-const DropdownMenuFaculties: React.FC<DropdownMenuFacultiesProps> = ({
-  onSelectFaculty,
-  selectedFacultyName,
-}) => {
-  const [selectedFaculties, setSelectedFaculties] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const { faculties, loading, error } = useFaculties();
-
-  useEffect(() => {
-    const storedFacultyId = localStorage.getItem("selectedFacultyId");
-    if (storedFacultyId) {
-      const selectedFaculty = faculties.find(
-        (faculty) => faculty.id === storedFacultyId
-      );
-      if (selectedFaculty) {
-        setSelectedFaculties(selectedFaculty.name);
-        onSelectFaculty(selectedFaculty.id);
-      }
-    }
-  }, [faculties, onSelectFaculty]);
-
-  if (loading) {
-    return <p>Loading faculties...</p>;
-  }
-
-  if (error) {
-    return <p>Error loading faculties: {error}</p>;
-  }
-
-  const handleSelect = (value: string) => {
-    setSelectedFaculties(value);
-    const selectedFaculty = faculties.find((faculty) => faculty.name === value);
-    if (selectedFaculty) {
-      onSelectFaculty(selectedFaculty.id);
-      localStorage.setItem("selectedFacultyId", selectedFaculty.id);
-      // Clear subsequent selections
-      localStorage.removeItem("selectedProgramId");
-      localStorage.removeItem("selectedYearId");
-      localStorage.removeItem("selectedBranchId");
-    }
-  };
-
-  return (
-    <div className="mb-4 w-48">
-      <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-        <DropdownMenuTrigger asChild>
-          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
-            <span>Faculties</span>
-            <FaChevronDown
-              className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-max max-w-sm">
-          <DropdownMenuLabel className="text-modra">
-            Select Faculty
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={selectedFaculties}
-            onValueChange={handleSelect}
-          >
-            {faculties.map((faculty) => (
-              <DropdownMenuRadioItem key={faculty.id} value={faculty.name}>
-                {faculty.name}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {selectedFacultyName && selectedFaculties && (
-        <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedFacultyName}
-        </div>
-      )}
-    </div>
-  );
-};
-
-interface DropdownMenuProgramsProps {
-  facultyId: string;
-  onSelectProgram: (programId: string, programDuration: number | null) => void;
-  selectedProgramName: string | null;
-}
-
-const DropdownMenuPrograms: React.FC<DropdownMenuProgramsProps> = ({
-  facultyId,
-  onSelectProgram,
-  selectedProgramName,
-}) => {
-  const [selectedPrograms, setSelectedPrograms] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const { programs, loading, error } = usePrograms(facultyId);
-
-  useEffect(() => {
-    const storedProgramId = localStorage.getItem("selectedProgramId");
-    if (storedProgramId) {
-      const selectedProgram = programs.find(
-        (program) => program.id === storedProgramId
-      );
-      if (selectedProgram) {
-        setSelectedPrograms(selectedProgram.name);
-        onSelectProgram(
-          selectedProgram.id,
-          Number(selectedProgram.programDuration)
-        );
-      }
-    }
-  }, [programs, onSelectProgram]);
-
-  if (loading) {
-    return <p>Loading programs...</p>;
-  }
-
-  if (error) {
-    return <p>Error loading programs: {error}</p>;
-  }
-
-  const handleSelect = (value: string) => {
-    setSelectedPrograms(value);
-    const selectedProgram = programs.find((program) => program.name === value);
-    if (selectedProgram) {
-      onSelectProgram(
-        selectedProgram.id,
-        Number(selectedProgram.programDuration)
-      );
-      localStorage.setItem("selectedProgramId", selectedProgram.id);
-      // Clear subsequent selections
-      localStorage.removeItem("selectedYearId");
-      localStorage.removeItem("selectedBranchId");
-    }
-  };
-
-  return (
-    <div className="mb-4 w-48">
-      <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-        <DropdownMenuTrigger asChild>
-          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
-            <span>Study Program</span>
-            <FaChevronDown
-              className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-max max-w-sm">
-          <DropdownMenuLabel className="text-modra">
-            Select Study Program
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={selectedPrograms}
-            onValueChange={handleSelect}
-          >
-            {programs.map((program) => (
-              <DropdownMenuRadioItem key={program.id} value={program.name}>
-                {program.name}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {selectedProgramName && selectedPrograms && (
-        <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedProgramName}
-        </div>
-      )}
-    </div>
-  );
-};
-
-interface DropdownMenuYearProps {
-  programDuration: number | null;
-  onSelectYear: (year: number | null) => void;
-  selectedYear: string | null;
-}
-
-const DropdownMenuYear: React.FC<DropdownMenuYearProps> = ({
-  programDuration,
-  onSelectYear,
-  selectedYear,
-}) => {
-  const [selectedYearState, setSelectedYearState] = useState<string | null>(
-    null
-  );
-  const [isOpen, setIsOpen] = useState(false);
-  const [years, setYears] = useState<number[]>([]);
-
-  useEffect(() => {
-    if (programDuration) {
-      const generateYears = () => {
-        const yearOptions = [];
-        for (let i = 1; i <= programDuration; i++) {
-          yearOptions.push(i);
-        }
-        setYears(yearOptions);
-      };
-      generateYears();
-    } else {
-      setYears([]);
-      setSelectedYearState(null);
-    }
-  }, [programDuration]);
-
-  useEffect(() => {
-    const storedYearId = localStorage.getItem("selectedYearId");
-    if (storedYearId) {
-      setSelectedYearState(storedYearId);
-      onSelectYear(Number(storedYearId));
-    }
-  }, [onSelectYear]);
-
-  const handleSelect = (value: string) => {
-    setSelectedYearState(value);
-    onSelectYear(Number(value));
-    localStorage.setItem("selectedYearId", value);
-    // Clear subsequent selections
-    localStorage.removeItem("selectedBranchId");
-  };
-
-  return (
-    <div className="mb-4 w-48">
-      <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-        <DropdownMenuTrigger asChild>
-          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
-            <span>Year</span>
-            <FaChevronDown
-              className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-max max-w-sm">
-          <DropdownMenuLabel className="text-modra">
-            Select Year
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={selectedYearState || ""}
-            onValueChange={handleSelect}
-          >
-            {years.map((year) => (
-              <DropdownMenuRadioItem key={year} value={year.toString()}>
-                {year}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {selectedYear && selectedYearState && (
-        <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedYear}
-        </div>
-      )}
-    </div>
-  );
-};
-
-interface DropdownMenuBranchesProps {
-  facultyId: string;
-  programId: string;
-  selectedYear: number | null;
-  onSelectBranch: (branchId: string | null) => void;
-  selectedBranchName: string | null;
-}
-
-const DropdownMenuBranches: React.FC<DropdownMenuBranchesProps> = ({
-  facultyId,
-  programId,
-  selectedYear,
-  onSelectBranch,
-  selectedBranchName,
-}) => {
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const { branches, loading, error } = useBranches(
-    facultyId,
-    programId,
-    selectedYear
-  );
-
-  useEffect(() => {
-    const storedBranchId = localStorage.getItem("selectedBranchId");
-    if (storedBranchId) {
-      setSelectedBranch(storedBranchId);
-      onSelectBranch(storedBranchId);
-    }
-  }, [branches, onSelectBranch]);
-
-  if (loading) {
-    return <p>Loading branches...</p>;
-  }
-
-  if (error) {
-    return <p>Error loading branches: {error}</p>;
-  }
-
-  const handleSelect = (value: string) => {
-    setSelectedBranch(value);
-    onSelectBranch(value);
-    localStorage.setItem("selectedBranchId", value);
-  };
-
-  return (
-    <div className="mb-4 w-48">
-      <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
-        <DropdownMenuTrigger asChild>
-          <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
-            <span>Branch</span>
-            <FaChevronDown
-              className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-            />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-max max-w-sm">
-          <DropdownMenuLabel className="text-modra">
-            Select Branch
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={selectedBranch || ""}
-            onValueChange={handleSelect}
-          >
-            {branches.map((branch) => (
-              <DropdownMenuRadioItem key={branch.id} value={branch.id}>
-                {branch.name}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {selectedBranchName && selectedBranch && (
-        <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedBranchName}
-        </div>
-      )}
-    </div>
-  );
-};
 
 interface TimetableProps {
   isAuthenticated: boolean;
@@ -399,24 +54,56 @@ interface Event {
 const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
 
-  const [selectedFacultyId, setSelectedFacultyId] = useState(() => localStorage.getItem("selectedFacultyId") || "");
-  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(null);
-  const { faculties } = useFaculties(); // Make sure this is defined to use faculties
-  const [programId, setProgramId] = useState<string | null>(() => localStorage.getItem("selectedProgramId") || null);
-  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(null);
-  const { programs } = usePrograms(selectedFacultyId); // Make sure this is defined to use programs
+  const [selectedFacultyId, setSelectedFacultyId] = useState(
+    () => localStorage.getItem("selectedFacultyId") || ""
+  );
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
+    null
+  );
+  const { faculties } = useFaculties();
+
+  const [programId, setProgramId] = useState<string | null>(
+    () => localStorage.getItem("selectedProgramId") || null
+  );
+  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
+    null
+  );
+  const { programs } = usePrograms(selectedFacultyId);
+
   const [programDuration, setProgramDuration] = useState<number | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(() => Number(localStorage.getItem("selectedYearId")) || null);
+
+  const [selectedYear, setSelectedYear] = useState<number | null>(
+    () => Number(localStorage.getItem("selectedYearId")) || null
+  );
   const [selectedYearName, setSelectedYearName] = useState<string | null>(null);
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(() => localStorage.getItem("selectedBranchId") || null);
-  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);
-  const { branches } = useBranches(selectedFacultyId, programId || "", selectedYear); // Make sure this is defined to use branches
+
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(
+    () => localStorage.getItem("selectedBranchId") || null
+  );
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
+    null
+  );
+
+  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
+    null
+  );
+
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
+    null
+  );
+
+  const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
+
+  const { branches } = useBranches(
+    selectedFacultyId,
+    programId || "",
+    selectedYear
+  );
 
   async function login() {
-
     const username = process.env.REACT_APP_USERNAME;
     const password = process.env.REACT_APP_PASSWORD;
 
@@ -428,17 +115,16 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     };
 
     try {
-      const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login",
+      const response = await axios.post(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login",
         { uid: username },
         { headers: headers, withCredentials: true }
       );
 
       console.log("Login successful", response);
-
     } catch (error) {
       console.error("Login failed", error);
     }
-
   }
 
   useEffect(() => {
@@ -469,43 +155,29 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     }
   }, [uid]);
 
-
   useEffect(() => {
-
     const fetchData = async () => {
       try {
-        const response = await axios.get("https://europe-west3-pameten-urnik.cloudfunctions.net/course-getAllForBranch", {
-          params: {
-            facultyId: selectedFacultyId,
-            branchId: selectedBranch
-          },
-          withCredentials: true
-        });
-        console.log('Response:', response.data);
-        /*
-                const formattedEvents: EventInput[] = response.data.result.map((course) => {
-                  return {
-                    id: course.id,
-                    title: course.course,
-                    start: 
-                    end: 
-                    extendedProps: {
-                      // ... 
-                    },
-                  };
-                });
-                setEvents(formattedEvents);
-                */
-
+        const response = await axios.get(
+          "https://europe-west3-pameten-urnik.cloudfunctions.net/course-getAllForBranch",
+          {
+            params: {
+              facultyId: selectedFacultyId,
+              branchId: selectedBranch,
+            },
+            withCredentials: true,
+          }
+        );
+        console.log("Response:", response.data);
       } catch (error: any) {
         if (error.response && error.response.status === 401) {
           try {
             await login();
           } catch (loginError) {
-            console.error('Napaka pri prijavi:', loginError);
+            console.error("Napaka pri prijavi:", loginError);
           }
         } else {
-          console.error('Error fetching data:', error);
+          console.error("Error fetching data:", error);
         }
       }
     };
@@ -516,9 +188,6 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
 
     console.log(selectedBranch);
   }, [selectedBranch]);
-
-
-
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = events.find(
@@ -599,93 +268,112 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   return (
     <div className="w-full p-5">
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
-      <div className="flex flex-col items-start mb-4">
-        <div className="flex space-x-4">
-          <DropdownMenuFaculties
-            onSelectFaculty={(id) => {
-              setSelectedFacultyId(id);
-              const selectedFaculty = faculties.find(
-                (faculty) => faculty.id === id
-              );
-              setSelectedFacultyName(
-                selectedFaculty ? selectedFaculty.name : null
-              );
-              setSelectedProgramName(null); // Clear subsequent selections
-              setSelectedYearName(null);
-              setSelectedBranchName(null);
-            }}
-            selectedFacultyName={selectedFacultyName}
-          />
-          <DropdownMenuPrograms
-            facultyId={selectedFacultyId}
-            onSelectProgram={(id, duration) => {
-              setProgramId(id);
-              setProgramDuration(duration);
-              const selectedProgram = programs.find(
-                (program) => program.id === id
-              );
-              setSelectedProgramName(
-                selectedProgram ? selectedProgram.name : null
-              );
-              setSelectedYearName(null); // Clear subsequent selections
-              setSelectedBranchName(null);
-            }}
-            selectedProgramName={selectedProgramName}
-          />
-          <DropdownMenuYear
-            programDuration={programDuration}
-            onSelectYear={(year) => {
-              setSelectedYear(year);
-              setSelectedYearName(year ? year.toString() : null);
-              setSelectedBranchName(null); // Clear subsequent selections
-            }}
-            selectedYear={selectedYearName}
-          />
-          <DropdownMenuBranches
-            facultyId={selectedFacultyId}
-            programId={programId || ""}
-            selectedYear={selectedYear}
-            onSelectBranch={(id) => {
-              setSelectedBranch(id);
-              const selectedBranch = branches.find(
-                (branch) => branch.id === id
-              );
-              setSelectedBranchName(
-                selectedBranch ? selectedBranch.name : null
-              );
-            }}
-            selectedBranchName={selectedBranchName}
-          />
-        </div>
-        <div className="mt-4 w-full bg-white rounded-lg p-4">
-          <FullCalendar
-            height={"auto"}
-            slotMinTime={"7:00"}
-            slotMaxTime={"21:00"}
-            plugins={[timeGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
-            weekends={false}
-            events={events}
-            eventContent={renderEventContent}
-            headerToolbar={{
-              left: "title",
-              center: "",
-              right: "prev,next today",
-            }}
-            titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
-            dayHeaderClassNames="font-bold text-lg"
-            dayHeaderFormat={{
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            }}
-            selectable={true}
-            selectMirror={true}
-            unselectAuto={true}
-            eventClick={handleEventClick}
-            select={handleDateSelect}
-          />
-        </div>
+      <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+        <DropdownMenuFaculties
+          onSelectFaculty={(id) => {
+            setSelectedFacultyId(id);
+            const selectedFaculty = faculties.find(
+              (faculty) => faculty.id === id
+            );
+            setSelectedFacultyName(
+              selectedFaculty ? selectedFaculty.name : null
+            );
+            setSelectedProgramName(null);
+            setSelectedYearName(null);
+            setSelectedBranchName(null);
+          }}
+          selectedFacultyName={selectedFacultyName}
+        />
+        <DropdownMenuPrograms
+          facultyId={selectedFacultyId}
+          onSelectProgram={(id, duration) => {
+            setProgramId(id);
+            setProgramDuration(duration);
+            const selectedProgram = programs.find(
+              (program) => program.id === id
+            );
+            setSelectedProgramName(
+              selectedProgram ? selectedProgram.name : null
+            );
+            setSelectedYearName(null);
+            setSelectedBranchName(null);
+          }}
+          selectedProgramName={selectedProgramName}
+        />
+        <DropdownMenuYear
+          programDuration={programDuration}
+          onSelectYear={(year) => {
+            setSelectedYear(year);
+            setSelectedYearName(year ? year.toString() : null);
+            setSelectedBranchName(null);
+          }}
+          selectedYear={selectedYearName}
+        />
+        <DropdownMenuBranches
+          facultyId={selectedFacultyId}
+          programId={programId || ""}
+          selectedYear={selectedYear}
+          onSelectBranch={(id) => {
+            setSelectedBranch(id);
+            const selectedBranch = branches.find((branch) => branch.id === id);
+            setSelectedBranchName(selectedBranch ? selectedBranch.name : null);
+          }}
+          selectedBranchName={selectedBranchName}
+        />
+      </div>
+      <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+        <DropdownMenuCourses
+          branchId={selectedBranch}
+          programId={programId}
+          onSelectCourse={(name) => {
+            setSelectedCourseName(name);
+          }}
+          selectedCourseName={selectedCourseName}
+        />
+        <DropdownMenuGroups
+          branchId={selectedBranch}
+          programId={programId}
+          onSelectGroup={(id, name) => {
+            setSelectedGroupName(name);
+          }}
+          selectedGroupName={selectedGroupName}
+        />
+        <DropdownMenuRooms
+          facultyId={selectedFacultyId}
+          onSelectRoom={(id, name) => {
+            setSelectedRoomName(name);
+          }}
+          selectedRoomName={selectedRoomName}
+        />
+      </div>
+      <div className="mt-4 w-full bg-white rounded-lg p-4">
+        <FullCalendar
+          height={"auto"}
+          slotMinTime={"7:00"}
+          slotMaxTime={"21:00"}
+          plugins={[timeGridPlugin, interactionPlugin]}
+          initialView="timeGridWeek"
+          weekends={false}
+          events={events}
+          eventContent={renderEventContent}
+          headerToolbar={{
+            left: "title",
+            center: "",
+            right: "prev,next today",
+          }}
+          titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
+          dayHeaderClassNames="font-bold text-lg"
+          dayHeaderFormat={{
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          }}
+          selectable={true}
+          selectMirror={true}
+          unselectAuto={true}
+          eventClick={handleEventClick}
+          select={handleDateSelect}
+        />
       </div>
 
       <CustomModal
