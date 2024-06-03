@@ -21,6 +21,8 @@ import useBranches from "../../Components/Hooks/useBranches";
 import { BASE_URL } from "../../api";
 import { firestore } from "../../Config/firebase";
 import dayjs, { Dayjs } from "dayjs";
+import axios from "axios";
+import { Buffer } from "buffer";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -399,36 +401,45 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = React.useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
-  const [selectedFacultyId, setSelectedFacultyId] = useState(
-    () => localStorage.getItem("selectedFacultyId") || ""
-  );
-  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
-    null
-  );
+
+  const [selectedFacultyId, setSelectedFacultyId] = useState(() => localStorage.getItem("selectedFacultyId") || "");
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(null);
   const { faculties } = useFaculties(); // Make sure this is defined to use faculties
-  const [programId, setProgramId] = useState<string | null>(
-    () => localStorage.getItem("selectedProgramId") || null
-  );
-  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
-    null
-  );
+  const [programId, setProgramId] = useState<string | null>(() => localStorage.getItem("selectedProgramId") || null);
+  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(null);
   const { programs } = usePrograms(selectedFacultyId); // Make sure this is defined to use programs
   const [programDuration, setProgramDuration] = useState<number | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(
-    () => Number(localStorage.getItem("selectedYearId")) || null
-  );
+  const [selectedYear, setSelectedYear] = useState<number | null>(() => Number(localStorage.getItem("selectedYearId")) || null);
   const [selectedYearName, setSelectedYearName] = useState<string | null>(null);
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(
-    () => localStorage.getItem("selectedBranchId") || null
-  );
-  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
-    null
-  );
-  const { branches } = useBranches(
-    selectedFacultyId,
-    programId || "",
-    selectedYear
-  ); // Make sure this is defined to use branches
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(() => localStorage.getItem("selectedBranchId") || null);
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);
+  const { branches } = useBranches(selectedFacultyId, programId || "", selectedYear); // Make sure this is defined to use branches
+
+  async function login() {
+
+    const username = process.env.REACT_APP_USERNAME;
+    const password = process.env.REACT_APP_PASSWORD;
+
+    const bufferedCredentials = Buffer.from(`${username}:${password}`);
+    const credentials = bufferedCredentials.toString("base64");
+    const headers = {
+      Authorization: `Basic ${credentials}`,
+      "Content-Type": "application/json",
+    };
+
+    try {
+      const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login",
+        { uid: username },
+        { headers: headers, withCredentials: true }
+      );
+
+      console.log("Login successful", response);
+
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+
+  }
 
   useEffect(() => {
     if (isAuthenticated && uid) {
@@ -457,6 +468,57 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       return () => unsubscribe();
     }
   }, [uid]);
+
+
+  useEffect(() => {
+
+    const fetchData = async () => {
+      try {
+        const response = await axios.get("https://europe-west3-pameten-urnik.cloudfunctions.net/course-getAllForBranch", {
+          params: {
+            facultyId: selectedFacultyId,
+            branchId: selectedBranch
+          },
+          withCredentials: true
+        });
+        console.log('Response:', response.data);
+        /*
+                const formattedEvents: EventInput[] = response.data.result.map((course) => {
+                  return {
+                    id: course.id,
+                    title: course.course,
+                    start: 
+                    end: 
+                    extendedProps: {
+                      // ... 
+                    },
+                  };
+                });
+                setEvents(formattedEvents);
+                */
+
+      } catch (error: any) {
+        if (error.response && error.response.status === 401) {
+          try {
+            await login();
+          } catch (loginError) {
+            console.error('Napaka pri prijavi:', loginError);
+          }
+        } else {
+          console.error('Error fetching data:', error);
+        }
+      }
+    };
+
+    if (selectedFacultyId && selectedBranch) {
+      fetchData();
+    }
+
+    console.log(selectedBranch);
+  }, [selectedBranch]);
+
+
+
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = events.find(

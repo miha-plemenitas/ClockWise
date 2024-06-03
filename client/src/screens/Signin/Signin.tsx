@@ -4,16 +4,8 @@ import { Input } from "../../Components/ui/input";
 import { Button } from "../../Components/ui/button";
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, Providers } from '../../Config/firebase';
-import { BASE_URL } from "../../api";
-
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.5 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { duration: 0.8, delay: 0.5, ease: [0, 0.71, 0.2, 1.01] },
-  },
-};
+import axios from "axios";
+import Cookies from 'js-cookie';
 
 interface SigninProps {
   onSignin: () => void;
@@ -35,7 +27,9 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
     setPassword(e.target.value);
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
+    /*
     e.preventDefault();
     setAuthenticating(true);
     setError(null);
@@ -46,13 +40,39 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
       navigate('/dashboard');
     } catch (error) {
       setEmail('');
-      setPassword('');	
+      setPassword('');
       setAuthenticating(false);
       setError("Incorrect email or password. Please try again.");
     } finally {
       setIsLoading(false);
     }
+    */
   };
+
+  async function login() {
+
+    const username = process.env.REACT_APP_USERNAME;
+    const password = process.env.REACT_APP_PASSWORD;
+
+    const bufferedCredentials = Buffer.from(`${username}:${password}`);
+    const credentials = bufferedCredentials.toString("base64");
+    const headers = {
+      Authorization: `Basic ${credentials}`,
+      "Content-Type": "application/json",
+    };
+
+    try {
+      const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login",
+        { uid: username },
+        { headers: headers, withCredentials: true }
+      );
+
+      console.log("Login successful", response);
+
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+  }
 
   const signInWithGoogle = async () => {
     try {
@@ -60,23 +80,28 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
       const user = result.user;
       if (user) {
         const uid = user.uid;
-  
-        const response = await fetch(`${BASE_URL}/signin`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ uid })
-        });
-  
-        const data = await response.json();
-        if (response.ok) {
-          onSignin();
-          navigate('/dashboard');
-        } else {
-          console.error('Server error: ', data.error);
-          setError("An error occurred with Google sign-in. Please try again.");
+        try {
+          const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/user-add",
+            { uid },
+            { withCredentials: true }
+          );
+          console.log('Response:', response.data);
+        } catch (error: any) {
+          if (error.response && error.response.status === 401) {
+            try {
+              await login();
+              await signInWithGoogle();
+              return;
+            } catch (loginError) {
+              console.error('Napaka pri prijavi:', loginError);
+            }
+          } else {
+            console.error('Error fetching data:', error);
+          }
         }
+
+        onSignin();
+        navigate('/dashboard');
       }
     } catch (error) {
       setError("An error occurred with Google sign-in. Please try again.");
