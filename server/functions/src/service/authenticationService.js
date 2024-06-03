@@ -32,7 +32,6 @@ const checkJwt = async (request) => {
 };
 
 
-
 module.exports = {
-  checkJwt,
+  checkJwt
 }

@@ -1,14 +1,22 @@
-require("dotenv").config();
+require("dotenv").config({ path: "./.env" });
 const axios = require("axios");
 const Buffer = require("buffer").Buffer;
 
 const loginUrl =
   "https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login";
-const username = process.env.USERNAME;
-const password = process.env.PASSWORD;
+const username = process.env.APP_USERNAME;
+const password = process.env.APP_PASSWORD;
 
-console.log("Username from env:", username);
-console.log("Password from env:", password);
+console.log("Username from env file:", username);
+console.log("Password from env file:", password);
+
+if (!username || !password) {
+  console.error("Username or password environment variable is not set.");
+  process.exit(1); // Exit the script with an error code
+}
+
+console.log("Username used:", username);
+console.log("Password used:", password);
 
 async function login() {
   const bufferedCredentials = Buffer.from(`${username}:${password}`);
