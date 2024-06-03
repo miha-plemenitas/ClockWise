@@ -10,10 +10,16 @@ interface Course {
 
 const useCourses = (branchId: string | null, programId: string | null) => {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!branchId || !programId) {
+      setCourses([]);
+      setLoading(false);
+      return;
+    }
+
     const fetchCourses = async () => {
       setLoading(true);
       try {
@@ -23,16 +29,11 @@ const useCourses = (branchId: string | null, programId: string | null) => {
           ...doc.data(),
         })) as Course[];
 
-        console.log("All Courses:", allCourses); // Log fetched courses
-
-        const filteredCourses =
-          branchId && programId
-            ? allCourses.filter(
-                (course) =>
-                  course.branchId === Number(branchId) &&
-                  course.programId === Number(programId)
-              )
-            : allCourses;
+        const filteredCourses = allCourses.filter(
+          (course) =>
+            course.branchId === Number(branchId) &&
+            course.programId === Number(programId)
+        );
 
         setCourses(filteredCourses);
       } catch (err) {

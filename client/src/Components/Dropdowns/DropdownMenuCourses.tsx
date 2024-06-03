@@ -37,6 +37,10 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
     }
   }, [selectedCourseName]);
 
+  if (!branchId || !programId) {
+    return <p>Select a branch and program to load courses.</p>;
+  }
+
   if (loading) {
     return <p>Loading courses...</p>;
   }

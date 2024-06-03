@@ -15,6 +15,7 @@ import DropdownMenuBranches from "../../Components/Dropdowns/DropdownMenuBranche
 import DropdownMenuCourses from "../../Components/Dropdowns/DropdownMenuCourses";
 import DropdownMenuGroups from "../../Components/Dropdowns/DropdownMenuGroups";
 import DropdownMenuRooms from "../../Components/Dropdowns/DropdownMenuRooms";
+import DropdownMenuTutors from "../../Components/Dropdowns/DropdownMenuTutors";
 
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
@@ -96,6 +97,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   );
 
   const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
+
+  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(
+    null
+  );
 
   const { branches } = useBranches(
     selectedFacultyId,
@@ -321,31 +326,40 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           selectedBranchName={selectedBranchName}
         />
       </div>
-      <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
-        <DropdownMenuCourses
-          branchId={selectedBranch}
-          programId={programId}
-          onSelectCourse={(name) => {
-            setSelectedCourseName(name);
-          }}
-          selectedCourseName={selectedCourseName}
-        />
-        <DropdownMenuGroups
-          branchId={selectedBranch}
-          programId={programId}
-          onSelectGroup={(id, name) => {
-            setSelectedGroupName(name);
-          }}
-          selectedGroupName={selectedGroupName}
-        />
-        <DropdownMenuRooms
-          facultyId={selectedFacultyId}
-          onSelectRoom={(id, name) => {
-            setSelectedRoomName(name);
-          }}
-          selectedRoomName={selectedRoomName}
-        />
-      </div>
+      {selectedBranch && (
+        <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+          <DropdownMenuCourses
+            branchId={selectedBranch}
+            programId={programId}
+            onSelectCourse={(name) => {
+              setSelectedCourseName(name);
+            }}
+            selectedCourseName={selectedCourseName}
+          />
+          <DropdownMenuGroups
+            branchId={selectedBranch}
+            programId={programId}
+            onSelectGroup={(id, name) => {
+              setSelectedGroupName(name);
+            }}
+            selectedGroupName={selectedGroupName}
+          />
+          <DropdownMenuRooms
+            facultyId={selectedFacultyId}
+            onSelectRoom={(id, name) => {
+              setSelectedRoomName(name);
+            }}
+            selectedRoomName={selectedRoomName}
+          />
+          <DropdownMenuTutors
+            facultyId={selectedFacultyId}
+            onSelectTutor={(id, name) => {
+              setSelectedTutorName(name);
+            }}
+            selectedTutorName={selectedTutorName}
+          />
+        </div>
+      )}
       <div className="mt-4 w-full bg-white rounded-lg p-4">
         <FullCalendar
           height={"auto"}

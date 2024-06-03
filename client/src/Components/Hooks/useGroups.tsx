@@ -10,10 +10,16 @@ interface Group {
 
 const useGroups = (branchId: string | null, programId: string | null) => {
   const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!branchId || !programId) {
+      setGroups([]);
+      setLoading(false);
+      return;
+    }
+
     const fetchGroups = async () => {
       setLoading(true);
       try {
@@ -23,14 +29,11 @@ const useGroups = (branchId: string | null, programId: string | null) => {
           ...doc.data(),
         })) as Group[];
 
-        const filteredGroups =
-          branchId && programId
-            ? allGroups.filter(
-                (group) =>
-                  group.branchId === Number(branchId) &&
-                  group.programId === Number(programId)
-              )
-            : allGroups;
+        const filteredGroups = allGroups.filter(
+          (group) =>
+            group.branchId === Number(branchId) &&
+            group.programId === Number(programId)
+        );
 
         setGroups(filteredGroups);
       } catch (err) {

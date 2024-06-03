@@ -30,15 +30,14 @@ const DropdownMenuGroups: React.FC<DropdownMenuGroupsProps> = ({
   const { groups, loading, error } = useGroups(branchId, programId);
 
   useEffect(() => {
-    const storedGroupId = localStorage.getItem("selectedGroupId");
-    if (storedGroupId) {
-      const selectedGroup = groups.find((group) => group.id === storedGroupId);
-      if (selectedGroup) {
-        setSelectedGroups(selectedGroup.name);
-        onSelectGroup(selectedGroup.id, selectedGroup.name);
-      }
+    if (selectedGroupName) {
+      setSelectedGroups(selectedGroupName);
     }
-  }, [groups, onSelectGroup]);
+  }, [selectedGroupName]);
+
+  if (!branchId || !programId) {
+    return <p>Select a branch and program to load groups.</p>;
+  }
 
   if (loading) {
     return <p>Loading groups...</p>;
@@ -85,9 +84,9 @@ const DropdownMenuGroups: React.FC<DropdownMenuGroupsProps> = ({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedGroupName && selectedGroups && (
+      {selectedGroups && (
         <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedGroupName}
+          {selectedGroups}
         </div>
       )}
     </div>
