@@ -10,51 +10,49 @@ import {
 } from "../../Components/ui/dropdown-menu";
 import { Button } from "../../Components/ui/button";
 import { FaChevronDown } from "react-icons/fa";
-import useCourses from "../../Components/Hooks/useCourses";
+import useGroups from "../../Components/Hooks/useGroups";
 
-interface DropdownMenuCoursesProps {
+interface DropdownMenuGroupsProps {
   branchId: string | null;
   programId: string | null;
-  onSelectCourse: (courseName: string) => void;
-  selectedCourseName: string | null;
+  onSelectGroup: (groupId: string, groupName: string) => void;
+  selectedGroupName: string | null;
 }
 
-const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
+const DropdownMenuGroups: React.FC<DropdownMenuGroupsProps> = ({
   branchId,
   programId,
-  onSelectCourse,
-  selectedCourseName,
+  onSelectGroup,
+  selectedGroupName,
 }) => {
-  const [selectedCourses, setSelectedCourses] = useState(
-    selectedCourseName || ""
-  );
+  const [selectedGroups, setSelectedGroups] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const { courses, loading, error } = useCourses(branchId, programId);
+  const { groups, loading, error } = useGroups(branchId, programId);
 
   useEffect(() => {
-    if (selectedCourseName) {
-      setSelectedCourses(selectedCourseName);
+    if (selectedGroupName) {
+      setSelectedGroups(selectedGroupName);
     }
-  }, [selectedCourseName]);
+  }, [selectedGroupName]);
 
   if (!branchId || !programId) {
-    return <p>Select a branch and program to load courses.</p>;
+    return <p>Select a branch and program to load groups.</p>;
   }
 
   if (loading) {
-    return <p>Loading courses...</p>;
+    return <p>Loading groups...</p>;
   }
 
   if (error) {
-    return <p>Error loading courses: {error}</p>;
+    return <p>Error loading groups: {error}</p>;
   }
 
   const handleSelect = (value: string) => {
-    setSelectedCourses(value);
-    const selectedCourse = courses.find((course) => course.course === value);
-    if (selectedCourse) {
-      onSelectCourse(selectedCourse.course);
-      localStorage.setItem("selectedCourseId", selectedCourse.id);
+    setSelectedGroups(value);
+    const selectedGroup = groups.find((group) => group.name === value);
+    if (selectedGroup) {
+      onSelectGroup(selectedGroup.id, selectedGroup.name);
+      localStorage.setItem("selectedGroupId", selectedGroup.id);
     }
   };
 
@@ -63,7 +61,7 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
       <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
         <DropdownMenuTrigger asChild>
           <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
-            <span>Courses</span>
+            <span>Groups</span>
             <FaChevronDown
               className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
             />
@@ -71,28 +69,28 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent className="min-w-max max-w-sm">
           <DropdownMenuLabel className="text-modra">
-            Select Course
+            Select Group
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuRadioGroup
-            value={selectedCourses}
+            value={selectedGroups}
             onValueChange={handleSelect}
           >
-            {courses.map((course) => (
-              <DropdownMenuRadioItem key={course.id} value={course.course}>
-                {course.course}
+            {groups.map((group) => (
+              <DropdownMenuRadioItem key={group.id} value={group.name}>
+                {group.name}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedCourses && (
+      {selectedGroups && (
         <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedCourses}
+          {selectedGroups}
         </div>
       )}
     </div>
   );
 };
 
-export default DropdownMenuCourses;
+export default DropdownMenuGroups;

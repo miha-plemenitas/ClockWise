@@ -13,10 +13,15 @@ import DropdownMenuPrograms from "../../Components/Dropdowns/DropdownMenuProgram
 import DropdownMenuYear from "../../Components/Dropdowns/DropdownMenuYear";
 import DropdownMenuBranches from "../../Components/Dropdowns/DropdownMenuBranches";
 import DropdownMenuCourses from "../../Components/Dropdowns/DropdownMenuCourses";
+import DropdownMenuGroups from "../../Components/Dropdowns/DropdownMenuGroups";
+import DropdownMenuRooms from "../../Components/Dropdowns/DropdownMenuRooms";
+import DropdownMenuTutors from "../../Components/Dropdowns/DropdownMenuTutors";
 
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
 import useBranches from "../../Components/Hooks/useBranches";
+import axios from "axios";
+import { Buffer } from "buffer";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -52,39 +57,80 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
+
   const [selectedFacultyId, setSelectedFacultyId] = useState(
     () => localStorage.getItem("selectedFacultyId") || ""
   );
   const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
     null
   );
-  const { faculties } = useFaculties(); // Make sure this is defined to use faculties
+  const { faculties } = useFaculties();
+
   const [programId, setProgramId] = useState<string | null>(
     () => localStorage.getItem("selectedProgramId") || null
   );
   const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
     null
   );
-  const { programs } = usePrograms(selectedFacultyId); // Make sure this is defined to use programs
+  const { programs } = usePrograms(selectedFacultyId);
+
   const [programDuration, setProgramDuration] = useState<number | null>(null);
+
   const [selectedYear, setSelectedYear] = useState<number | null>(
     () => Number(localStorage.getItem("selectedYearId")) || null
   );
   const [selectedYearName, setSelectedYearName] = useState<string | null>(null);
+
   const [selectedBranch, setSelectedBranch] = useState<string | null>(
     () => localStorage.getItem("selectedBranchId") || null
   );
   const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
     null
   );
+
   const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
     null
   );
+
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
+    null
+  );
+
+  const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
+
+  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(
+    null
+  );
+
   const { branches } = useBranches(
     selectedFacultyId,
     programId || "",
     selectedYear
-  ); // Make sure this is defined to use branches
+  );
+
+  async function login() {
+    const username = process.env.REACT_APP_USERNAME;
+    const password = process.env.REACT_APP_PASSWORD;
+
+    const bufferedCredentials = Buffer.from(`${username}:${password}`);
+    const credentials = bufferedCredentials.toString("base64");
+    const headers = {
+      Authorization: `Basic ${credentials}`,
+      "Content-Type": "application/json",
+    };
+
+    try {
+      const response = await axios.post(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login",
+        { uid: username },
+        { headers: headers, withCredentials: true }
+      );
+
+      console.log("Login successful", response);
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+  }
 
   useEffect(() => {
     if (isAuthenticated && uid) {
@@ -113,6 +159,40 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       return () => unsubscribe();
     }
   }, [uid]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(
+          "https://europe-west3-pameten-urnik.cloudfunctions.net/course-getAllForBranch",
+          {
+            params: {
+              facultyId: selectedFacultyId,
+              branchId: selectedBranch,
+            },
+            withCredentials: true,
+          }
+        );
+        console.log("Response:", response.data);
+      } catch (error: any) {
+        if (error.response && error.response.status === 401) {
+          try {
+            await login();
+          } catch (loginError) {
+            console.error("Napaka pri prijavi:", loginError);
+          }
+        } else {
+          console.error("Error fetching data:", error);
+        }
+      }
+    };
+
+    if (selectedFacultyId && selectedBranch) {
+      fetchData();
+    }
+
+    console.log(selectedBranch);
+  }, [selectedBranch]);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = events.find(
@@ -193,67 +273,61 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   return (
     <div className="w-full p-5">
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
-      <div className="flex flex-col items-start mb-4">
-        <div className="flex space-x-4">
-          <DropdownMenuFaculties
-            onSelectFaculty={(id) => {
-              setSelectedFacultyId(id);
-              const selectedFaculty = faculties.find(
-                (faculty) => faculty.id === id
-              );
-              setSelectedFacultyName(
-                selectedFaculty ? selectedFaculty.name : null
-              );
-              setSelectedProgramName(null);
-              setSelectedYearName(null);
-              setSelectedBranchName(null);
-              setSelectedCourseName(null);
-            }}
-            selectedFacultyName={selectedFacultyName}
-          />
-          <DropdownMenuPrograms
-            facultyId={selectedFacultyId}
-            onSelectProgram={(id, duration) => {
-              setProgramId(id);
-              setProgramDuration(duration);
-              const selectedProgram = programs.find(
-                (program) => program.id === id
-              );
-              setSelectedProgramName(
-                selectedProgram ? selectedProgram.name : null
-              );
-              setSelectedYearName(null); // Clear subsequent selections
-              setSelectedBranchName(null);
-              setSelectedCourseName(null);
-            }}
-            selectedProgramName={selectedProgramName}
-          />
-          <DropdownMenuYear
-            programDuration={programDuration}
-            onSelectYear={(year) => {
-              setSelectedYear(year);
-              setSelectedYearName(year ? year.toString() : null);
-              setSelectedBranchName(null); // Clear subsequent selections
-              setSelectedCourseName(null);
-            }}
-            selectedYear={selectedYearName}
-          />
-          <DropdownMenuBranches
-            facultyId={selectedFacultyId}
-            programId={programId || ""}
-            selectedYear={selectedYear}
-            onSelectBranch={(id) => {
-              setSelectedBranch(id);
-              const selectedBranch = branches.find(
-                (branch) => branch.id === id
-              );
-              setSelectedBranchName(
-                selectedBranch ? selectedBranch.name : null
-              );
-              setSelectedCourseName(null); // Clear subsequent selections
-            }}
-            selectedBranchName={selectedBranchName}
-          />
+      <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+        <DropdownMenuFaculties
+          onSelectFaculty={(id) => {
+            setSelectedFacultyId(id);
+            const selectedFaculty = faculties.find(
+              (faculty) => faculty.id === id
+            );
+            setSelectedFacultyName(
+              selectedFaculty ? selectedFaculty.name : null
+            );
+            setSelectedProgramName(null);
+            setSelectedYearName(null);
+            setSelectedBranchName(null);
+          }}
+          selectedFacultyName={selectedFacultyName}
+        />
+        <DropdownMenuPrograms
+          facultyId={selectedFacultyId}
+          onSelectProgram={(id, duration) => {
+            setProgramId(id);
+            setProgramDuration(duration);
+            const selectedProgram = programs.find(
+              (program) => program.id === id
+            );
+            setSelectedProgramName(
+              selectedProgram ? selectedProgram.name : null
+            );
+            setSelectedYearName(null);
+            setSelectedBranchName(null);
+          }}
+          selectedProgramName={selectedProgramName}
+        />
+        <DropdownMenuYear
+          programDuration={programDuration}
+          onSelectYear={(year) => {
+            setSelectedYear(year);
+            setSelectedYearName(year ? year.toString() : null);
+            setSelectedBranchName(null);
+          }}
+          selectedYear={selectedYearName}
+        />
+        <DropdownMenuBranches
+          facultyId={selectedFacultyId}
+          programId={programId || ""}
+          selectedYear={selectedYear}
+          onSelectBranch={(id) => {
+            setSelectedBranch(id);
+            const selectedBranch = branches.find((branch) => branch.id === id);
+            setSelectedBranchName(selectedBranch ? selectedBranch.name : null);
+          }}
+          selectedBranchName={selectedBranchName}
+        />
+      </div>
+      {selectedBranch && (
+        <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
           <DropdownMenuCourses
             branchId={selectedBranch}
             programId={programId}
@@ -262,36 +336,58 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
             }}
             selectedCourseName={selectedCourseName}
           />
-        </div>
-        <div className="mt-4 w-full bg-white rounded-lg p-4">
-          <FullCalendar
-            height={"auto"}
-            slotMinTime={"7:00"}
-            slotMaxTime={"21:00"}
-            plugins={[timeGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
-            weekends={false}
-            events={events}
-            eventContent={renderEventContent}
-            headerToolbar={{
-              left: "title",
-              center: "",
-              right: "prev,next today",
+          <DropdownMenuGroups
+            branchId={selectedBranch}
+            programId={programId}
+            onSelectGroup={(id, name) => {
+              setSelectedGroupName(name);
             }}
-            titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
-            dayHeaderClassNames="font-bold text-lg"
-            dayHeaderFormat={{
-              weekday: "short",
-              month: "short",
-              day: "numeric",
+            selectedGroupName={selectedGroupName}
+          />
+          <DropdownMenuRooms
+            facultyId={selectedFacultyId}
+            onSelectRoom={(id, name) => {
+              setSelectedRoomName(name);
             }}
-            selectable={true}
-            selectMirror={true}
-            unselectAuto={true}
-            eventClick={handleEventClick}
-            select={handleDateSelect}
+            selectedRoomName={selectedRoomName}
+          />
+          <DropdownMenuTutors
+            facultyId={selectedFacultyId}
+            onSelectTutor={(id, name) => {
+              setSelectedTutorName(name);
+            }}
+            selectedTutorName={selectedTutorName}
           />
         </div>
+      )}
+      <div className="mt-4 w-full bg-white rounded-lg p-4">
+        <FullCalendar
+          height={"auto"}
+          slotMinTime={"7:00"}
+          slotMaxTime={"21:00"}
+          plugins={[timeGridPlugin, interactionPlugin]}
+          initialView="timeGridWeek"
+          weekends={false}
+          events={events}
+          eventContent={renderEventContent}
+          headerToolbar={{
+            left: "title",
+            center: "",
+            right: "prev,next today",
+          }}
+          titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
+          dayHeaderClassNames="font-bold text-lg"
+          dayHeaderFormat={{
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          }}
+          selectable={true}
+          selectMirror={true}
+          unselectAuto={true}
+          eventClick={handleEventClick}
+          select={handleDateSelect}
+        />
       </div>
 
       <CustomModal

@@ -10,51 +10,48 @@ import {
 } from "../../Components/ui/dropdown-menu";
 import { Button } from "../../Components/ui/button";
 import { FaChevronDown } from "react-icons/fa";
-import useCourses from "../../Components/Hooks/useCourses";
+import useRooms from "../../Components/Hooks/useRooms";
 
-interface DropdownMenuCoursesProps {
-  branchId: string | null;
-  programId: string | null;
-  onSelectCourse: (courseName: string) => void;
-  selectedCourseName: string | null;
+interface DropdownMenuRoomsProps {
+  facultyId: string | null;
+  onSelectRoom: (id: string, name: string) => void;
+  selectedRoomName: string | null;
 }
 
-const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
-  branchId,
-  programId,
-  onSelectCourse,
-  selectedCourseName,
+const DropdownMenuRooms: React.FC<DropdownMenuRoomsProps> = ({
+  facultyId,
+  onSelectRoom,
+  selectedRoomName,
 }) => {
-  const [selectedCourses, setSelectedCourses] = useState(
-    selectedCourseName || ""
-  );
+  const [selectedRooms, setSelectedRooms] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const { courses, loading, error } = useCourses(branchId, programId);
+  const { rooms, loading, error } = useRooms(facultyId);
 
   useEffect(() => {
-    if (selectedCourseName) {
-      setSelectedCourses(selectedCourseName);
+    const storedRoomId = localStorage.getItem("selectedRoomId");
+    if (storedRoomId) {
+      const selectedRoom = rooms.find((room) => room.id === storedRoomId);
+      if (selectedRoom) {
+        setSelectedRooms(selectedRoom.roomName);
+        onSelectRoom(storedRoomId, selectedRoom.roomName);
+      }
     }
-  }, [selectedCourseName]);
-
-  if (!branchId || !programId) {
-    return <p>Select a branch and program to load courses.</p>;
-  }
+  }, [rooms, onSelectRoom]);
 
   if (loading) {
-    return <p>Loading courses...</p>;
+    return <p>Loading rooms...</p>;
   }
 
   if (error) {
-    return <p>Error loading courses: {error}</p>;
+    return <p>Error loading rooms: {error}</p>;
   }
 
   const handleSelect = (value: string) => {
-    setSelectedCourses(value);
-    const selectedCourse = courses.find((course) => course.course === value);
-    if (selectedCourse) {
-      onSelectCourse(selectedCourse.course);
-      localStorage.setItem("selectedCourseId", selectedCourse.id);
+    setSelectedRooms(value);
+    const selectedRoom = rooms.find((room) => room.roomName === value);
+    if (selectedRoom) {
+      onSelectRoom(selectedRoom.id, selectedRoom.roomName);
+      localStorage.setItem("selectedRoomId", selectedRoom.id);
     }
   };
 
@@ -63,7 +60,7 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
       <DropdownMenu onOpenChange={(open) => setIsOpen(open)}>
         <DropdownMenuTrigger asChild>
           <Button className="bg-modra text-white hover:bg-modra-700 flex items-center space-x-2 w-full">
-            <span>Courses</span>
+            <span>Rooms</span>
             <FaChevronDown
               className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
             />
@@ -71,28 +68,28 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent className="min-w-max max-w-sm">
           <DropdownMenuLabel className="text-modra">
-            Select Course
+            Select Room
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuRadioGroup
-            value={selectedCourses}
+            value={selectedRooms}
             onValueChange={handleSelect}
           >
-            {courses.map((course) => (
-              <DropdownMenuRadioItem key={course.id} value={course.course}>
-                {course.course}
+            {rooms.map((room) => (
+              <DropdownMenuRadioItem key={room.id} value={room.roomName}>
+                {room.roomName}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedCourses && (
+      {selectedRoomName && selectedRooms && (
         <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedCourses}
+          {selectedRoomName}
         </div>
       )}
     </div>
   );
 };
 
-export default DropdownMenuCourses;
+export default DropdownMenuRooms;
