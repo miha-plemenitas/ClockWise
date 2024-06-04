@@ -7,6 +7,7 @@ const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const { handleErrors } = require("../utils/endpointHelpers");
 
+
 /**
  * Cloud Function to add faculty documents from a list.
  * This function runs with a specified timeout and memory allocation, and is triggered via an HTTP request.

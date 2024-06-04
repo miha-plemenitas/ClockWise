@@ -150,6 +150,8 @@ function processRoomData(room) {
     id: room.id.toString(),
     roomId: Number(room.id),
     roomName: room.name,
+    size: room.size,
+    equipment: room.equipment
   };
 }
 

@@ -1,5 +1,25 @@
 const { processRoomData } = require('../utils/dataProcessors');
 const { processItemsInBatch } = require('../utils/batchOperations');
+const { roomData, roomBonusBlankFields } = require("../constants/room");
+
+
+function enhanceRoomDetails(room) {
+  let roomEnhanced = false;
+  for (const roomDataEntry of roomData) {
+    if (roomDataEntry.roomName === room.name) {
+      room.size = roomDataEntry.size;
+      room.equipment = roomDataEntry.equipment;
+      roomEnhanced = true;
+      break;
+    }
+  }
+
+  if (!roomEnhanced) {
+    room.size = roomBonusBlankFields.size;
+    room.equipment = roomBonusBlankFields.equipment;
+  }
+}
+
 
 /**
  * Fetches unique rooms from lectures for a given faculty document.
@@ -20,15 +40,16 @@ async function fetchRoomsByFacultyDoc(facultyDoc) {
   }
 
   const uniqueRooms = new Map();
+  let changeBool;
 
   for (const lectureDoc of lectures.docs) {
     const lecture = lectureDoc.data();
 
     for (const room of lecture.rooms_full) {
-      if (!room.id) {
-        continue;
+      if (room.id && !uniqueRooms.has(room.id)) {
+        enhanceRoomDetails(room);
+        uniqueRooms.set(room.id, room);
       }
-      uniqueRooms.set(room.id, { id: room.id, name: room.name });
     }
   }
 
@@ -44,6 +65,7 @@ async function fetchRoomsByFacultyDoc(facultyDoc) {
   console.log(log);
   return log;
 }
+
 
 module.exports = {
   fetchRoomsByFacultyDoc,
