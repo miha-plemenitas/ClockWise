@@ -20,6 +20,9 @@ import DropdownMenuTutors from "../../Components/Dropdowns/DropdownMenuTutors";
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
 import useBranches from "../../Components/Hooks/useBranches";
+import useTutors from "../../Components/Hooks/useTutors";
+import useRooms from "../../Components/Hooks/useRooms";
+import useGroups from "../../Components/Hooks/useGroups";
 import axios from "axios";
 import { Buffer } from "buffer";
 
@@ -58,49 +61,29 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
 
-  const [selectedFacultyId, setSelectedFacultyId] = useState(
-    () => localStorage.getItem("selectedFacultyId") || ""
-  );
-  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
-    null
-  );
+  const [selectedFacultyId, setSelectedFacultyId] = useState(() => localStorage.getItem("selectedFacultyId") || "");
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(null);
   const { faculties } = useFaculties();
 
-  const [programId, setProgramId] = useState<string | null>(
-    () => localStorage.getItem("selectedProgramId") || null
-  );
-  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
-    null
-  );
+  const [programId, setProgramId] = useState<string | null>(() => localStorage.getItem("selectedProgramId") || null);
+  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(null);
   const { programs } = usePrograms(selectedFacultyId);
 
   const [programDuration, setProgramDuration] = useState<number | null>(null);
 
-  const [selectedYear, setSelectedYear] = useState<number | null>(
-    () => Number(localStorage.getItem("selectedYearId")) || null
-  );
+  const [selectedYear, setSelectedYear] = useState<number | null>(() => Number(localStorage.getItem("selectedYearId")) || null);
   const [selectedYearName, setSelectedYearName] = useState<string | null>(null);
 
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(
-    () => localStorage.getItem("selectedBranchId") || null
-  );
-  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
-    null
-  );
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(() => localStorage.getItem("selectedBranchId") || null);
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);
 
-  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
-    null
-  );
+  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(null);
 
-  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
-    null
-  );
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
 
   const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
 
-  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(
-    null
-  );
+  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(null);
 
   const { branches } = useBranches(
     selectedFacultyId,
@@ -160,8 +143,31 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     }
   }, [uid]);
 
+  // Use custom hooks to fetch tutor, room, and group data
+  const { tutors } = useTutors(selectedFacultyId);
+  const { rooms } = useRooms(selectedFacultyId);
+  const { groups } = useGroups(selectedBranch, programId);
+
+  // Create lookup maps 
+  const tutorMap: Record<string, string> = tutors.reduce((acc, tutor) => {
+    acc[tutor.tutorId] = `${tutor.firstName} ${tutor.lastName}`;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const roomMap: Record<string, string> = rooms.reduce((acc, room) => {
+    acc[room.id] = room.roomName;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const groupMap: Record<string, string> = groups.reduce((acc, group) => {
+    acc[group.id] = group.name;
+    return acc;
+  }, {} as Record<string, string>);
+
   useEffect(() => {
+
     const fetchData = async () => {
+
       try {
         const response = await axios.get(
           "https://europe-west3-pameten-urnik.cloudfunctions.net/lecture-getAllForBranch",
@@ -193,9 +199,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
             extendedProps: {
               //date: ;
               type: lecture.executionType,
-              groups: lecture.groups,
-              teacher: lecture.tutors,
-              location: lecture.rooms,
+              groups: lecture.groups.map((id: string | number) => groupMap[id] || "Unknown Group").join(", "),
+              teacher: lecture.tutors.map((id: string | number) => tutorMap[id] || "Unknown Tutor").join(", "),
+              location: lecture.rooms.map((id: string | number) => roomMap[id] || "Unknown Room").join(", "),
               editable: false,
             },
           };
