@@ -164,16 +164,46 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          "https://europe-west3-pameten-urnik.cloudfunctions.net/course-getAllForBranch",
+          "https://europe-west3-pameten-urnik.cloudfunctions.net/lecture-getAllForBranch",
           {
             params: {
               facultyId: selectedFacultyId,
               branchId: selectedBranch,
+              startTime: "2023-09-01T00:00:00Z"
             },
             withCredentials: true,
           }
         );
-        console.log("Response:", response.data);
+
+        const formattedEvents: Event[] = response.data.result.map((lecture: any) => {
+
+          // Format start time
+          const startTime = new Date(lecture.startTime._seconds * 1000); // Convert seconds to milliseconds
+          const formattedStart = startTime.toISOString().slice(0, 19);
+
+          // Format end time
+          const endTime = new Date(lecture.endTime._seconds * 1000);
+          const formattedEnd = endTime.toISOString().slice(0, 19);
+
+          return {
+            id: lecture.id,
+            title: lecture.course,
+            start: formattedStart,
+            end: formattedEnd,
+            extendedProps: {
+              //date: ;
+              type: lecture.executionType,
+              groups: lecture.groups,
+              teacher: lecture.tutors,
+              location: lecture.rooms,
+              editable: false,
+            },
+          };
+        });
+
+        setEvents(formattedEvents);
+
+
       } catch (error: any) {
         if (error.response && error.response.status === 401) {
           try {
