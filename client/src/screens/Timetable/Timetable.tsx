@@ -24,7 +24,7 @@ import useTutors from "../../Components/Hooks/useTutors";
 import useRooms from "../../Components/Hooks/useRooms";
 import useGroups from "../../Components/Hooks/useGroups";
 import axios from "axios";
-import { Buffer } from "buffer";
+
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -38,6 +38,7 @@ function renderEventContent(eventInfo: EventContentArg) {
 interface TimetableProps {
   isAuthenticated: boolean;
   uid: string | null;
+  login: () => void;
 }
 
 interface Event {
@@ -55,7 +56,7 @@ interface Event {
   };
 }
 
-const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
+const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = useState(false);
@@ -91,29 +92,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     selectedYear
   );
 
-  async function login() {
-    const username = process.env.REACT_APP_USERNAME;
-    const password = process.env.REACT_APP_PASSWORD;
 
-    const bufferedCredentials = Buffer.from(`${username}:${password}`);
-    const credentials = bufferedCredentials.toString("base64");
-    const headers = {
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/json",
-    };
-
-    try {
-      const response = await axios.post(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login",
-        { uid: username },
-        { headers: headers, withCredentials: true }
-      );
-
-      console.log("Login successful", response);
-    } catch (error) {
-      console.error("Login failed", error);
-    }
-  }
 
   useEffect(() => {
     if (isAuthenticated && uid) {
@@ -164,70 +143,69 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     return acc;
   }, {} as Record<string, string>);
 
-  useEffect(() => {
-
-    const fetchData = async () => {
-
-      try {
-        const response = await axios.get(
-          "https://europe-west3-pameten-urnik.cloudfunctions.net/lecture-getAllForBranch",
-          {
-            params: {
-              facultyId: selectedFacultyId,
-              branchId: selectedBranch,
-              startTime: "2023-09-01T00:00:00Z"
-            },
-            withCredentials: true,
-          }
-        );
-
-        const formattedEvents: Event[] = response.data.result.map((lecture: any) => {
-
-          // Format start time
-          const startTime = new Date(lecture.startTime._seconds * 1000); // Convert seconds to milliseconds
-          const formattedStart = startTime.toISOString().slice(0, 19);
-
-          // Format end time
-          const endTime = new Date(lecture.endTime._seconds * 1000);
-          const formattedEnd = endTime.toISOString().slice(0, 19);
-
-          return {
-            id: lecture.id,
-            title: lecture.course,
-            start: formattedStart,
-            end: formattedEnd,
-            extendedProps: {
-              //date: ;
-              type: lecture.executionType,
-              groups: lecture.groups.map((id: string | number) => groupMap[id] || "Unknown Group").join(", "),
-              teacher: lecture.tutors.map((id: string | number) => tutorMap[id] || "Unknown Tutor").join(", "),
-              location: lecture.rooms.map((id: string | number) => roomMap[id] || "Unknown Room").join(", "),
-              editable: false,
-            },
-          };
-        });
-
-        setEvents(formattedEvents);
 
 
-      } catch (error: any) {
-        if (error.response && error.response.status === 401) {
-          try {
-            await login();
-          } catch (loginError) {
-            console.error("Napaka pri prijavi:", loginError);
-          }
-        } else {
-          console.error("Error fetching data:", error);
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/lecture-getAllForBranch",
+        {
+          params: {
+            facultyId: selectedFacultyId,
+            branchId: selectedBranch,
+            startTime: "2023-09-01T00:00:00Z"
+          },
+          withCredentials: true,
         }
+      );
+
+      const formattedEvents: Event[] = response.data.result.map((lecture: any) => {
+
+        // Format start time
+        const startTime = new Date(lecture.startTime._seconds * 1000); // Convert seconds to milliseconds
+        const formattedStart = startTime.toISOString().slice(0, 19);
+
+        // Format end time
+        const endTime = new Date(lecture.endTime._seconds * 1000);
+        const formattedEnd = endTime.toISOString().slice(0, 19);
+
+        return {
+          id: lecture.id,
+          title: lecture.course,
+          start: formattedStart,
+          end: formattedEnd,
+          extendedProps: {
+            type: lecture.executionType,
+            groups: lecture.groups.map((id: string | number) => groupMap[id] || "Unknown Group").join(", "),
+            teacher: lecture.tutors.map((id: string | number) => tutorMap[id] || "Unknown Tutor").join(", "),
+            location: lecture.rooms.map((id: string | number) => roomMap[id] || "Unknown Room").join(", "),
+            editable: false,
+          },
+        };
+      });
+      setEvents(formattedEvents);
+
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          login();
+          setTimeout(() => fetchData(), 500);
+        } catch (loginError) {
+          console.error("Error:", loginError);
+        }
+      } else {
+        console.error("Error fetching data:", error);
       }
-    };
+    }
+  };
+
+
+  useEffect(() => {
 
     if (selectedFacultyId && selectedBranch) {
       fetchData();
     }
 
-    console.log(selectedBranch);
   }, [selectedBranch]);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
