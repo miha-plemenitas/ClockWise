@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -24,7 +24,6 @@ import useTutors from "../../Components/Hooks/useTutors";
 import useRooms from "../../Components/Hooks/useRooms";
 import useGroups from "../../Components/Hooks/useGroups";
 import axios from "axios";
-
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -56,12 +55,22 @@ interface Event {
   };
 }
 
+interface Group {
+  id: string;
+  branchId: number;
+  programId: number;
+  name: string;
+}
+
 const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) => {
+  // events on timetable
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
+  const calendarRef = useRef<FullCalendar>(null);
 
+  // dropdowns
   const [selectedFacultyId, setSelectedFacultyId] = useState(() => localStorage.getItem("selectedFacultyId") || "");
   const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(null);
   const { faculties } = useFaculties();
@@ -81,19 +90,15 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
   const [selectedCourseName, setSelectedCourseName] = useState<string | null>(null);
 
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const [allGroups, setAllGroups] = useState<Group[]>([]);
 
   const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
 
   const [selectedTutorName, setSelectedTutorName] = useState<string | null>(null);
 
-  const { branches } = useBranches(
-    selectedFacultyId,
-    programId || "",
-    selectedYear
-  );
+  const { branches } = useBranches(selectedFacultyId, programId || "", selectedYear);
 
-
-
+  // fetching custom events - POPRAVI!
   useEffect(() => {
     if (isAuthenticated && uid) {
       const unsubscribe = firestore
@@ -122,12 +127,30 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     }
   }, [uid]);
 
+  const fetchAllGroups = async () => {
+    try {
+      const querySnapshot = await firestore
+        .collection("faculties")
+        .doc(selectedFacultyId)
+        .collection("groups")
+        .get();
+
+      const filteredGroups: Group[] = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Group[];
+
+      setAllGroups(filteredGroups);
+    } catch (err) {
+      console.error("Error loading groups:", err);
+    }
+  };
+
   // Use custom hooks to fetch tutor, room, and group data
   const { tutors } = useTutors(selectedFacultyId);
   const { rooms } = useRooms(selectedFacultyId);
-  const { groups } = useGroups(selectedBranch, programId);
 
-  // Create lookup maps 
+  // Lookup maps for event info
   const tutorMap: Record<string, string> = tutors.reduce((acc, tutor) => {
     acc[tutor.tutorId] = `${tutor.firstName} ${tutor.lastName}`;
     return acc;
@@ -138,12 +161,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     return acc;
   }, {} as Record<string, string>);
 
-  const groupMap: Record<string, string> = groups.reduce((acc, group) => {
+  const groupMap: Record<string, string> = allGroups.reduce((acc, group) => {
     acc[group.id] = group.name;
     return acc;
   }, {} as Record<string, string>);
-
-
 
   const fetchData = async () => {
     try {
@@ -162,7 +183,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
       const formattedEvents: Event[] = response.data.result.map((lecture: any) => {
 
         // Format start time
-        const startTime = new Date(lecture.startTime._seconds * 1000); // Convert seconds to milliseconds
+        const startTime = new Date(lecture.startTime._seconds * 1000);
         const formattedStart = startTime.toISOString().slice(0, 19);
 
         // Format end time
@@ -183,6 +204,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
           },
         };
       });
+      console.log(formattedEvents);
       setEvents(formattedEvents);
 
     } catch (error) {
@@ -199,15 +221,38 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     }
   };
 
-
   useEffect(() => {
-
+    if (selectedFacultyId) {
+      fetchAllGroups();
+    }
     if (selectedFacultyId && selectedBranch) {
       fetchData();
     }
+  }, [selectedBranch, selectedFacultyId]);
 
-  }, [selectedBranch]);
+  useEffect(() => {
+    setEvents([]); // ???
+    setSelectedFacultyId("");
+    setSelectedFacultyName(null);
+    setProgramId(null);
+    setSelectedProgramName(null);
+    setProgramDuration(null);
+    setSelectedYear(null);
+    setSelectedYearName(null);
+    setSelectedBranch(null);
+    setSelectedBranchName(null);
+    setSelectedCourseName(null);
+    setSelectedGroupName(null);
+    setSelectedRoomName(null);
+    setSelectedTutorName(null);
 
+    localStorage.removeItem("selectedFacultyId");
+    localStorage.removeItem("selectedProgramId");
+    localStorage.removeItem("selectedYearId");
+    localStorage.removeItem("selectedBranchId");
+
+  }, []);
+ 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = events.find(
       (event: Event) => event.id === clickInfo.event.id
@@ -234,6 +279,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     }
   };
 
+  // adding custom event - POPRAVI!
   const handleAddEvent = (eventInfo: any) => {
     fetch(`${BASE_URL}/add`, {
       method: "POST",
@@ -259,6 +305,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
       });
   };
 
+  // updating custom event - POPRAVI!
   const handleUpdateEvent = (eventInfo: any) => {
     fetch(`${BASE_URL}/update`, {
       method: "POST",
@@ -283,6 +330,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
         console.error("Error updating event:", error);
       });
   };
+
+  // deleting custom event - DODAJ!
+  // ...
 
   return (
     <div className="w-full p-5">
@@ -376,6 +426,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
       )}
       <div className="mt-4 w-full bg-white rounded-lg p-4">
         <FullCalendar
+          ref={calendarRef}
           height={"auto"}
           slotMinTime={"7:00"}
           slotMaxTime={"21:00"}
