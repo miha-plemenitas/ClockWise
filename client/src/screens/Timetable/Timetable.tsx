@@ -98,35 +98,6 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
 
   const { branches } = useBranches(selectedFacultyId, programId || "", selectedYear);
 
-  // fetching custom events - POPRAVI!
-  useEffect(() => {
-    if (isAuthenticated && uid) {
-      const unsubscribe = firestore
-        .collection("users")
-        .doc(uid)
-        .collection("events")
-        .onSnapshot((snapshot) => {
-          const updatedEvents: Event[] = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            title: doc.data().title,
-            start: doc.data().start,
-            end: doc.data().end,
-            extendedProps: {
-              date: dayjs(doc.data().extendedProps.date),
-              type: doc.data().extendedProps.type,
-              groups: doc.data().extendedProps.groups,
-              teacher: doc.data().extendedProps.teacher,
-              location: doc.data().extendedProps.location,
-              editable: doc.data().extendedProps.editable,
-            },
-          }));
-          setEvents(updatedEvents);
-        });
-
-      return () => unsubscribe();
-    }
-  }, [uid]);
-
   const fetchAllGroups = async () => {
     try {
       const querySnapshot = await firestore
@@ -204,7 +175,6 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
           },
         };
       });
-      console.log(formattedEvents);
       setEvents(formattedEvents);
 
     } catch (error) {
@@ -252,7 +222,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     localStorage.removeItem("selectedBranchId");
 
   }, []);
- 
+
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = events.find(
       (event: Event) => event.id === clickInfo.event.id
@@ -279,30 +249,61 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     }
   };
 
-  // adding custom event - POPRAVI!
-  const handleAddEvent = (eventInfo: any) => {
-    fetch(`${BASE_URL}/add`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...eventInfo,
-        uid: uid,
-      }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to add event");
-        }
-        return response.json();
-      })
-      .then((data) => {
+  // fetching custom events - POPRAVI!
+  /*
+  useEffect(() => {
+    if (isAuthenticated && uid) {
+      const unsubscribe = firestore
+        .collection("users")
+        .doc(uid)
+        .collection("events")
+        .onSnapshot((snapshot) => {
+          const updatedEvents: Event[] = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            title: doc.data().title,
+            start: doc.data().start,
+            end: doc.data().end,
+            extendedProps: {
+              date: dayjs(doc.data().extendedProps.date),
+              type: doc.data().extendedProps.type,
+              groups: doc.data().extendedProps.groups,
+              teacher: doc.data().extendedProps.teacher,
+              location: doc.data().extendedProps.location,
+              editable: doc.data().extendedProps.editable,
+            },
+          }));
+          setEvents(updatedEvents);
+        });
+
+      return () => unsubscribe();
+    
+    }
+  }, [uid]);
+  */
+
+  // adding custom event 
+  const handleAddEvent = async (eventInfo: any) => {
+    console.log(eventInfo);
+    try {
+      const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
+        { uid, ...eventInfo },
+        { withCredentials: true }
+      );
+      if (response.status === 201) {
         setOpen(false);
-      })
-      .catch((error) => {
-        console.error("Error saving event:", error);
-      });
+      }
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          login();
+          setTimeout(() => handleAddEvent, 500);
+        } catch (loginError) {
+          console.error("Error:", loginError);
+        }
+      } else {
+        console.error("Error fetching data:", error);
+      }
+    }
   };
 
   // updating custom event - POPRAVI!
