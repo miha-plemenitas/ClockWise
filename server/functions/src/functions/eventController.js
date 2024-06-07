@@ -123,7 +123,6 @@ exports.update = functions
       }
     }
 
-
   });
 
 
@@ -134,17 +133,28 @@ exports.delete = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
+    response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.set('Access-Control-Allow-Credentials', 'true');
 
-    try {
-      await checkJWTandMethodForRequest(request, "DELETE");
-      const { uid, eventId } = request.body;
-      validateRequestParams({ uid, eventId });
+    if (request.method === 'OPTIONS') {
 
-      const result = await deleteEventForUser(uid, eventId);
-      console.log(`Deleted user with id ${uid}`);
-      response.status(200).json({ result: result });
-    } catch (error) {
-      handleErrors(error, response);
+      response.set('Access-Control-Allow-Methods', 'DELETE');
+      response.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      response.set('Access-Control-Max-Age', '3600');
+      response.status(204).send('');
+
+    } else {
+      try {
+        await checkJWTandMethodForRequest(request, "DELETE");
+        const { uid, eventId } = request.body;
+        validateRequestParams({ uid, eventId });
+
+        const result = await deleteEventForUser(uid, eventId);
+        console.log(`Deleted user with id ${uid}`);
+        response.status(200).json({ result: result });
+      } catch (error) {
+        handleErrors(error, response);
+      }
     }
+
   });

@@ -343,15 +343,15 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     }
   };
 
-  // updating custom event - POPRAVI!
+  // updating custom event 
   const handleUpdateEvent = async (eventInfo: any) => {
 
     try {
       const response = await axios.put(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update", 
-        { uid, eventId: eventInfo.id, ...eventInfo }, 
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
+        { uid, eventId: eventInfo.id, ...eventInfo },
         {
-          withCredentials: true 
+          withCredentials: true
         }
       );
       if (response.status === 200) {
@@ -372,10 +372,34 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     }
   };
 
+  // deleting custom event
+  const handleDeleteEvent = async (eventId: any) => {
 
-
-  // deleting custom event - DODAJ!
-  // ...
+    try {
+      const response = await axios.delete(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
+        {
+          data: { uid, eventId },
+          withCredentials: true
+        }
+      );
+      if (response.status === 200) {
+        setOpen(false);
+        fetchCustomEvents();
+      }
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          login();
+          setTimeout(() => handleDeleteEvent, 500);
+        } catch (loginError) {
+          console.error("Error:", loginError);
+        }
+      } else {
+        console.error("Error fetching data:", error);
+      }
+    }
+  };
 
   return (
     <div className="w-full p-5">
@@ -505,6 +529,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
         mode={mode}
         onSave={handleAddEvent}
         onUpdate={handleUpdateEvent}
+        onDelete={handleDeleteEvent}
         event={selectedEvent}
       />
     </div>

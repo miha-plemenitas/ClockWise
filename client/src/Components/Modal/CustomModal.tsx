@@ -39,6 +39,7 @@ interface CustomModalProps {
     mode: 'view' | 'edit' | 'add';
     onSave: (eventInfo: any) => void;
     onUpdate: (eventInfo: any) => void;
+    onDelete: (eventInfo: any) => void;
     event: {
         id: string;
         title: string;
@@ -62,6 +63,7 @@ export default function CustomModal({
     mode,
     onSave,
     onUpdate,
+    onDelete,
     event,
 }: CustomModalProps) {
     const [title, setTitle] = useState('');
@@ -132,7 +134,9 @@ export default function CustomModal({
         setProstor('');
     }
 
-    const handleDeleteEvent = () => { }
+    const handleDeleteEvent = () => {
+        onDelete(event.id);
+     }
 
     return (
         <Modal
