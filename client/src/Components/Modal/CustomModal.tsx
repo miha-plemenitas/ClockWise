@@ -50,6 +50,7 @@ interface CustomModalProps {
             groups: string;
             teacher: string;
             location: string;
+            notes: string;
             editable: boolean;
         };
     };
@@ -293,7 +294,9 @@ export default function CustomModal({
                             fullWidth
                             margin="normal"
                             label="Notes"
-                            defaultValue={event.extendedProps.teacher}
+                            multiline
+                            rows={4}
+                            defaultValue={event.extendedProps.notes}
                             onChange={(e) => setIzvajalec(e.target.value)}
                         />
                     </>

@@ -36,7 +36,10 @@ async function getEventsForUser(uid){
   const userRef = await checkIfExistsByRefCollectionNameId(db, "users", uid);
   const eventsRef = await  userRef.collection("events").get();
 
-  const items = eventsRef.docs.map(doc => doc.data());
+  const items = eventsRef.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
   return items;
 }
 
