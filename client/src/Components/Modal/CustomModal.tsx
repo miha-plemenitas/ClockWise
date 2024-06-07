@@ -71,6 +71,7 @@ export default function CustomModal({
     const [skupina, setSkupina] = useState('');
     const [tip, setTip] = useState('');
     const [prostor, setProstor] = useState('');
+    const [notes, setNotes] = useState('');
 
 
     const formatDate = (dateString: string) => format(new Date(dateString), 'EEEE, d. M. yyyy', { locale: sl });
@@ -86,17 +87,11 @@ export default function CustomModal({
         const updatedStartTime = startTime ? startTime.set('year', date.year()).set('month', date.month()).set('date', date.date()) : null;
         const updatedEndTime = endTime ? endTime.set('year', date.year()).set('month', date.month()).set('date', date.date()) : null;
         const eventDetails = {
-            title,
-            startTime: updatedStartTime ? updatedStartTime.format('YYYY-MM-DDTHH:mm:ss') : null,
-            endTime: updatedEndTime ? updatedEndTime.format('YYYY-MM-DDTHH:mm:ss') : null,
-            extendedProps: {
-                date: date,
-                type: tip,
-                groups: skupina,
-                teacher: izvajalec,
-                location: prostor,
-                editable: true
-            }
+            "startTime": updatedStartTime ? updatedStartTime.format('YYYY-MM-DDTHH:mm:ss') : null,
+            "endTime": updatedEndTime ? updatedEndTime.format('YYYY-MM-DDTHH:mm:ss') : null,
+            "title": title,
+            "notes": notes,
+            "editable": true
         };
 
         onSave(eventDetails);
@@ -104,10 +99,7 @@ export default function CustomModal({
         setDate(null);
         setStartTime(null);
         setEndTime(null);
-        setIzvajalec('');
-        setSkupina('');
-        setTip('');
-        setProstor('');
+        setNotes('');
     }
 
     const handleUpdateEvent = () => {
@@ -145,10 +137,8 @@ export default function CustomModal({
         setProstor('');
     }
 
-    const handleDeleteEvent = () => {
+    const handleDeleteEvent = () => { }
 
-
-    }
     return (
         <Modal
             open={isOpen}
@@ -177,7 +167,7 @@ export default function CustomModal({
                                         WebkitTextFillColor: 'rgba(0, 0, 0, 0.87)',
                                     },
                                 }}
-                           
+
                             />
                             <TextField
                                 fullWidth
@@ -302,33 +292,10 @@ export default function CustomModal({
                         <TextField
                             fullWidth
                             margin="normal"
-                            label="Teacher"
+                            label="Notes"
                             defaultValue={event.extendedProps.teacher}
                             onChange={(e) => setIzvajalec(e.target.value)}
                         />
-                        <TextField
-                            fullWidth
-                            margin="normal"
-                            label="Groups"
-                            defaultValue={event.extendedProps.groups}
-                            onChange={(e) => setSkupina(e.target.value)}
-                        />
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <TextField
-                                fullWidth
-                                margin="normal"
-                                label="Type"
-                                defaultValue={event.extendedProps.type}
-                                onChange={(e) => setTip(e.target.value)}
-                            />
-                            <TextField
-                                fullWidth
-                                margin="normal"
-                                label="Location"
-                                defaultValue={event.extendedProps.location}
-                                onChange={(e) => setProstor(e.target.value)}
-                            />
-                        </Box>
                     </>
                 )}
 
@@ -372,44 +339,18 @@ export default function CustomModal({
                                 />
                             </LocalizationProvider>
                         </Box>
-
                         <TextField
                             fullWidth
                             margin="normal"
-                            label="Teacher"
-                            name="izvajalec"
-                            value={izvajalec}
-                            onChange={(e) => setIzvajalec(e.target.value)}
+                            label="Notes"
+                            name="notes"
+                            multiline
+                            rows={4}
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
                         />
-                        <TextField
-                            fullWidth
-                            margin="normal"
-                            label="Groups"
-                            name="skupina"
-                            value={skupina}
-                            onChange={(e) => setSkupina(e.target.value)}
-                        />
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <TextField
-                                fullWidth
-                                margin="normal"
-                                label="Type"
-                                name="tip"
-                                value={tip}
-                                onChange={(e) => setTip(e.target.value)}
-                            />
-                            <TextField
-                                fullWidth
-                                margin="normal"
-                                label="Location"
-                                name="prostor"
-                                value={prostor}
-                                onChange={(e) => setProstor(e.target.value)}
-                            />
-                        </Box>
                     </>
                 )}
-
                 < div className="flex justify-end mt-4 w-full">
                     <Button
                         onClick={toggle}
@@ -424,8 +365,8 @@ export default function CustomModal({
                         >
                             <span>Delete</span>
                         </Button>
-                        
-                        
+
+
                     )}
                     {mode === 'edit' && (
                         <Button

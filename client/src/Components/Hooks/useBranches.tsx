@@ -13,9 +13,7 @@ const useBranches = (
   useEffect(() => {
     const fetchBranches = async () => {
       if (facultyId && programId && selectedYear !== null) {
-        console.log(
-          `Fetching branches for facultyId: ${facultyId}, programId: ${programId}, selectedYear: ${selectedYear}`
-        );
+        //console.log(`Fetching branches for facultyId: ${facultyId}, programId: ${programId}, selectedYear: ${selectedYear}`);
         setLoading(true);
         setError(null);
 
@@ -36,7 +34,7 @@ const useBranches = (
             id: doc.id,
             ...doc.data(),
           }));
-          console.log("Fetched branches:", branchesList);
+          //console.log("Fetched branches:", branchesList);
           setBranches(branchesList);
         } catch (err) {
           console.error("Error fetching branches:", err);

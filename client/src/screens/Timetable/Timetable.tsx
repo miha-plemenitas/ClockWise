@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -20,8 +20,10 @@ import DropdownMenuTutors from "../../Components/Dropdowns/DropdownMenuTutors";
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
 import useBranches from "../../Components/Hooks/useBranches";
+import useTutors from "../../Components/Hooks/useTutors";
+import useRooms from "../../Components/Hooks/useRooms";
+import useGroups from "../../Components/Hooks/useGroups";
 import axios from "axios";
-import { Buffer } from "buffer";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -35,6 +37,7 @@ function renderEventContent(eventInfo: EventContentArg) {
 interface TimetableProps {
   isAuthenticated: boolean;
   uid: string | null;
+  login: () => void;
 }
 
 interface Event {
@@ -52,147 +55,173 @@ interface Event {
   };
 }
 
-const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
+interface Group {
+  id: string;
+  branchId: number;
+  programId: number;
+  name: string;
+}
+
+const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) => {
+  // events on timetable
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
+  const calendarRef = useRef<FullCalendar>(null);
 
-  const [selectedFacultyId, setSelectedFacultyId] = useState(
-    () => localStorage.getItem("selectedFacultyId") || ""
-  );
-  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
-    null
-  );
+  // dropdowns
+  const [selectedFacultyId, setSelectedFacultyId] = useState(() => localStorage.getItem("selectedFacultyId") || "");
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(null);
   const { faculties } = useFaculties();
 
-  const [programId, setProgramId] = useState<string | null>(
-    () => localStorage.getItem("selectedProgramId") || null
-  );
-  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
-    null
-  );
+  const [programId, setProgramId] = useState<string | null>(() => localStorage.getItem("selectedProgramId") || null);
+  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(null);
   const { programs } = usePrograms(selectedFacultyId);
 
   const [programDuration, setProgramDuration] = useState<number | null>(null);
 
-  const [selectedYear, setSelectedYear] = useState<number | null>(
-    () => Number(localStorage.getItem("selectedYearId")) || null
-  );
+  const [selectedYear, setSelectedYear] = useState<number | null>(() => Number(localStorage.getItem("selectedYearId")) || null);
   const [selectedYearName, setSelectedYearName] = useState<string | null>(null);
 
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(
-    () => localStorage.getItem("selectedBranchId") || null
-  );
-  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
-    null
-  );
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(() => localStorage.getItem("selectedBranchId") || null);
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);
 
-  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
-    null
-  );
+  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(null);
 
-  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
-    null
-  );
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const [allGroups, setAllGroups] = useState<Group[]>([]);
 
   const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
 
-  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(
-    null
-  );
+  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(null);
 
-  const { branches } = useBranches(
-    selectedFacultyId,
-    programId || "",
-    selectedYear
-  );
+  const { branches } = useBranches(selectedFacultyId, programId || "", selectedYear);
 
-  async function login() {
-    const username = process.env.REACT_APP_USERNAME;
-    const password = process.env.REACT_APP_PASSWORD;
-
-    const bufferedCredentials = Buffer.from(`${username}:${password}`);
-    const credentials = bufferedCredentials.toString("base64");
-    const headers = {
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/json",
-    };
-
+  const fetchAllGroups = async () => {
     try {
-      const response = await axios.post(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login",
-        { uid: username },
-        { headers: headers, withCredentials: true }
+      const querySnapshot = await firestore
+        .collection("faculties")
+        .doc(selectedFacultyId)
+        .collection("groups")
+        .get();
+
+      const filteredGroups: Group[] = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Group[];
+
+      setAllGroups(filteredGroups);
+    } catch (err) {
+      console.error("Error loading groups:", err);
+    }
+  };
+
+  // Use custom hooks to fetch tutor, room, and group data
+  const { tutors } = useTutors(selectedFacultyId);
+  const { rooms } = useRooms(selectedFacultyId);
+
+  // Lookup maps for event info
+  const tutorMap: Record<string, string> = tutors.reduce((acc, tutor) => {
+    acc[tutor.tutorId] = `${tutor.firstName} ${tutor.lastName}`;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const roomMap: Record<string, string> = rooms.reduce((acc, room) => {
+    acc[room.id] = room.roomName;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const groupMap: Record<string, string> = allGroups.reduce((acc, group) => {
+    acc[group.id] = group.name;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/lecture-getAllForBranch",
+        {
+          params: {
+            facultyId: selectedFacultyId,
+            branchId: selectedBranch,
+            startTime: "2023-09-01T00:00:00Z"
+          },
+          withCredentials: true,
+        }
       );
 
-      console.log("Login successful", response);
+      const formattedEvents: Event[] = response.data.result.map((lecture: any) => {
+
+        // Format start time
+        const startTime = new Date(lecture.startTime._seconds * 1000);
+        const formattedStart = startTime.toISOString().slice(0, 19);
+
+        // Format end time
+        const endTime = new Date(lecture.endTime._seconds * 1000);
+        const formattedEnd = endTime.toISOString().slice(0, 19);
+
+        return {
+          id: lecture.id,
+          title: lecture.course,
+          start: formattedStart,
+          end: formattedEnd,
+          extendedProps: {
+            type: lecture.executionType,
+            groups: lecture.groups.map((id: string | number) => groupMap[id] || "Unknown Group").join(", "),
+            teacher: lecture.tutors.map((id: string | number) => tutorMap[id] || "Unknown Tutor").join(", "),
+            location: lecture.rooms.map((id: string | number) => roomMap[id] || "Unknown Room").join(", "),
+            editable: false,
+          },
+        };
+      });
+      setEvents(formattedEvents);
+
     } catch (error) {
-      console.error("Login failed", error);
-    }
-  }
-
-  useEffect(() => {
-    if (isAuthenticated && uid) {
-      const unsubscribe = firestore
-        .collection("users")
-        .doc(uid)
-        .collection("events")
-        .onSnapshot((snapshot) => {
-          const updatedEvents: Event[] = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            title: doc.data().title,
-            start: doc.data().start,
-            end: doc.data().end,
-            extendedProps: {
-              date: dayjs(doc.data().extendedProps.date),
-              type: doc.data().extendedProps.type,
-              groups: doc.data().extendedProps.groups,
-              teacher: doc.data().extendedProps.teacher,
-              location: doc.data().extendedProps.location,
-              editable: doc.data().extendedProps.editable,
-            },
-          }));
-          setEvents(updatedEvents);
-        });
-
-      return () => unsubscribe();
-    }
-  }, [uid]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(
-          "https://europe-west3-pameten-urnik.cloudfunctions.net/course-getAllForBranch",
-          {
-            params: {
-              facultyId: selectedFacultyId,
-              branchId: selectedBranch,
-            },
-            withCredentials: true,
-          }
-        );
-        console.log("Response:", response.data);
-      } catch (error: any) {
-        if (error.response && error.response.status === 401) {
-          try {
-            await login();
-          } catch (loginError) {
-            console.error("Napaka pri prijavi:", loginError);
-          }
-        } else {
-          console.error("Error fetching data:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          login();
+          setTimeout(() => fetchData(), 500);
+        } catch (loginError) {
+          console.error("Error:", loginError);
         }
+      } else {
+        console.error("Error fetching data:", error);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
+    if (selectedFacultyId) {
+      fetchAllGroups();
+    }
     if (selectedFacultyId && selectedBranch) {
       fetchData();
     }
+  }, [selectedBranch, selectedFacultyId]);
 
-    console.log(selectedBranch);
-  }, [selectedBranch]);
+  useEffect(() => {
+    setEvents([]); // ???
+    setSelectedFacultyId("");
+    setSelectedFacultyName(null);
+    setProgramId(null);
+    setSelectedProgramName(null);
+    setProgramDuration(null);
+    setSelectedYear(null);
+    setSelectedYearName(null);
+    setSelectedBranch(null);
+    setSelectedBranchName(null);
+    setSelectedCourseName(null);
+    setSelectedGroupName(null);
+    setSelectedRoomName(null);
+    setSelectedTutorName(null);
+
+    localStorage.removeItem("selectedFacultyId");
+    localStorage.removeItem("selectedProgramId");
+    localStorage.removeItem("selectedYearId");
+    localStorage.removeItem("selectedBranchId");
+
+  }, []);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = events.find(
@@ -220,31 +249,64 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     }
   };
 
-  const handleAddEvent = (eventInfo: any) => {
-    fetch(`${BASE_URL}/add`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...eventInfo,
-        uid: uid,
-      }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to add event");
-        }
-        return response.json();
-      })
-      .then((data) => {
+  // fetching custom events - POPRAVI!
+  /*
+  useEffect(() => {
+    if (isAuthenticated && uid) {
+      const unsubscribe = firestore
+        .collection("users")
+        .doc(uid)
+        .collection("events")
+        .onSnapshot((snapshot) => {
+          const updatedEvents: Event[] = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            title: doc.data().title,
+            start: doc.data().start,
+            end: doc.data().end,
+            extendedProps: {
+              date: dayjs(doc.data().extendedProps.date),
+              type: doc.data().extendedProps.type,
+              groups: doc.data().extendedProps.groups,
+              teacher: doc.data().extendedProps.teacher,
+              location: doc.data().extendedProps.location,
+              editable: doc.data().extendedProps.editable,
+            },
+          }));
+          setEvents(updatedEvents);
+        });
+
+      return () => unsubscribe();
+    
+    }
+  }, [uid]);
+  */
+
+  // adding custom event 
+  const handleAddEvent = async (eventInfo: any) => {
+    console.log(eventInfo);
+    try {
+      const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
+        { uid, ...eventInfo },
+        { withCredentials: true }
+      );
+      if (response.status === 201) {
         setOpen(false);
-      })
-      .catch((error) => {
-        console.error("Error saving event:", error);
-      });
+      }
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          login();
+          setTimeout(() => handleAddEvent, 500);
+        } catch (loginError) {
+          console.error("Error:", loginError);
+        }
+      } else {
+        console.error("Error fetching data:", error);
+      }
+    }
   };
 
+  // updating custom event - POPRAVI!
   const handleUpdateEvent = (eventInfo: any) => {
     fetch(`${BASE_URL}/update`, {
       method: "POST",
@@ -269,6 +331,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         console.error("Error updating event:", error);
       });
   };
+
+  // deleting custom event - DODAJ!
+  // ...
 
   return (
     <div className="w-full p-5">
@@ -362,6 +427,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       )}
       <div className="mt-4 w-full bg-white rounded-lg p-4">
         <FullCalendar
+          ref={calendarRef}
           height={"auto"}
           slotMinTime={"7:00"}
           slotMaxTime={"21:00"}

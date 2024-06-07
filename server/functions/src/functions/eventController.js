@@ -20,17 +20,27 @@ exports.add = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
+    response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.set('Access-Control-Allow-Credentials', 'true');
 
-    try {
-      await checkJWTandMethodForRequest(request, "POST");
-      const { uid } = request.body;
-      validateRequestParams({ uid });
+    if (request.method === 'OPTIONS') {
 
-      const eventId = await saveEventForUser(uid, request.body);
-      return response.status(201).send({ uid: eventId });
-    } catch (error) {
-      handleErrors(error, response);
+      response.set('Access-Control-Allow-Methods', 'POST');
+      response.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      response.set('Access-Control-Max-Age', '3600');
+      response.status(204).send('');
+
+    } else {
+      try {
+        await checkJWTandMethodForRequest(request, "POST");
+        const { uid } = request.body;
+        validateRequestParams({ uid });
+
+        const eventId = await saveEventForUser(uid, request.body);
+        return response.status(201).send({ uid: eventId });
+      } catch (error) {
+        handleErrors(error, response);
+      }
     }
   });
 

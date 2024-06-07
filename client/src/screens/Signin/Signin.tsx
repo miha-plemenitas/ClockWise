@@ -9,9 +9,10 @@ import Cookies from 'js-cookie';
 
 interface SigninProps {
   onSignin: () => void;
+  login: () => void;
 }
 
-const Signin: React.FC<SigninProps> = ({ onSignin }) => {
+const Signin: React.FC<SigninProps> = ({ onSignin, login }) => {
   const [authenticating, setAuthenticating] = useState<boolean>(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,31 +50,6 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
     */
   };
 
-  async function login() {
-
-    const username = process.env.REACT_APP_USERNAME;
-    const password = process.env.REACT_APP_PASSWORD;
-
-    const bufferedCredentials = Buffer.from(`${username}:${password}`);
-    const credentials = bufferedCredentials.toString("base64");
-    const headers = {
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/json",
-    };
-
-    try {
-      const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login",
-        { uid: username },
-        { headers: headers, withCredentials: true }
-      );
-
-      console.log("Login successful", response);
-
-    } catch (error) {
-      console.error("Login failed", error);
-    }
-  }
-
   const signInWithGoogle = async () => {
     try {
       const result = await auth.signInWithPopup(Providers.google);
@@ -87,16 +63,15 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
           );
           console.log('Response:', response.data);
         } catch (error: any) {
-          if (error.response && error.response.status === 401) {
+          if (axios.isAxiosError(error) && error.response?.status === 401) {
             try {
-              await login();
-              await signInWithGoogle();
-              return;
+              login();
+              setTimeout(() => signInWithGoogle(), 500);
             } catch (loginError) {
-              console.error('Napaka pri prijavi:', loginError);
+              console.error("Error:", loginError);
             }
           } else {
-            console.error('Error fetching data:', error);
+            console.error("Error fetching data:", error);
           }
         }
 
