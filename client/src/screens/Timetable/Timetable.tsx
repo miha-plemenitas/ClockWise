@@ -344,29 +344,32 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
   };
 
   // updating custom event - POPRAVI!
-  const handleUpdateEvent = (eventInfo: any) => {
-    fetch(`${BASE_URL}/update`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...eventInfo,
-        uid: uid,
-      }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to update event");
+  const handleUpdateEvent = async (eventInfo: any) => {
+
+    try {
+      const response = await axios.put(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update", 
+        { uid, eventId: eventInfo.id, ...eventInfo }, 
+        {
+          withCredentials: true 
         }
-        return response.json();
-      })
-      .then((data) => {
+      );
+      if (response.status === 200) {
         setOpen(false);
-      })
-      .catch((error) => {
-        console.error("Error updating event:", error);
-      });
+        fetchCustomEvents();
+      }
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          login();
+          setTimeout(() => handleUpdateEvent, 500);
+        } catch (loginError) {
+          console.error("Error:", loginError);
+        }
+      } else {
+        console.error("Error fetching data:", error);
+      }
+    }
   };
 
 
@@ -473,7 +476,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
           plugins={[timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
           weekends={false}
-          eventSources={[{ events: events, color: 'blue' }, { events: customEvents, color: 'green' }]}
+          eventSources={[{ events: events, color: '#26547C' }, { events: customEvents, color: '#48ACF0' }]}
           //events={customEvents}
           eventContent={renderEventContent}
           headerToolbar={{

@@ -113,18 +113,12 @@ export default function CustomModal({
         const updatedStartTime = startTime ? startTime.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date()) : newStart.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date());
         const updatedEndTime = endTime ? endTime.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date()) : newEnd.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date());
         const eventDetails = {
-            id: event.id,
-            title: title || event.title,
-            startTime: updatedStartTime.format('YYYY-MM-DDTHH:mm:ss'),
-            endTime: updatedEndTime.format('YYYY-MM-DDTHH:mm:ss'),
-            extendedProps: {
-                date: newdate,
-                type: tip || event.extendedProps.type,
-                groups: skupina || event.extendedProps.groups,
-                teacher: izvajalec || event.extendedProps.teacher,
-                location: prostor || event.extendedProps.location,
-                editable: true
-            }
+            "id": event.id,
+            "title": title || event.title,
+            "startTime": updatedStartTime ? updatedStartTime.format('YYYY-MM-DDTHH:mm:ss') : null,
+            "endTime": updatedEndTime ? updatedEndTime.format('YYYY-MM-DDTHH:mm:ss') : null,
+            "notes": notes || event.extendedProps.notes,
+            "editable": true
         };
 
         onUpdate(eventDetails);
@@ -297,7 +291,7 @@ export default function CustomModal({
                             multiline
                             rows={4}
                             defaultValue={event.extendedProps.notes}
-                            onChange={(e) => setIzvajalec(e.target.value)}
+                            onChange={(e) => setNotes(e.target.value)}
                         />
                     </>
                 )}
