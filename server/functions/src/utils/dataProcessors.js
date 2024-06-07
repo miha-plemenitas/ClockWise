@@ -13,9 +13,13 @@ function processLectureData(lecture) {
     executionTypeId = "99";
     executionType = "99";
   }
+  
+  const startTimeDateObj = new Date(lecture.start_time);
+  const endTimeDateObj = new Date(lecture.end_time);
 
-  const startTime = lecture.start_time ? Timestamp.fromDate(new Date(lecture.start_time)) : null;
-  const endTime = lecture.end_time ? Timestamp.fromDate(new Date(lecture.end_time)) : null;
+  const startTime = lecture.start_time ? Timestamp.fromDate(startTimeDateObj) : null;
+  const endTime = lecture.end_time ? Timestamp.fromDate(endTimeDateObj) : null;
+  const duration = endTimeDateObj - startTimeDateObj / (1000 * 60 * 60);
 
   const extractIds = (items) => items.map(item => item.id);
 
@@ -33,6 +37,9 @@ function processLectureData(lecture) {
     groups: lecture.groups ? extractIds(lecture.groups) : [],
     tutors: lecture.lecturers ? extractIds(lecture.lecturers) : [],
     rooms_full: lecture.rooms,
+    tutors_full: lecture.lecturers,
+    groups_full: lecture.groups,
+    duration: duration,
   };
 }
 
