@@ -36,7 +36,10 @@ async function getEventsForUser(uid){
   const userRef = await checkIfExistsByRefCollectionNameId(db, "users", uid);
   const eventsRef = await  userRef.collection("events").get();
 
-  const items = eventsRef.docs.map(doc => doc.data());
+  const items = eventsRef.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
   return items;
 }
 
@@ -49,7 +52,8 @@ async function updateEventForUser(uid, eventId, data) {
     eventId
   );
 
-  data = filterForAllowedKeys(data, eventAllowedKeys);
+  //data = filterForAllowedKeys(data, eventAllowedKeys);
+  data = filterAndFormatTimes(data, eventAllowedKeys);
 
   await eventRef.update(data);
 

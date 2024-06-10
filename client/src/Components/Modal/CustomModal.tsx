@@ -39,6 +39,7 @@ interface CustomModalProps {
     mode: 'view' | 'edit' | 'add';
     onSave: (eventInfo: any) => void;
     onUpdate: (eventInfo: any) => void;
+    onDelete: (eventInfo: any) => void;
     event: {
         id: string;
         title: string;
@@ -50,6 +51,7 @@ interface CustomModalProps {
             groups: string;
             teacher: string;
             location: string;
+            notes: string;
             editable: boolean;
         };
     };
@@ -61,6 +63,7 @@ export default function CustomModal({
     mode,
     onSave,
     onUpdate,
+    onDelete,
     event,
 }: CustomModalProps) {
     const [title, setTitle] = useState('');
@@ -112,18 +115,12 @@ export default function CustomModal({
         const updatedStartTime = startTime ? startTime.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date()) : newStart.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date());
         const updatedEndTime = endTime ? endTime.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date()) : newEnd.set('year', newdate.year()).set('month', newdate.month()).set('date', newdate.date());
         const eventDetails = {
-            id: event.id,
-            title: title || event.title,
-            startTime: updatedStartTime.format('YYYY-MM-DDTHH:mm:ss'),
-            endTime: updatedEndTime.format('YYYY-MM-DDTHH:mm:ss'),
-            extendedProps: {
-                date: newdate,
-                type: tip || event.extendedProps.type,
-                groups: skupina || event.extendedProps.groups,
-                teacher: izvajalec || event.extendedProps.teacher,
-                location: prostor || event.extendedProps.location,
-                editable: true
-            }
+            "id": event.id,
+            "title": title || event.title,
+            "startTime": updatedStartTime ? updatedStartTime.format('YYYY-MM-DDTHH:mm:ss') : null,
+            "endTime": updatedEndTime ? updatedEndTime.format('YYYY-MM-DDTHH:mm:ss') : null,
+            "notes": notes || event.extendedProps.notes,
+            "editable": true
         };
 
         onUpdate(eventDetails);
@@ -137,7 +134,9 @@ export default function CustomModal({
         setProstor('');
     }
 
-    const handleDeleteEvent = () => { }
+    const handleDeleteEvent = () => {
+        onDelete(event.id);
+     }
 
     return (
         <Modal
@@ -293,8 +292,10 @@ export default function CustomModal({
                             fullWidth
                             margin="normal"
                             label="Notes"
-                            defaultValue={event.extendedProps.teacher}
-                            onChange={(e) => setIzvajalec(e.target.value)}
+                            multiline
+                            rows={4}
+                            defaultValue={event.extendedProps.notes}
+                            onChange={(e) => setNotes(e.target.value)}
                         />
                     </>
                 )}

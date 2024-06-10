@@ -24,6 +24,7 @@ import useTutors from "../../Components/Hooks/useTutors";
 import useRooms from "../../Components/Hooks/useRooms";
 import useGroups from "../../Components/Hooks/useGroups";
 import axios from "axios";
+import useId from "@mui/material/utils/useId";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -55,6 +56,17 @@ interface Event {
   };
 }
 
+interface CustomEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  extendedProps: {
+    notes: string;
+    editable: boolean;
+  };
+}
+
 interface Group {
   id: string;
   branchId: number;
@@ -65,6 +77,7 @@ interface Group {
 const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) => {
   // events on timetable
   const [events, setEvents] = useState<Event[]>([]);
+  const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
@@ -200,6 +213,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     }
   }, [selectedBranch, selectedFacultyId]);
 
+
   useEffect(() => {
     setEvents([]); // ???
     setSelectedFacultyId("");
@@ -223,10 +237,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
 
   }, []);
 
+
   const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = events.find(
-      (event: Event) => event.id === clickInfo.event.id
-    );
+    const event = events.find((event: Event) => event.id === clickInfo.event.id)
+      || customEvents.find((event: CustomEvent) => event.id === clickInfo.event.id)
     if (event) {
       setSelectedEvent(event);
       setMode(event.extendedProps.editable ? "edit" : "view");
@@ -249,41 +263,63 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     }
   };
 
-  // fetching custom events - POPRAVI!
-  /*
+  // fetching custom events 
+  const fetchCustomEvents = async () => {
+
+    try {
+      const response = await axios.get(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-getAll",
+        {
+          params: { uid },
+          withCredentials: true
+        }
+      );
+
+      const formattedEvents: CustomEvent[] = response.data.result.map((eventData: any) => {
+
+        // Format start time
+        const startTime = new Date(eventData.startTime._seconds * 1000);
+        const formattedStart = startTime.toISOString().slice(0, 19);
+
+        // Format end time
+        const endTime = new Date(eventData.endTime._seconds * 1000);
+        const formattedEnd = endTime.toISOString().slice(0, 19);
+
+        return {
+          id: eventData.id,
+          title: eventData.title,
+          start: formattedStart,
+          end: formattedEnd,
+          extendedProps: {
+            notes: eventData.notes,
+            editable: eventData.editable
+          }
+        };
+      });
+      setCustomEvents(formattedEvents);
+
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          login();
+          setTimeout(() => fetchCustomEvents(), 500);
+        } catch (loginError) {
+          console.error("Error:", loginError);
+        }
+      } else {
+        console.error("Error fetching data:", error);
+      }
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated && uid) {
-      const unsubscribe = firestore
-        .collection("users")
-        .doc(uid)
-        .collection("events")
-        .onSnapshot((snapshot) => {
-          const updatedEvents: Event[] = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            title: doc.data().title,
-            start: doc.data().start,
-            end: doc.data().end,
-            extendedProps: {
-              date: dayjs(doc.data().extendedProps.date),
-              type: doc.data().extendedProps.type,
-              groups: doc.data().extendedProps.groups,
-              teacher: doc.data().extendedProps.teacher,
-              location: doc.data().extendedProps.location,
-              editable: doc.data().extendedProps.editable,
-            },
-          }));
-          setEvents(updatedEvents);
-        });
-
-      return () => unsubscribe();
-    
+      fetchCustomEvents();
     }
   }, [uid]);
-  */
 
   // adding custom event 
   const handleAddEvent = async (eventInfo: any) => {
-    console.log(eventInfo);
     try {
       const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
         { uid, ...eventInfo },
@@ -291,6 +327,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
       );
       if (response.status === 201) {
         setOpen(false);
+        fetchCustomEvents();
       }
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
@@ -306,34 +343,63 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
     }
   };
 
-  // updating custom event - POPRAVI!
-  const handleUpdateEvent = (eventInfo: any) => {
-    fetch(`${BASE_URL}/update`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ...eventInfo,
-        uid: uid,
-      }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to update event");
+  // updating custom event 
+  const handleUpdateEvent = async (eventInfo: any) => {
+
+    try {
+      const response = await axios.put(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
+        { uid, eventId: eventInfo.id, ...eventInfo },
+        {
+          withCredentials: true
         }
-        return response.json();
-      })
-      .then((data) => {
+      );
+      if (response.status === 200) {
         setOpen(false);
-      })
-      .catch((error) => {
-        console.error("Error updating event:", error);
-      });
+        fetchCustomEvents();
+      }
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          login();
+          setTimeout(() => handleUpdateEvent, 500);
+        } catch (loginError) {
+          console.error("Error:", loginError);
+        }
+      } else {
+        console.error("Error fetching data:", error);
+      }
+    }
   };
 
-  // deleting custom event - DODAJ!
-  // ...
+  // deleting custom event
+  const handleDeleteEvent = async (eventId: any) => {
+
+    try {
+      const response = await axios.delete(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
+        {
+          data: { uid, eventId },
+          withCredentials: true
+        }
+      );
+      if (response.status === 200) {
+        setOpen(false);
+        fetchCustomEvents();
+      }
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          login();
+          setTimeout(() => handleDeleteEvent, 500);
+        } catch (loginError) {
+          console.error("Error:", loginError);
+        }
+      } else {
+        console.error("Error fetching data:", error);
+      }
+    }
+  };
 
   return (
     <div className="w-full p-5">
@@ -434,7 +500,8 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
           plugins={[timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
           weekends={false}
-          events={events}
+          eventSources={[{ events: events, color: '#26547C' }, { events: customEvents, color: '#48ACF0' }]}
+          //events={customEvents}
           eventContent={renderEventContent}
           headerToolbar={{
             left: "title",
@@ -462,6 +529,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
         mode={mode}
         onSave={handleAddEvent}
         onUpdate={handleUpdateEvent}
+        onDelete={handleDeleteEvent}
         event={selectedEvent}
       />
     </div>
