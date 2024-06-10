@@ -4,9 +4,9 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import CustomModal from "../../Components/Modal/CustomModal";
-import { BASE_URL } from "../../api";
 import { firestore } from "../../Config/firebase";
 import dayjs, { Dayjs } from "dayjs";
+import { Buffer } from "buffer";
 
 import DropdownMenuFaculties from "../../Components/Dropdowns/DropdownMenuFaculties";
 import DropdownMenuPrograms from "../../Components/Dropdowns/DropdownMenuPrograms";
@@ -22,9 +22,8 @@ import usePrograms from "../../Components/Hooks/usePrograms";
 import useBranches from "../../Components/Hooks/useBranches";
 import useTutors from "../../Components/Hooks/useTutors";
 import useRooms from "../../Components/Hooks/useRooms";
-import useGroups from "../../Components/Hooks/useGroups";
 import axios from "axios";
-import useId from "@mui/material/utils/useId";
+
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -38,7 +37,6 @@ function renderEventContent(eventInfo: EventContentArg) {
 interface TimetableProps {
   isAuthenticated: boolean;
   uid: string | null;
-  login: () => void;
 }
 
 interface Event {
@@ -74,7 +72,7 @@ interface Group {
   name: string;
 }
 
-const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) => {
+const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   // events on timetable
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
@@ -152,6 +150,17 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
 
   const fetchData = async () => {
     try {
+
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
       const response = await axios.get(
         "https://europe-west3-pameten-urnik.cloudfunctions.net/lecture-getAllForBranch",
         {
@@ -160,10 +169,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
             branchId: selectedBranch,
             startTime: "2023-09-01T00:00:00Z"
           },
-          withCredentials: true,
+          headers: headers,
         }
       );
-
       const formattedEvents: Event[] = response.data.result.map((lecture: any) => {
 
         // Format start time
@@ -191,16 +199,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
       setEvents(formattedEvents);
 
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        try {
-          login();
-          setTimeout(() => fetchData(), 500);
-        } catch (loginError) {
-          console.error("Error:", loginError);
-        }
-      } else {
-        console.error("Error fetching data:", error);
-      }
+      console.error("Error fetching data:", error);
     }
   };
 
@@ -267,11 +266,22 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
   const fetchCustomEvents = async () => {
 
     try {
+
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
       const response = await axios.get(
         "https://europe-west3-pameten-urnik.cloudfunctions.net/event-getAll",
         {
           params: { uid },
-          withCredentials: true
+          headers: headers
         }
       );
 
@@ -299,16 +309,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
       setCustomEvents(formattedEvents);
 
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        try {
-          login();
-          setTimeout(() => fetchCustomEvents(), 500);
-        } catch (loginError) {
-          console.error("Error:", loginError);
-        }
-      } else {
         console.error("Error fetching data:", error);
-      }
     }
   };
 
@@ -321,25 +322,27 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
   // adding custom event 
   const handleAddEvent = async (eventInfo: any) => {
     try {
+
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
       const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
         { uid, ...eventInfo },
-        { withCredentials: true }
+        { headers: headers }
       );
       if (response.status === 201) {
         setOpen(false);
         fetchCustomEvents();
       }
     } catch (error: any) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        try {
-          login();
-          setTimeout(() => handleAddEvent, 500);
-        } catch (loginError) {
-          console.error("Error:", loginError);
-        }
-      } else {
         console.error("Error fetching data:", error);
-      }
     }
   };
 
@@ -347,11 +350,22 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
   const handleUpdateEvent = async (eventInfo: any) => {
 
     try {
+
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
       const response = await axios.put(
         "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
         { uid, eventId: eventInfo.id, ...eventInfo },
         {
-          withCredentials: true
+          headers: headers
         }
       );
       if (response.status === 200) {
@@ -359,16 +373,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
         fetchCustomEvents();
       }
     } catch (error: any) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        try {
-          login();
-          setTimeout(() => handleUpdateEvent, 500);
-        } catch (loginError) {
-          console.error("Error:", loginError);
-        }
-      } else {
         console.error("Error fetching data:", error);
-      }
     }
   };
 
@@ -376,11 +381,22 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
   const handleDeleteEvent = async (eventId: any) => {
 
     try {
+
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
       const response = await axios.delete(
         "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
         {
           data: { uid, eventId },
-          withCredentials: true
+          headers: headers
         }
       );
       if (response.status === 200) {
@@ -388,16 +404,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, login }) =>
         fetchCustomEvents();
       }
     } catch (error: any) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        try {
-          login();
-          setTimeout(() => handleDeleteEvent, 500);
-        } catch (loginError) {
-          console.error("Error:", loginError);
-        }
-      } else {
         console.error("Error fetching data:", error);
-      }
     }
   };
 

@@ -5,14 +5,13 @@ import { Button } from "../../Components/ui/button";
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, Providers } from '../../Config/firebase';
 import axios from "axios";
-import Cookies from 'js-cookie';
+import { Buffer } from "buffer";
 
 interface SigninProps {
   onSignin: () => void;
-  login: () => void;
 }
 
-const Signin: React.FC<SigninProps> = ({ onSignin, login }) => {
+const Signin: React.FC<SigninProps> = ({ onSignin }) => {
   const [authenticating, setAuthenticating] = useState<boolean>(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,6 +51,17 @@ const Signin: React.FC<SigninProps> = ({ onSignin, login }) => {
 
   const signInWithGoogle = async () => {
     try {
+
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
       const result = await auth.signInWithPopup(Providers.google);
       const user = result.user;
       if (user) {
@@ -59,20 +69,11 @@ const Signin: React.FC<SigninProps> = ({ onSignin, login }) => {
         try {
           const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/user-add",
             { uid },
-            { withCredentials: true }
+            { headers: headers }
           );
           console.log('Response:', response.data);
         } catch (error: any) {
-          if (axios.isAxiosError(error) && error.response?.status === 401) {
-            try {
-              login();
-              setTimeout(() => signInWithGoogle(), 500);
-            } catch (loginError) {
-              console.error("Error:", loginError);
-            }
-          } else {
             console.error("Error fetching data:", error);
-          }
         }
 
         onSignin();
