@@ -1,11 +1,10 @@
-const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getAllFacultyCollectionItems,
   getItemByFacultyAndCollectionAndItemId,
   getItemByFacultyAndCollectionAndFilterById
 } = require('../service/facultyCollections');
-const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
+const { handleErrors, validateRequestParams, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
 
 
 /**
@@ -31,9 +30,10 @@ exports.getOneById = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, courseId } = request.query;
       validateRequestParams({ facultyId, courseId });
-      await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "courses", courseId);
       console.log(`Found and sent course with id ${courseId} of faculty ${facultyId}`);
@@ -66,9 +66,10 @@ exports.getAllForFaculty = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId } = request.query;
       validateRequestParams({ facultyId });
-      await checkJwt(request);
       
       const result = await getAllFacultyCollectionItems(facultyId, "courses");
       console.log(`Found and sent all courses by faculty with id ${facultyId}`);
@@ -102,9 +103,10 @@ exports.getAllForProgram = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, programId } = request.query;
       validateRequestParams({ facultyId, programId });
-      await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "courses", "programId", Number(programId));
       console.log(`Found and sent coures for program ${programId} of faculty ${facultyId}`);
@@ -139,9 +141,10 @@ exports.getAllForBranch = functions
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, branchId } = request.query;
       validateRequestParams({ facultyId, branchId });
-      await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "courses", "branchId", Number(branchId));
       console.log(`Found and sent courses for branch ${branchId} of faculty ${facultyId}`);

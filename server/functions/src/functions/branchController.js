@@ -1,10 +1,9 @@
 const functions = require("firebase-functions");
-const { checkJwt } = require('../service/authenticationService');
 const {
   getItemByFacultyAndCollectionAndItemId,
   getItemByFacultyAndCollectionAndFilterById
 } = require('../service/facultyCollections');
-const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
+const { handleErrors, validateRequestParams, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
 
 
 /**
@@ -30,9 +29,10 @@ exports.getOneById = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+      
       const { facultyId, branchId } = request.query;
       validateRequestParams({ facultyId, branchId });
-      await checkJwt(request);
 
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "branches", branchId);
       console.log(`Found and sent branch with id ${branchId} of faculty ${facultyId}`);
@@ -66,9 +66,10 @@ exports.getAllForProgram = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, programId } = request.query;
       validateRequestParams({ facultyId, programId });
-      await checkJwt(request);
 
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "branches", "programId", Number(programId));
       console.log(`Found and sent all branches by faculty with faculty id ${facultyId} and program id ${programId}`);
@@ -103,9 +104,10 @@ exports.getAllForProgramYear = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, programId, year } = request.query;
       validateRequestParams({ facultyId, programId, year });
-      await checkJwt(request);
 
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "branches", "programId", Number(programId), year);
       console.log(`Found and sent all branches by faculty with faculty id ${facultyId}, program id ${programId} and year ${year}`);

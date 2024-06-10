@@ -1,10 +1,13 @@
-const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getAllFaculties,
   getFacultyById
 } = require('../service/facultyService');
-const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
+const {
+  handleErrors,
+  validateRequestParams,
+  checkAuthenticationandMethodForRequest
+} = require("../utils/endpointHelpers");
 
 
 /**
@@ -25,7 +28,7 @@ exports.getAll = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "GET");
 
       const result = await getAllFaculties();
       console.log("Found and sent all faculties");
@@ -58,9 +61,10 @@ exports.getById = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId } = request.query;
       validateRequestParams({ facultyId });
-      await checkJwt(request);
 
       const result = await getFacultyById(facultyId);
       console.log(`Found and sent faculty with id ${facultyId}`);

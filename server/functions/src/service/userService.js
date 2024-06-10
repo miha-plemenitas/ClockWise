@@ -19,7 +19,7 @@ async function getUserById(uid) {
   const userDoc = await db.collection("users").doc(uid).get();
 
   if (!userDoc.exists) {
-    throw new Error(`User with id ${uid} not found`);
+    throw new Error(`User with uid ${uid} not found`);
   }
 
   const user = userDoc.data();
@@ -50,7 +50,7 @@ async function deleteUser(uid) {
 
   const userDoc = await userRef.get();
   if (!userDoc.exists) {
-    throw new Error("User does not exist.");
+    throw new Error(`User with uid ${uid} not found`);
   }
 
   await userRef.delete();

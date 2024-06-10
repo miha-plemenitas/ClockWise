@@ -1,9 +1,8 @@
-const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getLecturesByFilterAndOptionallyDate
 } = require('../service/lectureService');
-const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
+const { handleErrors, validateRequestParams, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
 
 
 /**
@@ -31,9 +30,10 @@ exports.getAllForCourse = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, courseId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId ,courseId });
-      await checkJwt(request);
       
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "courseId", courseId, startTime, endTime);
       console.log(`Found and sent lectures for course ${courseId} of faculty ${facultyId}`);
@@ -66,14 +66,16 @@ exports.getAllForBranch = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.set('Access-Control-Allow-Origin', '*');
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, branchId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, branchId });
-      await checkJwt(request);
       
+      console.log(`Got request for all lectures for faculty ${facultyId} and branch ${branchId}, with ${startTime} and ${endTime}`);
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "branches", Number(branchId), startTime, endTime);
       console.log(`Found and sent lectures for branch ${branchId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
@@ -110,7 +112,6 @@ exports.getAllForGroup = functions
     try {
       const { facultyId, groupId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, groupId });
-      await checkJwt(request);
       
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "groups", Number(groupId), startTime, endTime);
       console.log(`Found and sent lectures for group ${groupId} of faculty ${facultyId}`);
@@ -146,9 +147,10 @@ exports.getAllForRoom = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, roomId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, roomId });
-      await checkJwt(request);
       
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "rooms", Number(roomId), startTime, endTime);
       console.log(`Found and sent lectures for course ${roomId} of faculty ${facultyId}`);
@@ -184,9 +186,10 @@ exports.getAllForTutor = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, tutorId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, tutorId });
-      await checkJwt(request);
       
       const result = await getLecturesByFilterAndOptionallyDate(facultyId, "tutors", Number(tutorId), startTime, endTime);
       console.log(`Found and sent lectures for tutor ${tutorId} of faculty ${facultyId}`);

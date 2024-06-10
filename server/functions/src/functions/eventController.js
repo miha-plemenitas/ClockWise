@@ -9,7 +9,7 @@ const {
 const {
   handleErrors,
   validateRequestParams,
-  checkJWTandMethodForRequest
+  checkAuthenticationandMethodForRequest
 } = require("../utils/endpointHelpers");
 
 
@@ -20,19 +20,12 @@ exports.add = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.set('Access-Control-Allow-Origin', '*');
     response.set('Access-Control-Allow-Credentials', 'true');
 
-    if (request.method === 'OPTIONS') {
-
-      response.set('Access-Control-Allow-Methods', 'POST');
-      response.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-      response.set('Access-Control-Max-Age', '3600');
-      response.status(204).send('');
-
-    } else {
       try {
-        await checkJWTandMethodForRequest(request, "POST");
+        await checkAuthenticationandMethodForRequest(request, "POST");
+
         const { uid } = request.body;
         validateRequestParams({ uid });
 
@@ -41,7 +34,6 @@ exports.add = functions
       } catch (error) {
         handleErrors(error, response);
       }
-    }
   });
 
 
@@ -55,7 +47,8 @@ exports.get = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
-      await checkJWTandMethodForRequest(request, "GET");
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { uid, eventId } = request.body;
       validateRequestParams({ uid, eventId });
 
@@ -78,7 +71,8 @@ exports.getAll = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
-      await checkJWTandMethodForRequest(request, "GET");
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { uid } = request.body;
       validateRequestParams({ uid });
 
@@ -101,7 +95,8 @@ exports.update = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
-      await checkJWTandMethodForRequest(request, "PUT");
+      await checkAuthenticationandMethodForRequest(request, "PUT");
+
       const { uid, eventId } = request.body;
       validateRequestParams({ uid, eventId });
 
@@ -124,7 +119,8 @@ exports.delete = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
-      await checkJWTandMethodForRequest(request, "DELETE");
+      await checkAuthenticationandMethodForRequest(request, "DELETE");
+      
       const { uid, eventId } = request.body;
       validateRequestParams({ uid, eventId });
 

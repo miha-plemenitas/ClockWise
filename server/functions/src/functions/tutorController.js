@@ -1,10 +1,13 @@
-const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getAllFacultyCollectionItems,
   getItemByFacultyAndCollectionAndItemId
 } = require('../service/facultyCollections');
-const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
+const {
+  handleErrors,
+  validateRequestParams,
+  checkAuthenticationandMethodForRequest
+} = require("../utils/endpointHelpers");
 
 
 /**
@@ -30,9 +33,10 @@ exports.getOneById = functions
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, tutorId } = request.query;
       validateRequestParams({ facultyId, tutorId })
-      await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "tutors", tutorId);
       console.log(`Found and sent tutor with id ${tutorId} of faculty ${facultyId}`);
@@ -65,9 +69,10 @@ exports.getAllForFaculty = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+      
       const { facultyId } = request.query;
       validateRequestParams({ facultyId })
-      await checkJwt(request);
       
       const result = await getAllFacultyCollectionItems(facultyId, "tutors");
       console.log(`Found and sent all tutors by faculty with id ${facultyId}`);

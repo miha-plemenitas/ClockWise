@@ -1,10 +1,13 @@
-const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getAllFacultyCollectionItems,
   getItemByFacultyAndCollectionAndItemId
 } = require('../service/facultyCollections');
-const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
+const {
+  handleErrors,
+  validateRequestParams,
+  checkAuthenticationandMethodForRequest
+} = require("../utils/endpointHelpers");
 
 
 /**
@@ -30,9 +33,10 @@ exports.getOneById = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, programId } = request.query;
       validateRequestParams({ facultyId, programId });
-      await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "programs", programId);
       console.log(`Found and sent program with id ${programId} of faculty ${facultyId}`);
@@ -64,10 +68,11 @@ exports.getAllForFaculty = functions
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");
 
-    try {
+    try {      
+      await checkAuthenticationandMethodForRequest(request, "GET");
+      
       const { facultyId } = request.query;
       validateRequestParams({ facultyId });
-      await checkJwt(request);
       
       const result = await getAllFacultyCollectionItems(facultyId, "programs");
       console.log(`Found and sent all programs by faculty with id ${facultyId}`);

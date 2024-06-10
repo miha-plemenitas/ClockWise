@@ -46,9 +46,10 @@ exports.login = functions
           response.status(400).send("Incomplete request");
           return;
         }
-
-        const token = jwt.sign({ uid: uid }, secretKey, { expiresIn: '1h' });
-        response.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'None' });
+  
+        const token = jwt.sign({ uid: uid }, secretKey, { expiresIn: '24h' });
+        response.cookie('token', token);
+        console.log(token)
         response.status(200).json({ message: 'Login successful' });
       } else {
         response.status(401).send("Unauthorized");

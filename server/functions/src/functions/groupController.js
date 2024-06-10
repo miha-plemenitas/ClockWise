@@ -1,10 +1,13 @@
-const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
 const {
   getItemByFacultyAndCollectionAndFilterById,
   getItemByFacultyAndCollectionAndItemId
 } = require('../service/facultyCollections');
-const { handleErrors, validateRequestParams } = require("../utils/endpointHelpers");
+const {
+  handleErrors,
+  validateRequestParams,
+  checkAuthenticationandMethodForRequest
+} = require("../utils/endpointHelpers");
 
 
 /**
@@ -31,9 +34,10 @@ exports.getOneById = functions
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
       const { facultyId, groupId } = request.query;
       validateRequestParams({ facultyId, groupId });
-      await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "groups", groupId);
       console.log(`Found and sent group with id ${groupId} of faculty ${facultyId}`);
@@ -67,9 +71,10 @@ exports.getAllForBranch = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+      
       const { facultyId, branchId } = request.query;
       validateRequestParams({ facultyId, branchId });
-      await checkJwt(request);
       
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "groups", "branchId", Number(branchId));
       console.log(`Found and sent all groups by faculty with faculty ${facultyId} and branch ${branchId}`);

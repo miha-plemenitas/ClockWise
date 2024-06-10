@@ -1,17 +1,22 @@
-const { checkJwt } = require('../service/authenticationService');
+const { checkAuthentication } = require('../service/authenticationService');
 
 
 function handleErrors(error, response) {
   console.log(error.message);
   if (error.message.startsWith("No ")) {
     response.status(400).send(error.message);
-  } else if (error.message === 'TokenExpired' || error.message === 'Unauthorized') {
-    response.status(401).send(error.message);
-  } else if (error.message.includes(" does not exist in ")) {
+  } else if (error.message === 'OPTIONS') {
+    response.set('Access-Control-Allow-Methods', 'GET');
+    response.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+    response.set('Access-Control-Max-Age', '3600');
+    response.status(204).send('');
+  } else if (
+    error.message.includes(" does not exist in ") ||
+    error.message.includes(" not found")) {
     response.status(404).send(error.message);
-  }else if (error.message.startsWith("Method ")) {
+  } else if (error.message.startsWith("Method ")) {
     response.status(405).send(error.message);
-  }  else {
+  } else {
     console.error("Error:", error);
     response.status(500).send("Failed due to: " + error.message);
   }
@@ -28,15 +33,17 @@ function validateRequestParams(params) {
 
 
 function checkForHTTPMethod(request, required) {
-  if (request.method !== required) {
+  if (request.method === "OPTIONS") {
+    throw new Error("OPTIONS");
+  } else if (request.method !== required) {
     throw new Error(`Method ${request.method} not allowed`);
   }
 }
 
 
-async function checkJWTandMethodForRequest (request, require) {
+async function checkAuthenticationandMethodForRequest(request, require) {
   checkForHTTPMethod(request, require);
-  await checkJwt(request);
+  await checkAuthentication(request);
 }
 
 
@@ -44,5 +51,5 @@ module.exports = {
   handleErrors,
   validateRequestParams,
   checkForHTTPMethod,
-  checkJWTandMethodForRequest,
+  checkAuthenticationandMethodForRequest,
 }

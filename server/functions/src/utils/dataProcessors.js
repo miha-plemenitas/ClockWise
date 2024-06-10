@@ -13,13 +13,13 @@ function processLectureData(lecture) {
     executionTypeId = "99";
     executionType = "99";
   }
-  
+
   const startTimeDateObj = new Date(lecture.start_time);
   const endTimeDateObj = new Date(lecture.end_time);
 
   const startTime = lecture.start_time ? Timestamp.fromDate(startTimeDateObj) : null;
   const endTime = lecture.end_time ? Timestamp.fromDate(endTimeDateObj) : null;
-  const duration = endTimeDateObj - startTimeDateObj / (1000 * 60 * 60);
+  const duration = (endTimeDateObj - startTimeDateObj) / (1000 * 60 * 60);
 
   const extractIds = (items) => items.map(item => item.id);
 
@@ -40,6 +40,7 @@ function processLectureData(lecture) {
     tutors_full: lecture.lecturers,
     groups_full: lecture.groups,
     duration: duration,
+    hasRooms: lecture.rooms.length > 0
   };
 }
 
@@ -162,6 +163,26 @@ function processRoomData(room) {
   };
 }
 
+
+function processScheduleData(lecture) {
+  const startTime = lecture.date.clone().hour(lecture.timeSlot.start).toDate();
+
+  const endTime = lecture.date.clone().hour(lecture.timeSlot.start).add(lecture.duration, 'hours').toDate();
+
+  return {
+      id: `S${lecture.lecture.courseId} ${lecture.date.clone().hour(lecture.timeSlot.start).format("YYYY-MM-DDTHH:mm:ss")}`,
+      startTime: Timestamp.fromDate(startTime),
+      endTime: Timestamp.fromDate(endTime),
+      ...lecture.lecture,
+      rooms_full: [{
+          id: lecture.room,
+          name: ""
+      }],
+      rooms: [lecture.room]
+  };
+}
+
+
 module.exports = {
   processBranchData,
   processCourseData,
@@ -171,4 +192,5 @@ module.exports = {
   processProgramData,
   processRoomData,
   processTutorData,
+  processScheduleData
 }

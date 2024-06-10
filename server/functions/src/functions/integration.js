@@ -3,9 +3,8 @@ const {
   fetchProgramsForAllFaculties
 } = require('../faculties');
 const { fetchData } = require('../faculties/fetchDataForFaculty');
-const { checkJwt } = require('../service/authenticationService');
 const functions = require("firebase-functions");
-const { handleErrors } = require("../utils/endpointHelpers");
+const { handleErrors, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
 
 
 /**
@@ -28,7 +27,7 @@ exports.addFaculties = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
       const result = await addFacultyDocumentsFromList();
       response.status(200).json({ result: result });
@@ -59,7 +58,7 @@ exports.addPrograms = functions
     response.set("Access-Control-Allow-Origin", "*");
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
       const result = await fetchProgramsForAllFaculties();
       response.status(200).json({ result: result });
@@ -93,7 +92,7 @@ exports.addBranches = functions
     const id = request.query.id;
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
       const result = await fetchData(id, "branches");
       response.status(200).json({ result: result });
@@ -126,7 +125,7 @@ exports.addCourses = functions
     const id = request.query.id;
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
       const result = await fetchData(id, "courses");
       response.status(200).json({ result: result });
@@ -160,7 +159,7 @@ exports.addTutors = functions
     const id = request.query.id;
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
       const result = await fetchData(id, "tutors");
       response.status(200).json({ result: result });
@@ -194,7 +193,7 @@ exports.addGroups = functions
     const id = request.query.id;
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
       const result = await fetchData(id, "groups");
       response.status(200).json({ result: result });
@@ -228,7 +227,7 @@ exports.addLectures = functions
     const id = request.query.id;
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
       const result = await fetchData(id, "original_lectures");
       response.status(200).json({ result: result });
@@ -262,7 +261,7 @@ exports.addRooms = functions
     const id = request.query.id;
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
       const result = await fetchData(id, "rooms");
       response.status(200).json({ result: result });
@@ -280,7 +279,7 @@ exports.duplicateLectures = functions
     const id = request.query.id;
 
     try {
-      await checkJwt(request);
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
       const result = await fetchData(id, "lectures");
       response.status(200).json({ result: result });

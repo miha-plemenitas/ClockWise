@@ -1,37 +1,29 @@
 const functions = require('firebase-functions');
-const jwt = require('jsonwebtoken');
-
-const secretKey = functions.config().auth.secret_key;
 
 
-const checkJwt = async (request) => {
-  const cookies = request.headers.cookie;
-  if (!cookies) {
-    throw new Error('Unauthorized');
+const adminPassword = functions.config().auth.password;
+const adminUsername = functions.config().auth.username;
+
+
+const checkAuthentication = async (request) => {
+  const authHeader = request.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    console.log("No basic auth");
+    throw new Error("Unauthorized");
   }
 
-  const token = cookies.split(';').find(cookie => cookie.trim().startsWith('token='));
-  if (!token) {
-    throw new Error('Unauthorized');
+  const base64Credentials = authHeader.split(' ')[1];
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+  const [username, password] = credentials.split(':');
+
+  if (!(username === adminUsername && password === adminPassword)) {
+    console.log("Wrong password");
+    throw new Error("Unauthorized");
   }
-
-  const tokenValue = token.split('=')[1];
-
-  return new Promise((resolve, reject) => {
-    jwt.verify(tokenValue, secretKey, (err, decoded) => {
-      if (err) {
-        if (err.name === 'TokenExpiredError') {
-          throw new Error('TokenExpired');
-        }
-        throw new Error('Unauthorized');
-      }
-      request.user = decoded;
-      resolve(true);
-    });
-  });
 };
 
 
 module.exports = {
-  checkJwt
+  checkAuthentication
 }
