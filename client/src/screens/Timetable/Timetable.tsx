@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useId } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -347,9 +347,11 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       const response = await axios.get(
         "https://europe-west3-pameten-urnik.cloudfunctions.net/event-getAll",
         {
-          params: { uid },
-          headers: headers,
-        }
+          params: { 
+              uid: uid
+          },
+          headers: headers
+      }
       );
 
       const formattedEvents: CustomEvent[] = response.data.result.map(
@@ -455,13 +457,14 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         "Content-Type": "application/json",
       };
 
-      const response = await axios.delete(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
-        {
-          data: { uid, eventId },
-          headers: headers,
-        }
-      );
+      const response = await axios.delete("https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete", {
+        data: {
+          uid,
+          eventId
+        },
+        headers: headers
+      });
+
       if (response.status === 200) {
         setOpen(false);
         fetchCustomEvents();
