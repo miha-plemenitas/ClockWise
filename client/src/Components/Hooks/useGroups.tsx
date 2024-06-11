@@ -35,6 +35,8 @@ const useGroups = (branchId: string | null, programId: string | null) => {
             group.programId === Number(programId)
         );
 
+        filteredGroups.sort((a, b) => a.name.localeCompare(b.name));
+
         setGroups(filteredGroups);
       } catch (err) {
         console.error("Error loading groups:", err);

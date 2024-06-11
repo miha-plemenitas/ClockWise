@@ -27,6 +27,13 @@ const useTutors = (facultyId: string) => {
           id: doc.id,
           ...doc.data(),
         })) as Tutor[];
+
+        tutorsData.sort((a, b) => {
+          const nameA = `${a.firstName} ${a.lastName}`.toUpperCase();
+          const nameB = `${b.firstName} ${b.lastName}`.toUpperCase();
+          return nameA.localeCompare(nameB);
+        });
+
         setTutors(tutorsData);
       } catch (error) {
         setError("Failed to load tutors");

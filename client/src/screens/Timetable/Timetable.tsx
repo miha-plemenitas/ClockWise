@@ -81,6 +81,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
+    null
+  );
   const calendarRef = useRef<FullCalendar>(null);
 
   // dropdowns
@@ -111,10 +115,6 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     () => localStorage.getItem("selectedBranchId") || null
   );
   const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
-    null
-  );
-
-  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
     null
   );
 
@@ -244,6 +244,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     }
   }, [selectedBranch, selectedFacultyId]);
 
+  // So that the additional filters are stackable
   useEffect(() => {
     let filtered = events;
 
@@ -259,8 +260,20 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       );
     }
 
+    if (selectedRoomId) {
+      filtered = filtered.filter((event) =>
+        event.extendedProps.location.includes(roomMap[selectedRoomId!])
+      );
+    }
+
+    if (selectedCourseName) {
+      filtered = filtered.filter((event) =>
+        event.title.includes(selectedCourseName)
+      );
+    }
+
     setFilteredEvents(filtered);
-  }, [selectedGroupId, selectedTutorId, events]);
+  }, [selectedGroupId, selectedTutorId, selectedRoomId, selectedCourseName, events]);
 
   useEffect(() => {
     setEvents([]); // ???
@@ -279,6 +292,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     setSelectedTutorName(null);
     setSelectedGroupId(null); // Clear the selected group ID
     setSelectedTutorId(null); // Clear the selected tutor ID
+    setSelectedRoomId(null); // Clear the selected room ID
 
     localStorage.removeItem("selectedFacultyId");
     localStorage.removeItem("selectedProgramId");
@@ -286,6 +300,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     localStorage.removeItem("selectedBranchId");
     localStorage.removeItem("selectedGroupId"); // Remove selected group ID from local storage
     localStorage.removeItem("selectedTutorId"); // Remove selected tutor ID from local storage
+    localStorage.removeItem("selectedRoomId"); // Remove selected room ID from local storage
   }, []);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
@@ -519,6 +534,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
             programId={programId}
             onSelectCourse={(name) => {
               setSelectedCourseName(name);
+              localStorage.setItem("selectedCourseName", name); // Save selected course name to local storage
             }}
             selectedCourseName={selectedCourseName}
           />
@@ -535,7 +551,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           <DropdownMenuRooms
             facultyId={selectedFacultyId}
             onSelectRoom={(id, name) => {
+              setSelectedRoomId(id);
               setSelectedRoomName(name);
+              localStorage.setItem("selectedRoomId", id); // Save selected room ID to local storage
             }}
             selectedRoomName={selectedRoomName}
           />
