@@ -24,12 +24,11 @@ import useTutors from "../../Components/Hooks/useTutors";
 import useRooms from "../../Components/Hooks/useRooms";
 import axios from "axios";
 
-
 function renderEventContent(eventInfo: EventContentArg) {
   return (
     <>
       <b>{eventInfo.event.title}</b>
-      <p>{eventInfo.event.extendedProps.prostor}</p>
+      <p>{eventInfo.event.extendedProps.location}</p>
     </>
   );
 }
@@ -76,38 +75,64 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   // events on timetable
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
 
   // dropdowns
-  const [selectedFacultyId, setSelectedFacultyId] = useState(() => localStorage.getItem("selectedFacultyId") || "");
-  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(null);
+  const [selectedFacultyId, setSelectedFacultyId] = useState(
+    () => localStorage.getItem("selectedFacultyId") || ""
+  );
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
+    null
+  );
   const { faculties } = useFaculties();
 
-  const [programId, setProgramId] = useState<string | null>(() => localStorage.getItem("selectedProgramId") || null);
-  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(null);
+  const [programId, setProgramId] = useState<string | null>(
+    () => localStorage.getItem("selectedProgramId") || null
+  );
+  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
+    null
+  );
   const { programs } = usePrograms(selectedFacultyId);
 
   const [programDuration, setProgramDuration] = useState<number | null>(null);
 
-  const [selectedYear, setSelectedYear] = useState<number | null>(() => Number(localStorage.getItem("selectedYearId")) || null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(
+    () => Number(localStorage.getItem("selectedYearId")) || null
+  );
   const [selectedYearName, setSelectedYearName] = useState<string | null>(null);
 
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(() => localStorage.getItem("selectedBranchId") || null);
-  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(
+    () => localStorage.getItem("selectedBranchId") || null
+  );
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
+    null
+  );
 
-  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(null);
+  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
+    null
+  );
 
-  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
+    null
+  );
   const [allGroups, setAllGroups] = useState<Group[]>([]);
 
   const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
 
-  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(null);
+  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(
+    null
+  );
 
-  const { branches } = useBranches(selectedFacultyId, programId || "", selectedYear);
+  const { branches } = useBranches(
+    selectedFacultyId,
+    programId || "",
+    selectedYear
+  );
 
   const fetchAllGroups = async () => {
     try {
@@ -150,7 +175,6 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
 
   const fetchData = async () => {
     try {
-
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
 
@@ -167,37 +191,44 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           params: {
             facultyId: selectedFacultyId,
             branchId: selectedBranch,
-            startTime: "2023-09-01T00:00:00Z"
+            startTime: "2023-09-01T00:00:00Z",
           },
           headers: headers,
         }
       );
-      const formattedEvents: Event[] = response.data.result.map((lecture: any) => {
+      const formattedEvents: Event[] = response.data.result.map(
+        (lecture: any) => {
+          // Format start time
+          const startTime = new Date(lecture.startTime._seconds * 1000);
+          const formattedStart = startTime.toISOString().slice(0, 19);
 
-        // Format start time
-        const startTime = new Date(lecture.startTime._seconds * 1000);
-        const formattedStart = startTime.toISOString().slice(0, 19);
+          // Format end time
+          const endTime = new Date(lecture.endTime._seconds * 1000);
+          const formattedEnd = endTime.toISOString().slice(0, 19);
 
-        // Format end time
-        const endTime = new Date(lecture.endTime._seconds * 1000);
-        const formattedEnd = endTime.toISOString().slice(0, 19);
-
-        return {
-          id: lecture.id,
-          title: lecture.course,
-          start: formattedStart,
-          end: formattedEnd,
-          extendedProps: {
-            type: lecture.executionType,
-            groups: lecture.groups.map((id: string | number) => groupMap[id] || "Unknown Group").join(", "),
-            teacher: lecture.tutors.map((id: string | number) => tutorMap[id] || "Unknown Tutor").join(", "),
-            location: lecture.rooms.map((id: string | number) => roomMap[id] || "Unknown Room").join(", "),
-            editable: false,
-          },
-        };
-      });
+          return {
+            id: lecture.id,
+            title: lecture.course,
+            start: formattedStart,
+            end: formattedEnd,
+            extendedProps: {
+              type: lecture.executionType,
+              groups: lecture.groups
+                .map((id: string | number) => groupMap[id] || "Unknown Group")
+                .join(", "),
+              teacher: lecture.tutors
+                .map((id: string | number) => tutorMap[id] || "Unknown Tutor")
+                .join(", "),
+              location: lecture.rooms
+                .map((id: string | number) => roomMap[id] || "Unknown Room")
+                .join(", "),
+              editable: false,
+            },
+          };
+        }
+      );
       setEvents(formattedEvents);
-
+      setFilteredEvents(formattedEvents);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -212,6 +243,16 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     }
   }, [selectedBranch, selectedFacultyId]);
 
+  useEffect(() => {
+    if (selectedGroupId) {
+      const filtered = events.filter((event) =>
+        event.extendedProps.groups.includes(groupMap[selectedGroupId!])
+      );
+      setFilteredEvents(filtered);
+    } else {
+      setFilteredEvents(events);
+    }
+  }, [selectedGroupId, events]);
 
   useEffect(() => {
     setEvents([]); // ???
@@ -228,18 +269,21 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     setSelectedGroupName(null);
     setSelectedRoomName(null);
     setSelectedTutorName(null);
+    setSelectedGroupId(null); // Clear the selected group ID
 
     localStorage.removeItem("selectedFacultyId");
     localStorage.removeItem("selectedProgramId");
     localStorage.removeItem("selectedYearId");
     localStorage.removeItem("selectedBranchId");
-
+    localStorage.removeItem("selectedGroupId"); // Remove selected group ID from local storage
   }, []);
 
-
   const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = events.find((event: Event) => event.id === clickInfo.event.id)
-      || customEvents.find((event: CustomEvent) => event.id === clickInfo.event.id)
+    const event =
+      events.find((event: Event) => event.id === clickInfo.event.id) ||
+      customEvents.find(
+        (event: CustomEvent) => event.id === clickInfo.event.id
+      );
     if (event) {
       setSelectedEvent(event);
       setMode(event.extendedProps.editable ? "edit" : "view");
@@ -262,11 +306,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     }
   };
 
-  // fetching custom events 
+  // fetching custom events
   const fetchCustomEvents = async () => {
-
     try {
-
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
 
@@ -281,35 +323,35 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         "https://europe-west3-pameten-urnik.cloudfunctions.net/event-getAll",
         {
           params: { uid },
-          headers: headers
+          headers: headers,
         }
       );
 
-      const formattedEvents: CustomEvent[] = response.data.result.map((eventData: any) => {
+      const formattedEvents: CustomEvent[] = response.data.result.map(
+        (eventData: any) => {
+          // Format start time
+          const startTime = new Date(eventData.startTime._seconds * 1000);
+          const formattedStart = startTime.toISOString().slice(0, 19);
 
-        // Format start time
-        const startTime = new Date(eventData.startTime._seconds * 1000);
-        const formattedStart = startTime.toISOString().slice(0, 19);
+          // Format end time
+          const endTime = new Date(eventData.endTime._seconds * 1000);
+          const formattedEnd = endTime.toISOString().slice(0, 19);
 
-        // Format end time
-        const endTime = new Date(eventData.endTime._seconds * 1000);
-        const formattedEnd = endTime.toISOString().slice(0, 19);
-
-        return {
-          id: eventData.id,
-          title: eventData.title,
-          start: formattedStart,
-          end: formattedEnd,
-          extendedProps: {
-            notes: eventData.notes,
-            editable: eventData.editable
-          }
-        };
-      });
+          return {
+            id: eventData.id,
+            title: eventData.title,
+            start: formattedStart,
+            end: formattedEnd,
+            extendedProps: {
+              notes: eventData.notes,
+              editable: eventData.editable,
+            },
+          };
+        }
+      );
       setCustomEvents(formattedEvents);
-
     } catch (error) {
-        console.error("Error fetching data:", error);
+      console.error("Error fetching data:", error);
     }
   };
 
@@ -319,10 +361,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     }
   }, [uid]);
 
-  // adding custom event 
+  // adding custom event
   const handleAddEvent = async (eventInfo: any) => {
     try {
-
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
 
@@ -333,7 +374,8 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         "Content-Type": "application/json",
       };
 
-      const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
+      const response = await axios.post(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
         { uid, ...eventInfo },
         { headers: headers }
       );
@@ -342,15 +384,13 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         fetchCustomEvents();
       }
     } catch (error: any) {
-        console.error("Error fetching data:", error);
+      console.error("Error fetching data:", error);
     }
   };
 
-  // updating custom event 
+  // updating custom event
   const handleUpdateEvent = async (eventInfo: any) => {
-
     try {
-
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
 
@@ -365,7 +405,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
         { uid, eventId: eventInfo.id, ...eventInfo },
         {
-          headers: headers
+          headers: headers,
         }
       );
       if (response.status === 200) {
@@ -373,15 +413,13 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         fetchCustomEvents();
       }
     } catch (error: any) {
-        console.error("Error fetching data:", error);
+      console.error("Error fetching data:", error);
     }
   };
 
   // deleting custom event
   const handleDeleteEvent = async (eventId: any) => {
-
     try {
-
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
 
@@ -396,7 +434,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
         {
           data: { uid, eventId },
-          headers: headers
+          headers: headers,
         }
       );
       if (response.status === 200) {
@@ -404,7 +442,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         fetchCustomEvents();
       }
     } catch (error: any) {
-        console.error("Error fetching data:", error);
+      console.error("Error fetching data:", error);
     }
   };
 
@@ -478,6 +516,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
             branchId={selectedBranch}
             programId={programId}
             onSelectGroup={(id, name) => {
+              setSelectedGroupId(id);
               setSelectedGroupName(name);
             }}
             selectedGroupName={selectedGroupName}
@@ -507,8 +546,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           plugins={[timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
           weekends={false}
-          eventSources={[{ events: events, color: '#26547C' }, { events: customEvents, color: '#48ACF0' }]}
-          //events={customEvents}
+          events={filteredEvents}
           eventContent={renderEventContent}
           headerToolbar={{
             left: "title",
