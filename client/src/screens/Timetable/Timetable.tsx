@@ -80,6 +80,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
 
   // dropdowns
@@ -244,15 +245,22 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   }, [selectedBranch, selectedFacultyId]);
 
   useEffect(() => {
+    let filtered = events;
+
     if (selectedGroupId) {
-      const filtered = events.filter((event) =>
+      filtered = filtered.filter((event) =>
         event.extendedProps.groups.includes(groupMap[selectedGroupId!])
       );
-      setFilteredEvents(filtered);
-    } else {
-      setFilteredEvents(events);
     }
-  }, [selectedGroupId, events]);
+
+    if (selectedTutorId) {
+      filtered = filtered.filter((event) =>
+        event.extendedProps.teacher.includes(tutorMap[selectedTutorId!])
+      );
+    }
+
+    setFilteredEvents(filtered);
+  }, [selectedGroupId, selectedTutorId, events]);
 
   useEffect(() => {
     setEvents([]); // ???
@@ -270,12 +278,14 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     setSelectedRoomName(null);
     setSelectedTutorName(null);
     setSelectedGroupId(null); // Clear the selected group ID
+    setSelectedTutorId(null); // Clear the selected tutor ID
 
     localStorage.removeItem("selectedFacultyId");
     localStorage.removeItem("selectedProgramId");
     localStorage.removeItem("selectedYearId");
     localStorage.removeItem("selectedBranchId");
     localStorage.removeItem("selectedGroupId"); // Remove selected group ID from local storage
+    localStorage.removeItem("selectedTutorId"); // Remove selected tutor ID from local storage
   }, []);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
@@ -518,6 +528,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
             onSelectGroup={(id, name) => {
               setSelectedGroupId(id);
               setSelectedGroupName(name);
+              localStorage.setItem("selectedGroupId", id); // Save selected group ID to local storage
             }}
             selectedGroupName={selectedGroupName}
           />
@@ -531,7 +542,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           <DropdownMenuTutors
             facultyId={selectedFacultyId}
             onSelectTutor={(id, name) => {
+              setSelectedTutorId(id);
               setSelectedTutorName(name);
+              localStorage.setItem("selectedTutorId", id); // Save selected tutor ID to local storage
             }}
             selectedTutorName={selectedTutorName}
           />
