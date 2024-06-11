@@ -23,17 +23,17 @@ exports.add = functions
     response.set('Access-Control-Allow-Origin', '*');
     response.set('Access-Control-Allow-Credentials', 'true');
 
-      try {
-        await checkAuthenticationandMethodForRequest(request, "POST");
+    try {
+      await checkAuthenticationandMethodForRequest(request, "POST");
 
-        const { uid } = request.body;
-        validateRequestParams({ uid });
+      const { uid } = request.body;
+      validateRequestParams({ uid });
 
-        const eventId = await saveEventForUser(uid, request.body);
-        return response.status(201).send({ uid: eventId });
-      } catch (error) {
-        handleErrors(error, response);
-      }
+      const eventId = await saveEventForUser(uid, request.body);
+      return response.status(201).send({ uid: eventId });
+    } catch (error) {
+      handleErrors(error, response);
+    }
   });
 
 
@@ -74,7 +74,7 @@ exports.getAll = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
-      const { uid } = request.body;
+      const { uid } = request.query;
       validateRequestParams({ uid });
 
       const result = await getEventsForUser(uid);
@@ -103,11 +103,13 @@ exports.update = functions
       response.set('Access-Control-Max-Age', '3600');
       response.status(204).send('');
 
-    try {
-      await checkAuthenticationandMethodForRequest(request, "PUT");
+    } else {
 
-      const { uid, eventId } = request.body;
-      validateRequestParams({ uid, eventId });
+      try {
+        await checkAuthenticationandMethodForRequest(request, "PUT");
+
+        const { uid, eventId } = request.body;
+        validateRequestParams({ uid, eventId });
 
         const result = await updateEventForUser(uid, eventId, request.body);
         console.log(`Updated event ${eventId} for user with id ${uid}`);
@@ -136,12 +138,12 @@ exports.delete = functions
       response.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
       response.set('Access-Control-Max-Age', '3600');
       response.status(204).send('');
+    } else {
+      try {
+        await checkAuthenticationandMethodForRequest(request, "DELETE");
 
-    try {
-      await checkAuthenticationandMethodForRequest(request, "DELETE");
-      
-      const { uid, eventId } = request.body;
-      validateRequestParams({ uid, eventId });
+        const { uid, eventId } = request.body;
+        validateRequestParams({ uid, eventId });
 
         const result = await deleteEventForUser(uid, eventId);
         console.log(`Deleted user with id ${uid}`);
