@@ -130,6 +130,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     null
   );
 
+
   const { branches } = useBranches(
     selectedFacultyId,
     programId || "",
@@ -573,8 +574,8 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           plugins={[timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
           weekends={false}
-          events={filteredEvents}
           eventContent={renderEventContent}
+          eventSources={[{ events: filteredEvents, color: '#4890CB' },{ events: customEvents, color: '#1B364B' }]}
           headerToolbar={{
             left: "title",
             center: "",
