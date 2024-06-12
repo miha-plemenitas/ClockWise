@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useId } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -82,6 +82,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
     null
   );
@@ -273,35 +274,28 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     }
 
     setFilteredEvents(filtered);
-  }, [selectedGroupId, selectedTutorId, selectedRoomId, selectedCourseName, events]);
+  }, [
+    selectedGroupId,
+    selectedTutorId,
+    selectedRoomId,
+    selectedCourseName,
+    events,
+  ]);
 
-  useEffect(() => {
-    setEvents([]); // ???
-    setSelectedFacultyId("");
-    setSelectedFacultyName(null);
-    setProgramId(null);
-    setSelectedProgramName(null);
-    setProgramDuration(null);
-    setSelectedYear(null);
-    setSelectedYearName(null);
-    setSelectedBranch(null);
-    setSelectedBranchName(null);
+  const clearFilters = () => {
+    setSelectedGroupId(null);
+    setSelectedTutorId(null);
+    setSelectedRoomId(null);
+    setSelectedCourseId(null);
     setSelectedCourseName(null);
-    setSelectedGroupName(null);
-    setSelectedRoomName(null);
-    setSelectedTutorName(null);
-    setSelectedGroupId(null); // Clear the selected group ID
-    setSelectedTutorId(null); // Clear the selected tutor ID
-    setSelectedRoomId(null); // Clear the selected room ID
+    setFilteredEvents(events);
 
-    localStorage.removeItem("selectedFacultyId");
-    localStorage.removeItem("selectedProgramId");
-    localStorage.removeItem("selectedYearId");
-    localStorage.removeItem("selectedBranchId");
-    localStorage.removeItem("selectedGroupId"); // Remove selected group ID from local storage
-    localStorage.removeItem("selectedTutorId"); // Remove selected tutor ID from local storage
-    localStorage.removeItem("selectedRoomId"); // Remove selected room ID from local storage
-  }, []);
+    localStorage.removeItem("selectedGroupId");
+    localStorage.removeItem("selectedTutorId");
+    localStorage.removeItem("selectedRoomId");
+    localStorage.removeItem("selectedCourseId");
+    localStorage.removeItem("selectedCourseName");
+  };
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event =
@@ -347,11 +341,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       const response = await axios.get(
         "https://europe-west3-pameten-urnik.cloudfunctions.net/event-getAll",
         {
-          params: { 
-              uid: uid
-          },
-          headers: headers
-      }
+          params: { uid },
+          headers: headers,
+        }
       );
 
       const formattedEvents: CustomEvent[] = response.data.result.map(
@@ -457,14 +449,13 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         "Content-Type": "application/json",
       };
 
-      const response = await axios.delete("https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete", {
-        data: {
-          uid,
-          eventId
-        },
-        headers: headers
-      });
-
+      const response = await axios.delete(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
+        {
+          data: { uid, eventId },
+          headers: headers,
+        }
+      );
       if (response.status === 200) {
         setOpen(false);
         fetchCustomEvents();
@@ -535,8 +526,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           <DropdownMenuCourses
             branchId={selectedBranch}
             programId={programId}
-            onSelectCourse={(name) => {
+            onSelectCourse={(id, name) => {
+              setSelectedCourseId(id);
               setSelectedCourseName(name);
+              localStorage.setItem("selectedCourseId", id); // Save selected course ID to local storage
               localStorage.setItem("selectedCourseName", name); // Save selected course name to local storage
             }}
             selectedCourseName={selectedCourseName}
@@ -601,7 +594,12 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           select={handleDateSelect}
         />
       </div>
-
+      <button
+        onClick={clearFilters}
+        className="bg-oranzna text-white hover:bg-oranzna-700 rounded-lg px-4 py-2 flex items-center justify-center"
+      >
+        Clear Filters
+      </button>
       <CustomModal
         isOpen={open}
         toggle={handleCloseModal}

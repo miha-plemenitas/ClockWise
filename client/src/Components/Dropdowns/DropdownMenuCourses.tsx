@@ -15,7 +15,7 @@ import useCourses from "../../Components/Hooks/useCourses";
 interface DropdownMenuCoursesProps {
   branchId: string | null;
   programId: string | null;
-  onSelectCourse: (courseName: string) => void;
+  onSelectCourse: (courseId: string, courseName: string) => void;
   selectedCourseName: string | null;
 }
 
@@ -53,8 +53,9 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
     setSelectedCourses(value);
     const selectedCourse = courses.find((course) => course.course === value);
     if (selectedCourse) {
-      onSelectCourse(selectedCourse.course);
+      onSelectCourse(selectedCourse.id, selectedCourse.course);
       localStorage.setItem("selectedCourseId", selectedCourse.id);
+      localStorage.setItem("selectedCourseName", selectedCourse.course);
     }
   };
 
