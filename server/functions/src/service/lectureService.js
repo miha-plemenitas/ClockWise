@@ -28,7 +28,7 @@ function convertToDate(dateString, endOfDay = false) {
  * @returns {firebase.firestore.Query} A Firestore query with the applied filter.
  */
 function buildFilteredQuery(lectureRef, filterFieldName, filterValue) {
-  const arrayFields = ["tutors", "rooms", "groups", "branches"];
+  const arrayFields = ["tutor_ids", "room_ids", "group_ids", "branch_ids"];
 
   if (arrayFields.includes(filterFieldName)) {
     return lectureRef.where(filterFieldName, "array-contains", filterValue);

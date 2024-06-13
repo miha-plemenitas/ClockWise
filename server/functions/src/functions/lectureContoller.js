@@ -81,7 +81,7 @@ exports.getAllForBranch = functions
 
       
       console.log(`Got request for all lectures for faculty ${facultyId} and branch ${branchId}, with ${startTime} and ${endTime}`);
-      const result = await getLecturesByFilterAndOptionallyDate(facultyId, "branches", Number(branchId), startTime, endTime, "lectures");
+      const result = await getLecturesByFilterAndOptionallyDate(facultyId, "branch_ids", Number(branchId), startTime, endTime, "lectures");
       console.log(`Found and sent lectures for branch ${branchId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
@@ -118,7 +118,7 @@ exports.getAllForGroup = functions
       const { facultyId, groupId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, groupId });
       
-      const result = await getLecturesByFilterAndOptionallyDate(facultyId, "groups", Number(groupId), startTime, endTime, "lectures");
+      const result = await getLecturesByFilterAndOptionallyDate(facultyId, "group_ids", Number(groupId), startTime, endTime, "lectures");
       console.log(`Found and sent lectures for group ${groupId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
@@ -157,7 +157,7 @@ exports.getAllForRoom = functions
       const { facultyId, roomId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, roomId });
       
-      const result = await getLecturesByFilterAndOptionallyDate(facultyId, "rooms", Number(roomId), startTime, endTime, "lectures");
+      const result = await getLecturesByFilterAndOptionallyDate(facultyId, "room_ids", Number(roomId), startTime, endTime, "lectures");
       console.log(`Found and sent lectures for course ${roomId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {
@@ -196,7 +196,7 @@ exports.getAllForTutor = functions
       const { facultyId, tutorId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, tutorId });
       
-      const result = await getLecturesByFilterAndOptionallyDate(facultyId, "tutors", Number(tutorId), startTime, endTime, "lectures");
+      const result = await getLecturesByFilterAndOptionallyDate(facultyId, "tutor_ids", Number(tutorId), startTime, endTime, "lectures");
       console.log(`Found and sent lectures for tutor ${tutorId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
     } catch (error) {

@@ -5,6 +5,9 @@ const {
   getItemByFacultyAndCollectionAndFilterById
 } = require('../service/facultyCollections');
 const { handleErrors, validateRequestParams, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
+const {
+  getLecturesByFilterAndOptionallyDate
+} = require('../service/lectureService');
 
 
 /**
@@ -34,7 +37,7 @@ exports.getOneById = functions
 
       const { facultyId, courseId } = request.query;
       validateRequestParams({ facultyId, courseId });
-      
+
       const result = await getItemByFacultyAndCollectionAndItemId(facultyId, "courses", courseId);
       console.log(`Found and sent course with id ${courseId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
@@ -70,7 +73,7 @@ exports.getAllForFaculty = functions
 
       const { facultyId } = request.query;
       validateRequestParams({ facultyId });
-      
+
       const result = await getAllFacultyCollectionItems(facultyId, "courses");
       console.log(`Found and sent all courses by faculty with id ${facultyId}`);
       response.status(200).json({ result: result });
@@ -107,7 +110,7 @@ exports.getAllForProgram = functions
 
       const { facultyId, programId } = request.query;
       validateRequestParams({ facultyId, programId });
-      
+
       const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "courses", "programId", Number(programId));
       console.log(`Found and sent coures for program ${programId} of faculty ${facultyId}`);
       response.status(200).json({ result: result });
@@ -118,9 +121,9 @@ exports.getAllForProgram = functions
 
 
 /**
- * Google Cloud Function to retrieve all courses associated with a specific branch from a faculty's "courses" collection.
+ * Google Cloud Function to retrieve all courses associated with a specific branch from a faculty's "lecture" collection.
  * This function is an HTTP-triggered endpoint that requires both the faculty ID and the branch ID to be provided in the query parameters.
- * It handles CORS, checks if the JWT token is valid, and manages potential errors related to missing parameters, unauthorized access, or 
+ * It handles CORS, checks authentication, and manages potential errors related to missing parameters, unauthorized access, or 
  * issues during data retrieval.
  *
  * Query Parameters:
@@ -145,10 +148,23 @@ exports.getAllForBranch = functions
 
       const { facultyId, branchId } = request.query;
       validateRequestParams({ facultyId, branchId });
-      
-      const result = await getItemByFacultyAndCollectionAndFilterById(facultyId, "courses", "branchId", Number(branchId));
-      console.log(`Found and sent courses for branch ${branchId} of faculty ${facultyId}`);
-      response.status(200).json({ result: result });
+
+      const lectures = await getLecturesByFilterAndOptionallyDate(facultyId, "branch_ids", Number(branchId), "2024-02-26", "2024-06-09", "lectures");
+      const courses = new Array();
+
+      for (const lecture of lectures) {
+        const course = {
+          "id": lecture.courseId,
+          "courseId": Number(lecture.courseId),
+          "course": lecture.course
+        };
+
+        if (!courses.some(existingCourse => existingCourse.courseId === course.courseId)) {
+          courses.push(course);
+        }
+      }
+
+      response.status(200).json({ result: courses });
     } catch (error) {
       handleErrors(error, response);
     }
