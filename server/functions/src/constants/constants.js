@@ -3,6 +3,7 @@ module.exports = {
   bufferedCredentials: Buffer.from("wtt_api_user_a:H50lsd2$XejBIBv7t"),
   userAllowedKeys: ["facultyId", "programId", "branchId", "groupId"],
   eventAllowedKeys: ["startTime", "endTime", "title", "notes", "editable"],
+  timetableAllowedKeys: ["events"],
   allowedRoles: ['student', 'professor', 'referat','admin'],
   faculties: [
     {

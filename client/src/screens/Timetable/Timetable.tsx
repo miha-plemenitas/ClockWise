@@ -5,7 +5,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import CustomModal from "../../Components/Modal/CustomModal";
 import { firestore } from "../../Config/firebase";
-import dayjs, { Dayjs } from "dayjs";
+import { Dayjs } from "dayjs";
 import { Buffer } from "buffer";
 
 import DropdownMenuFaculties from "../../Components/Dropdowns/DropdownMenuFaculties";
@@ -23,6 +23,7 @@ import useBranches from "../../Components/Hooks/useBranches";
 import useTutors from "../../Components/Hooks/useTutors";
 import useRooms from "../../Components/Hooks/useRooms";
 import axios from "axios";
+import SaveButton from "../../Components/SaveButton/SaveButton";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -181,6 +182,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       );
       const formattedEvents: Event[] = response.data.result.map(
         (lecture: any) => {
+
           // Format start time
           const startTime = new Date(lecture.startTime._seconds * 1000);
           const formattedStart = startTime.toISOString().slice(0, 19);
@@ -273,6 +275,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   };
 
   useEffect(() => {
+    setFilteredEvents([]);
     setSelectedFacultyId("");
     setSelectedFacultyName(null);
     setProgramId(null);
@@ -596,12 +599,15 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           select={handleDateSelect}
         />
       </div>
+      <div className="flex space-x-2">
         <button
           onClick={clearFilters}
           className="bg-oranzna text-white hover:bg-oranzna-700 rounded-lg px-4 py-2 flex items-center justify-center"
         >
           Clear Filters
         </button>
+        <SaveButton isAuthenticated={isAuthenticated} uid={uid} events={filteredEvents}/>
+      </div>
       <CustomModal
         isOpen={open}
         toggle={handleCloseModal}
