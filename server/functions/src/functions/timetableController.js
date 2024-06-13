@@ -1,6 +1,7 @@
 const functions = require("firebase-functions");
 const {
   saveTimetableForUser,
+  getTimetableByUserId
 } = require("../service/timetableService");
 const {
     handleErrors,
@@ -27,6 +28,29 @@ exports.add = functions
 
       const timetableId = await saveTimetableForUser(uid, request.body);
       return response.status(201).send({ uid: timetableId });
+    } catch (error) {
+      handleErrors(error, response);
+    }
+  });
+
+  exports.get = functions
+  .region("europe-west3")
+  .runWith({
+    timeoutSeconds: 540
+  })
+  .https
+  .onRequest(async (request, response) => {
+    response.set("Access-Control-Allow-Origin", "*");
+
+    try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
+      const { uid } = request.query;
+      validateRequestParams({ uid });
+
+      const result = await getTimetableByUserId(uid);
+      console.log(`Found and sent timetable for user with id ${uid}`);
+      response.status(200).json({ result: result });
     } catch (error) {
       handleErrors(error, response);
     }

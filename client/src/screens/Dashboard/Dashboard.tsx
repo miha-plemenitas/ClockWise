@@ -1,186 +1,194 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion"; // Import motion
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-} from "../../Components/ui/card";
-import { Label } from "../../Components/ui/label";
-import { Button } from "../../Components/ui/button";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "../../Components/ui/tabs";
-import { CalendarIcon } from "@radix-ui/react-icons";
-import { format } from "date-fns";
-import { cn } from "../../lib/utils";
-import { Calendar } from "../../Components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../../Components/ui/popover";
+import React, { useEffect, useState } from "react";
+import { Tabs, TabsList, TabsTrigger, } from "../../Components/ui/tabs";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import { EventClickArg, EventContentArg } from "@fullcalendar/core";
+import CustomModal from "../../Components/Modal/CustomModal";
+import { Dayjs } from "dayjs";
+import { Buffer } from "buffer";
+import axios from "axios";
 
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.5 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { duration: 0.8, delay: 0.5, ease: [0, 0.71, 0.2, 1.01] },
-  },
-};
+function renderEventContent(eventInfo: EventContentArg) {
+  return (
+    <>
+      <p>{eventInfo.event.title}</p>
+      <p>{eventInfo.event.extendedProps.location}</p>
+    </>
+  );
+}
 
-const Dashboard = () => {
+interface Event {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  extendedProps: {
+    date: Dayjs;
+    type: string;
+    groups: string;
+    teacher: string;
+    location: string;
+    editable: boolean;
+  };
+}
+
+interface DashboardProps {
+  isAuthenticated: boolean;
+  uid: string | null;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ isAuthenticated, uid }) => {
   const [activeTab, setActiveTab] = useState("overview");
-  const [date, setDate] = React.useState<Date>();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"view" | "edit" | "add">("add");
+
+  const fetchTimetable = async () => {
+    try {
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = await axios.get(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/timetable-get",
+        {
+          params: { uid: uid },
+          headers,
+        }
+      );
+      setEvents(response.data.result.events);
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated && uid) {
+      fetchTimetable()
+    }
+  }, [uid]);
+
+  const handleEventClick = (clickInfo: EventClickArg) => {
+    const event =
+      events.find((event: Event) => event.id === clickInfo.event.id);
+
+    if (event) {
+      setSelectedEvent(event);
+      setMode("view");
+      setOpen(true);
+    } else {
+      console.error("Event not found");
+      alert("Event not found. Please try again.");
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSelectedEvent(null);
+    setOpen(false);
+  };
 
   return (
     <div className="dashboard-container p-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-modra text-3xl font-bold">Dashboard</h1>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={cn(
-                "w-[240px] justify-start text-left font-normal",
-                !date && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4 text-oranzna-700" />
-              {date ? format(date, "PPP") : <span>Pick a date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              className="text-oranzna-700"
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
       </div>
-
+      {/* 
       <div className="inline-block bg-gray-100 p-2 rounded-lg mb-6">
-        {" "}
-        {/* Adjusted padding for equal margins */}
+        
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="flex">
             <TabsTrigger
               value="overview"
-              className={`tab ${
-                activeTab === "overview" ? "bg-white shadow" : "text-gray-500"
-              } px-4 py-2 rounded-lg transition-all duration-300 ease-in-out`}
+              className={`tab ${activeTab === "overview" ? "bg-white shadow" : "text-gray-500"
+                } px-4 py-2 rounded-lg transition-all duration-300 ease-in-out`}
             >
               Overview
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
-              className={`tab ${
-                activeTab === "analytics" ? "bg-white shadow" : "text-gray-500"
-              } px-4 py-2 rounded-lg transition-all duration-300 ease-in-out`}
+              className={`tab ${activeTab === "analytics" ? "bg-white shadow" : "text-gray-500"
+                } px-4 py-2 rounded-lg transition-all duration-300 ease-in-out`}
             >
               Analytics
             </TabsTrigger>
             <TabsTrigger
               value="reports"
-              className={`tab ${
-                activeTab === "reports" ? "bg-white shadow" : "text-gray-500"
-              } px-4 py-2 rounded-lg transition-all duration-300 ease-in-out`}
+              className={`tab ${activeTab === "reports" ? "bg-white shadow" : "text-gray-500"
+                } px-4 py-2 rounded-lg transition-all duration-300 ease-in-out`}
             >
               Reports
             </TabsTrigger>
             <TabsTrigger
               value="notifications"
-              className={`tab ${
-                activeTab === "notifications"
-                  ? "bg-white shadow"
-                  : "text-gray-500"
-              } px-4 py-2 rounded-lg transition-all duration-300 ease-in-out`}
+              className={`tab ${activeTab === "notifications"
+                ? "bg-white shadow"
+                : "text-gray-500"
+                } px-4 py-2 rounded-lg transition-all duration-300 ease-in-out`}
             >
               Notifications
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        <motion.div variants={cardVariants} initial="hidden" animate="visible">
-          <Card className="col-span-1 border border-gray-200 bg-white rounded-lg shadow-sm p-6">
-            <CardContent className="flex flex-col items-center justify-center text-center">
-              <Label className="text-sm font-medium text-modra">
-                Total Revenue
-              </Label>
-              <h2 className="text-3xl font-semibold mt-2">$45,231.89</h2>
-              <Label className="text-sm font-medium text-green-500 mt-1">
-                +20.1% from last month
-              </Label>
-            </CardContent>
-          </Card>
-        </motion.div>
+      */}
+      {isAuthenticated && (
+        <div>
+          <div className="mt-4 w-full bg-white rounded-lg p-4">
+            <FullCalendar
+              height={"auto"}
+              slotMinTime={"7:00"}
+              slotMaxTime={"21:00"}
+              plugins={[timeGridPlugin, interactionPlugin]}
+              initialView="timeGridWeek"
+              weekends={false}
+              eventContent={renderEventContent}
+              eventSources={[{ events: events, color: '#4890CB' }]}
+              headerToolbar={{
+                left: "title",
+                center: "",
+                right: "prev,next today",
+              }}
+              titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
+              dayHeaderClassNames="font-bold text-lg"
+              dayHeaderFormat={{
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              }}
+              selectable={true}
+              selectMirror={true}
+              unselectAuto={true}
+              eventClick={handleEventClick}
+            />
+          </div>
+          <CustomModal
+            isOpen={open}
+            toggle={handleCloseModal}
+            mode={mode}
+            event={selectedEvent}
+          />
+        </div>
+      )}
+      {!isAuthenticated && (
+        <div className="flex flex-col items-center pt-40">
+          <p className="text-xl text-center font-bold mb-2">
+            <h2 className="text-modra text-3xl font-bold">Your Timetable Awaits!</h2>
+          </p>
+          <p className="text-center text-gray-700 mb-4">
+            <a href="/signin" className="text-oranzna hover:text-modra">Sign in</a> to access your saved timetable and more.
+          </p>
+        </div>
+      )}
 
-        <motion.div variants={cardVariants} initial="hidden" animate="visible">
-          <Card className="col-span-1 border border-gray-200 bg-white rounded-lg shadow-sm p-6">
-            <CardContent className="flex flex-col items-center justify-center text-center">
-              <Label className="text-sm font-medium text-modra">
-                Subscriptions
-              </Label>
-              <h2 className="text-3xl font-semibold mt-2">+2350</h2>
-              <Label className="text-sm font-medium text-green-500 mt-1">
-                +18.0% from last month
-              </Label>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div variants={cardVariants} initial="hidden" animate="visible">
-          <Card className="col-span-1 border border-gray-200 bg-white rounded-lg shadow-sm p-6">
-            <CardContent className="flex flex-col items-center justify-center text-center">
-              <Label className="text-sm font-medium text-modra">Sales</Label>
-              <h2 className="text-3xl font-semibold mt-2">+12,234</h2>
-              <Label className="text-sm font-medium text-green-500 mt-1">
-                +19% from last month
-              </Label>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4 mt-6">
-        <Card className="col-span-2 border border-gray-200 bg-white rounded-lg shadow-sm overflow-hidden">
-          <CardHeader className="px-6 py-4">
-            <h2 className="text-lg font-semibold text-modra">Overview</h2>
-          </CardHeader>
-          <CardContent className="p-6">
-            {/* Insert chart component */}
-          </CardContent>
-        </Card>
-
-        <motion.div variants={cardVariants} initial="hidden" animate="visible">
-          <Card className="col-span-1 border border-gray-200 bg-white rounded-lg shadow-sm">
-            <CardHeader className="px-6 py-4">
-              <h2 className="text-lg font-semibold text-modra">Recent Sales</h2>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {/* Replace with a list of sales */}
-              <div className="sale-item flex justify-between items-center">
-                <Label className="text-sm font-medium text-gray-600">
-                  Olivia Martin
-                </Label>
-                <span className="text-sm font-medium text-gray-900">
-                  $1,999.00
-                </span>
-              </div>
-              {/* Repeat for each sale */}
-              {/* Add additional sale items here */}
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
     </div>
   );
 };

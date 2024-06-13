@@ -7,8 +7,6 @@ import "./App.css";
 import ForgotPassword from "./screens/ForgotPassword/ForgotPassword";
 import { useEffect, useState } from "react";
 import { auth } from "./Config/firebase";
-import axios from "axios";
-import { Buffer } from "buffer";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -40,7 +38,7 @@ const App = () => {
       <BrowserRouter>
         <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} />
         <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard isAuthenticated={isAuthenticated} uid={uid}/>} />
           <Route path="/" element={<Timetable isAuthenticated={isAuthenticated} uid={uid} />} />
           <Route path="/signin" element={<Signin onSignin={handleSignin} />} />
           <Route path="/forgot" element={<ForgotPassword />} />

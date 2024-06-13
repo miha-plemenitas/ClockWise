@@ -25,6 +25,23 @@ async function saveTimetableForUser(uid, timetableData) {
   }
 }
 
+async function getTimetableByUserId(uid) {
+  const userRef = await checkIfExistsByRefCollectionNameId(db, "users", uid);
+  const timetableRef = userRef.collection("timetable");
+
+  const timetableQuery = timetableRef.limit(1);
+  const timetableSnapshot = await timetableQuery.get();
+
+  if (timetableSnapshot.empty) {
+    console.log(`No timetable found for user ID: ${uid}`);
+    return [];
+  } else {
+    const timetableData = timetableSnapshot.docs[0].data(); 
+    return timetableData;
+  }
+}
+
 module.exports = {
-  saveTimetableForUser
+  saveTimetableForUser,
+  getTimetableByUserId
 }

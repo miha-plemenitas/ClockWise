@@ -37,9 +37,9 @@ interface CustomModalProps {
     isOpen: boolean;
     toggle: () => void;
     mode: 'view' | 'edit' | 'add';
-    onSave: (eventInfo: any) => void;
-    onUpdate: (eventInfo: any) => void;
-    onDelete: (eventInfo: any) => void;
+    onSave?: (eventInfo: any) => void;
+    onUpdate?: (eventInfo: any) => void;
+    onDelete?: (eventInfo: any) => void;
     event: {
         id: string;
         title: string;
@@ -97,7 +97,9 @@ export default function CustomModal({
             "editable": true
         };
 
-        onSave(eventDetails);
+        if (onSave) {
+            onSave(eventDetails);
+        }
         setTitle('');
         setDate(null);
         setStartTime(null);
@@ -123,7 +125,9 @@ export default function CustomModal({
             "editable": true
         };
 
-        onUpdate(eventDetails);
+        if (onUpdate) {
+            onUpdate(eventDetails);
+        }
         setTitle('');
         setDate(null);
         setStartTime(null);
@@ -135,8 +139,10 @@ export default function CustomModal({
     }
 
     const handleDeleteEvent = () => {
-        onDelete(event.id);
-     }
+        if (onDelete) {
+            onDelete(event.id);
+        }
+    }
 
     return (
         <Modal
