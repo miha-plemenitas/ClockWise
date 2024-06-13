@@ -66,7 +66,21 @@ async function fetchFromApi(endpointName, params = null, headers = null) {
   }
 }
 
+
+function getLectureCollectionName(request) {
+  const { scheduleType } = request.query;
+
+  let collectionName = "lectures";
+  if (scheduleType === "generated") {
+    collectionName = "generated_lectures";
+  }
+
+  return collectionName;
+}
+
+
 module.exports = {
   fetchFromApi,
   getHeadersWithToken,
+  getLectureCollectionName
 }

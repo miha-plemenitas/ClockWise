@@ -7,6 +7,6 @@ exports.tutor = require('./src/functions/tutorController');
 exports.room = require('./src/functions/roomController');
 exports.course = require('./src/functions/courseContoller');
 exports.lecture = require('./src/functions/lectureContoller');
-exports.auth = require('./src/functions/authenticationController');
 exports.user = require('./src/functions/userController');
 exports.event = require('./src/functions/eventController');
+exports.schedule = require('./src/functions/scheduleController');

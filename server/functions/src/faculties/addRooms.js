@@ -45,7 +45,7 @@ async function fetchRoomsByFacultyDoc(facultyDoc) {
   for (const lectureDoc of lectures.docs) {
     const lecture = lectureDoc.data();
 
-    for (const room of lecture.rooms_full) {
+    for (const room of lecture.rooms) {
       if (room.id && !uniqueRooms.has(room.id)) {
         enhanceRoomDetails(room);
         uniqueRooms.set(room.id, room);

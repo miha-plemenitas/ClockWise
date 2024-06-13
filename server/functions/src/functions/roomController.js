@@ -30,7 +30,7 @@ exports.getOneById = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.set('Access-Control-Allow-Origin', '*');
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {

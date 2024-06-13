@@ -92,7 +92,8 @@ async function getLecturesByFilterAndOptionallyDate(
   filterFieldName,
   filterValue,
   startTime,
-  endTime
+  endTime,
+  collectionName
 ) {
   const facultyRef = db.collection("faculties").doc(facultyId);
   const facultyDoc = await facultyRef.get();
@@ -101,7 +102,7 @@ async function getLecturesByFilterAndOptionallyDate(
     throw new Error(`Faculty with id ${facultyId} not found`);
   }
 
-  const lectureRef = facultyRef.collection("lectures");
+  const lectureRef = facultyRef.collection(collectionName);
   let filteredQuery = buildFilteredQuery(lectureRef, filterFieldName, filterValue);
   filteredQuery = applyDateFilters(filteredQuery, startTime, endTime);
 
@@ -110,6 +111,7 @@ async function getLecturesByFilterAndOptionallyDate(
 
   return lectures;
 }
+
 
 
 module.exports = {

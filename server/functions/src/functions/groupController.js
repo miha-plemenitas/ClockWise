@@ -30,7 +30,7 @@ exports.getOneById = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.set('Access-Control-Allow-Origin', '*');
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {
@@ -72,7 +72,7 @@ exports.getAllForBranch = functions
 
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
-      
+
       const { facultyId, branchId } = request.query;
       validateRequestParams({ facultyId, branchId });
       

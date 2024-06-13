@@ -32,13 +32,14 @@ function processLectureData(lecture) {
     course: lecture.course,
     executionTypeId: executionTypeId,
     executionType: executionType,
-    branches: lecture.branches ? extractIds(lecture.branches) : [],
-    rooms: lecture.rooms ? extractIds(lecture.rooms) : [],
-    groups: lecture.groups ? extractIds(lecture.groups) : [],
-    tutors: lecture.lecturers ? extractIds(lecture.lecturers) : [],
-    rooms_full: lecture.rooms,
-    tutors_full: lecture.lecturers,
-    groups_full: lecture.groups,
+    branch_ids: lecture.branches ? extractIds(lecture.branches) : [],
+    room_ids: lecture.rooms ? extractIds(lecture.rooms) : [],
+    group_ids: lecture.groups ? extractIds(lecture.groups) : [],
+    tutor_ids: lecture.lecturers ? extractIds(lecture.lecturers) : [],
+    rooms: lecture.rooms,
+    tutors: lecture.lecturers,
+    groups: lecture.groups,
+    branches: lecture.branches,
     duration: duration,
     hasRooms: lecture.rooms.length > 0
   };
@@ -167,14 +168,14 @@ function processRoomData(room) {
 function processScheduleData(lecture) {
   const startTime = lecture.date.clone().hour(lecture.timeSlot.start).toDate();
 
-  const endTime = lecture.date.clone().hour(lecture.timeSlot.start).add(lecture.duration, 'hours').toDate();
+  const endTime = lecture.date.clone().hour(lecture.timeSlot.end).toDate();
 
   return {
       id: `S${lecture.lecture.courseId} ${lecture.date.clone().hour(lecture.timeSlot.start).format("YYYY-MM-DDTHH:mm:ss")}`,
       startTime: Timestamp.fromDate(startTime),
       endTime: Timestamp.fromDate(endTime),
       ...lecture.lecture,
-      rooms_full: [{
+      r: [{
           id: lecture.room,
           name: ""
       }],
