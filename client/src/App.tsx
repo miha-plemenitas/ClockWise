@@ -35,39 +35,14 @@ const App = () => {
     setIsAuthenticated(true);
   };
 
-  const login = async (): Promise<void> => { 
-    const username = process.env.REACT_APP_USERNAME;
-    const password = process.env.REACT_APP_PASSWORD;
-
-    const bufferedCredentials = Buffer.from(`${username}:${password}`);
-    const credentials = bufferedCredentials.toString("base64");
-    const headers = {
-      Authorization: `Basic ${credentials}`,
-      "Content-Type": "application/json",
-    };
-
-    try {
-      const response = await axios.post(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login",
-        { uid: username },
-        { headers: headers, withCredentials: true }
-      );
-
-      console.log("Login successful", response);
-    } catch (error) {
-      console.error("Login failed", error);
-      throw error;
-    }
-  }
-
   return (
     <div>
       <BrowserRouter>
         <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} />
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/" element={<Timetable isAuthenticated={isAuthenticated} uid={uid} login={login} />} />
-          <Route path="/signin" element={<Signin onSignin={handleSignin} login={login} />} />
+          <Route path="/" element={<Timetable isAuthenticated={isAuthenticated} uid={uid} />} />
+          <Route path="/signin" element={<Signin onSignin={handleSignin} />} />
           <Route path="/forgot" element={<ForgotPassword />} />
         </Routes>
       </BrowserRouter>

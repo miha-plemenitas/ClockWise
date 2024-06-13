@@ -25,6 +25,9 @@ const useRooms = (facultyId: string | null) => {
             id: doc.id,
             ...doc.data(),
           })) as Room[];
+
+          allRooms.sort((a, b) => a.roomName.localeCompare(b.roomName));
+
           setRooms(allRooms);
         } else {
           setRooms([]);
