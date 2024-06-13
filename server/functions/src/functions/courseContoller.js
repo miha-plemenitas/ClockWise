@@ -149,14 +149,15 @@ exports.getAllForBranch = functions
       const { facultyId, branchId } = request.query;
       validateRequestParams({ facultyId, branchId });
 
-      const lectures = await getLecturesByFilterAndOptionallyDate(facultyId, "branch_ids", Number(branchId), "2024-02-26", "2024-06-09", "lectures");
+      const lectures = await getLecturesByFilterAndOptionallyDate(facultyId, "branch_ids", Number(branchId), "2024-02-26", "2024-06-09", "original_lectures");
       const courses = new Array();
 
       for (const lecture of lectures) {
         const course = {
           "id": lecture.courseId,
           "courseId": Number(lecture.courseId),
-          "course": lecture.course
+          "course": lecture.course,
+          "branchId": branchId
         };
 
         if (!courses.some(existingCourse => existingCourse.courseId === course.courseId)) {

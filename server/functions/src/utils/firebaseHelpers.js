@@ -1,4 +1,5 @@
 const { db } = require('../utils/firebaseAdmin');
+const { commitBatch } = require("./batchOperations");
 
 
 /**
@@ -28,13 +29,23 @@ async function findProgramForBranch(facultyRef, branchId) {
 
 async function deleteAllDocumentsInCollection(collectionRef) {
   const snapshot = await collectionRef.get();
-  const batch = db.batch();
+  let batch = db.batch();
+  let count = 0;
 
-  snapshot.docs.forEach(doc => {
-      batch.delete(doc.ref);
+  snapshot.docs.forEach((doc, index) => {
+    batch.delete(doc.ref);
+    count++;
+
+    if (count >= 400) {
+      commitBatch(batch);
+      batch = db.batch();
+      count = 0;
+    }
   });
 
-  await batch.commit();
+  if (count > 0) {
+    commitBatch(batch);
+  }
 }
 
 

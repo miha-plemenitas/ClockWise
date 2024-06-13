@@ -273,6 +273,10 @@ exports.addRooms = functions
 
 exports.duplicateLectures = functions
   .region("europe-west3")
+  .runWith({
+    timeoutSeconds: 540,
+    memory: '2GB'
+  })
   .https
   .onRequest(async (request, response) => {
     response.set("Access-Control-Allow-Origin", "*");

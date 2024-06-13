@@ -9,4 +9,3 @@ exports.course = require('./src/functions/courseContoller');
 exports.lecture = require('./src/functions/lectureContoller');
 exports.user = require('./src/functions/userController');
 exports.event = require('./src/functions/eventController');
-exports.schedule = require('./src/functions/scheduleController');
