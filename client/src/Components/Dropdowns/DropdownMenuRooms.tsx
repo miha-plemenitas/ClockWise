@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../Components/ui/dropdown-menu";
@@ -14,29 +13,24 @@ import useRooms from "../../Components/Hooks/useRooms";
 
 interface DropdownMenuRoomsProps {
   facultyId: string | null;
-  onSelectRoom: (id: string, name: string) => void;
-  selectedRoomName: string | null;
+  onSelectRooms: (selectedRooms: string[]) => void;
+  selectedRoomNames: string[];
 }
 
 const DropdownMenuRooms: React.FC<DropdownMenuRoomsProps> = ({
   facultyId,
-  onSelectRoom,
-  selectedRoomName,
+  onSelectRooms,
+  selectedRoomNames,
 }) => {
-  const [selectedRooms, setSelectedRooms] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const { rooms, loading, error } = useRooms(facultyId);
 
-  useEffect(() => {
-    const storedRoomId = localStorage.getItem("selectedRoomId");
-    if (storedRoomId) {
-      const selectedRoom = rooms.find((room) => room.id === storedRoomId);
-      if (selectedRoom) {
-        setSelectedRooms(selectedRoom.roomName);
-        onSelectRoom(storedRoomId, selectedRoom.roomName);
-      }
-    }
-  }, [rooms, onSelectRoom]);
+  const handleSelect = (room: string) => {
+    const updatedSelectedRooms = selectedRoomNames.includes(room)
+      ? selectedRoomNames.filter((name) => name !== room)
+      : [...selectedRoomNames, room];
+    onSelectRooms(updatedSelectedRooms);
+  };
 
   if (loading) {
     return <p>Loading rooms...</p>;
@@ -45,15 +39,6 @@ const DropdownMenuRooms: React.FC<DropdownMenuRoomsProps> = ({
   if (error) {
     return <p>Error loading rooms: {error}</p>;
   }
-
-  const handleSelect = (value: string) => {
-    setSelectedRooms(value);
-    const selectedRoom = rooms.find((room) => room.roomName === value);
-    if (selectedRoom) {
-      onSelectRoom(selectedRoom.id, selectedRoom.roomName);
-      localStorage.setItem("selectedRoomId", selectedRoom.id);
-    }
-  };
 
   return (
     <div className="mb-4 w-48">
@@ -71,21 +56,20 @@ const DropdownMenuRooms: React.FC<DropdownMenuRoomsProps> = ({
             Select Room
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={selectedRooms}
-            onValueChange={handleSelect}
-          >
-            {rooms.map((room) => (
-              <DropdownMenuRadioItem key={room.id} value={room.roomName}>
-                {room.roomName}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
+          {rooms.map((room) => (
+            <DropdownMenuCheckboxItem
+              key={room.id}
+              checked={selectedRoomNames.includes(room.roomName)}
+              onCheckedChange={() => handleSelect(room.roomName)}
+            >
+              {room.roomName}
+            </DropdownMenuCheckboxItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedRoomName && selectedRooms && (
+      {selectedRoomNames.length > 0 && (
         <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedRoomName}
+          {selectedRoomNames.join(", ")}
         </div>
       )}
     </div>

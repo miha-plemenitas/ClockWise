@@ -80,13 +80,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
-    null
-  );
+  const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([]);
+  const [selectedTutorNames, setSelectedTutorNames] = useState<string[]>([]);
+  const [selectedRoomNames, setSelectedRoomNames] = useState<string[]>([]);
+  const [selectedCourseNames, setSelectedCourseNames] = useState<string[]>([]);
   const [allCourseNames, setAllCourseNames] = useState<string[]>([]);
   const calendarRef = useRef<FullCalendar>(null);
 
@@ -121,16 +118,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     null
   );
 
-  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
-    null
-  );
   const [allGroups, setAllGroups] = useState<Group[]>([]);
-
-  const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
-
-  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(
-    null
-  );
 
   const { branches } = useBranches(
     selectedFacultyId,
@@ -257,52 +245,56 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   useEffect(() => {
     let filtered = events;
 
-    if (selectedGroupId) {
+    if (selectedGroupNames.length > 0) {
       filtered = filtered.filter((event) =>
-        event.extendedProps.groups.includes(groupMap[selectedGroupId!])
+        selectedGroupNames.some((name) =>
+          event.extendedProps.groups.includes(name)
+        )
       );
     }
 
-    if (selectedTutorId) {
+    if (selectedTutorNames.length > 0) {
       filtered = filtered.filter((event) =>
-        event.extendedProps.teacher.includes(tutorMap[selectedTutorId!])
+        selectedTutorNames.some((name) =>
+          event.extendedProps.teacher.includes(name)
+        )
       );
     }
 
-    if (selectedRoomId) {
+    if (selectedRoomNames.length > 0) {
       filtered = filtered.filter((event) =>
-        event.extendedProps.location.includes(roomMap[selectedRoomId!])
+        selectedRoomNames.some((name) =>
+          event.extendedProps.location.includes(name)
+        )
       );
     }
 
-    if (selectedCourseName) {
+    if (selectedCourseNames.length > 0) {
       filtered = filtered.filter((event) =>
-        event.title.includes(selectedCourseName)
+        selectedCourseNames.some((name) => event.title.includes(name))
       );
     }
 
     setFilteredEvents(filtered);
   }, [
-    selectedGroupId,
-    selectedTutorId,
-    selectedRoomId,
-    selectedCourseName,
+    selectedGroupNames,
+    selectedTutorNames,
+    selectedRoomNames,
+    selectedCourseNames,
     events,
   ]);
 
   const clearFilters = () => {
-    setSelectedGroupId(null);
-    setSelectedTutorId(null);
-    setSelectedRoomId(null);
-    setSelectedCourseId(null);
-    setSelectedCourseName(null);
+    setSelectedGroupNames([]);
+    setSelectedTutorNames([]);
+    setSelectedRoomNames([]);
+    setSelectedCourseNames([]);
     setFilteredEvents(events);
 
-    localStorage.removeItem("selectedGroupId");
-    localStorage.removeItem("selectedTutorId");
-    localStorage.removeItem("selectedRoomId");
-    localStorage.removeItem("selectedCourseId");
-    localStorage.removeItem("selectedCourseName");
+    localStorage.removeItem("selectedGroupNames");
+    localStorage.removeItem("selectedTutorNames");
+    localStorage.removeItem("selectedRoomNames");
+    localStorage.removeItem("selectedCourseNames");
   };
 
   useEffect(() => {
@@ -316,15 +308,19 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     setSelectedYearName(null);
     setSelectedBranch(null);
     setSelectedBranchName(null);
-    setSelectedCourseName(null);
-    setSelectedGroupName(null);
-    setSelectedRoomName(null);
-    setSelectedTutorName(null);
+    setSelectedCourseNames([]);
+    setSelectedGroupNames([]);
+    setSelectedRoomNames([]);
+    setSelectedTutorNames([]);
 
     localStorage.removeItem("selectedFacultyId");
     localStorage.removeItem("selectedProgramId");
     localStorage.removeItem("selectedYearId");
     localStorage.removeItem("selectedBranchId");
+    localStorage.removeItem("selectedCourseNames");
+    localStorage.removeItem("selectedGroupNames");
+    localStorage.removeItem("selectedRoomNames");
+    localStorage.removeItem("selectedTutorNames");
   }, []);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
@@ -559,42 +555,40 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           <DropdownMenuCourses
             branchId={selectedBranch}
             programId={programId}
-            onSelectCourse={(id, name) => {
-              setSelectedCourseId(id);
-              setSelectedCourseName(name);
-              localStorage.setItem("selectedCourseId", id); // Save selected course ID to local storage
-              localStorage.setItem("selectedCourseName", name); // Save selected course name to local storage
+            onSelectCourses={(names) => {
+              setSelectedCourseNames(names);
+              localStorage.setItem(
+                "selectedCourseNames",
+                JSON.stringify(names)
+              );
             }}
-            selectedCourseName={selectedCourseName}
+            selectedCourseNames={selectedCourseNames}
             allCourseNames={allCourseNames}
           />
           <DropdownMenuGroups
             branchId={selectedBranch}
             programId={programId}
-            onSelectGroup={(id, name) => {
-              setSelectedGroupId(id);
-              setSelectedGroupName(name);
-              localStorage.setItem("selectedGroupId", id); // Save selected group ID to local storage
+            onSelectGroups={(names) => {
+              setSelectedGroupNames(names);
+              localStorage.setItem("selectedGroupNames", JSON.stringify(names));
             }}
-            selectedGroupName={selectedGroupName}
+            selectedGroupNames={selectedGroupNames}
           />
           <DropdownMenuRooms
             facultyId={selectedFacultyId}
-            onSelectRoom={(id, name) => {
-              setSelectedRoomId(id);
-              setSelectedRoomName(name);
-              localStorage.setItem("selectedRoomId", id); // Save selected room ID to local storage
+            onSelectRooms={(names) => {
+              setSelectedRoomNames(names);
+              localStorage.setItem("selectedRoomNames", JSON.stringify(names));
             }}
-            selectedRoomName={selectedRoomName}
+            selectedRoomNames={selectedRoomNames}
           />
           <DropdownMenuTutors
             facultyId={selectedFacultyId}
-            onSelectTutor={(id, name) => {
-              setSelectedTutorId(id);
-              setSelectedTutorName(name);
-              localStorage.setItem("selectedTutorId", id); // Save selected tutor ID to local storage
+            onSelectTutors={(names) => {
+              setSelectedTutorNames(names);
+              localStorage.setItem("selectedTutorNames", JSON.stringify(names));
             }}
-            selectedTutorName={selectedTutorName}
+            selectedTutorNames={selectedTutorNames}
           />
         </div>
       )}

@@ -4,44 +4,37 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
 } from "../../Components/ui/dropdown-menu";
 import { FaChevronDown } from "react-icons/fa";
 import useTutors from "../../Components/Hooks/useTutors";
 
 interface DropdownMenuTutorsProps {
   facultyId: string;
-  onSelectTutor: (tutorId: string, tutorName: string) => void;
-  selectedTutorName: string | null;
+  onSelectTutors: (tutorNames: string[]) => void;
+  selectedTutorNames: string[];
 }
 
 const DropdownMenuTutors: React.FC<DropdownMenuTutorsProps> = ({
   facultyId,
-  onSelectTutor,
-  selectedTutorName,
+  onSelectTutors,
+  selectedTutorNames,
 }) => {
-  const [selectedTutor, setSelectedTutor] = useState<string | null>(null);
+  const [selectedTutors, setSelectedTutors] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const { tutors, loading, error } = useTutors(facultyId);
 
   useEffect(() => {
-    const storedTutorId = localStorage.getItem("selectedTutorId");
-    if (storedTutorId) {
-      const selectedTutor = tutors.find(
-        (tutor) => tutor.tutorId === storedTutorId
-      );
-      if (selectedTutor) {
-        setSelectedTutor(selectedTutor.tutorId);
-        onSelectTutor(
-          selectedTutor.tutorId,
-          `${selectedTutor.firstName} ${selectedTutor.lastName}`
-        );
-      }
+    const storedTutorNames = JSON.parse(
+      localStorage.getItem("selectedTutorNames") || "[]"
+    );
+    if (storedTutorNames) {
+      setSelectedTutors(storedTutorNames);
+      onSelectTutors(storedTutorNames);
     }
-  }, [tutors, onSelectTutor]);
+  }, [tutors, onSelectTutors]);
 
   if (loading) {
     return <p>Loading tutors...</p>;
@@ -51,16 +44,21 @@ const DropdownMenuTutors: React.FC<DropdownMenuTutorsProps> = ({
     return <p>Error loading tutors: {error}</p>;
   }
 
-  const handleSelect = (value: string) => {
-    const selectedTutor = tutors.find((tutor) => tutor.tutorId === value);
-    if (selectedTutor) {
-      setSelectedTutor(selectedTutor.tutorId);
-      onSelectTutor(
-        selectedTutor.tutorId,
-        `${selectedTutor.firstName} ${selectedTutor.lastName}`
+  const handleSelect = (tutorName: string) => {
+    let updatedSelectedTutors;
+    if (selectedTutors.includes(tutorName)) {
+      updatedSelectedTutors = selectedTutors.filter(
+        (name) => name !== tutorName
       );
-      localStorage.setItem("selectedTutorId", selectedTutor.tutorId);
+    } else {
+      updatedSelectedTutors = [...selectedTutors, tutorName];
     }
+    setSelectedTutors(updatedSelectedTutors);
+    onSelectTutors(updatedSelectedTutors);
+    localStorage.setItem(
+      "selectedTutorNames",
+      JSON.stringify(updatedSelectedTutors)
+    );
   };
 
   return (
@@ -76,24 +74,27 @@ const DropdownMenuTutors: React.FC<DropdownMenuTutorsProps> = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent className="min-w-max max-w-sm">
           <DropdownMenuLabel className="text-modra">
-            Select Tutor
+            Select Tutors
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={selectedTutor || ""}
-            onValueChange={handleSelect}
-          >
-            {tutors.map((tutor) => (
-              <DropdownMenuRadioItem key={tutor.tutorId} value={tutor.tutorId}>
-                {tutor.firstName} {tutor.lastName}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
+          {tutors.map((tutor) => (
+            <DropdownMenuCheckboxItem
+              key={tutor.tutorId}
+              checked={selectedTutors.includes(
+                `${tutor.firstName} ${tutor.lastName}`
+              )}
+              onCheckedChange={() =>
+                handleSelect(`${tutor.firstName} ${tutor.lastName}`)
+              }
+            >
+              {tutor.firstName} {tutor.lastName}
+            </DropdownMenuCheckboxItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedTutorName && selectedTutor && (
+      {selectedTutorNames.length > 0 && (
         <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedTutorName}
+          {selectedTutorNames.join(", ")}
         </div>
       )}
     </div>

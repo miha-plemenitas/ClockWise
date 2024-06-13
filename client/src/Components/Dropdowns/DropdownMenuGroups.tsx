@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../Components/ui/dropdown-menu";
@@ -15,25 +14,25 @@ import useGroups from "../../Components/Hooks/useGroups";
 interface DropdownMenuGroupsProps {
   branchId: string | null;
   programId: string | null;
-  onSelectGroup: (groupId: string, groupName: string) => void;
-  selectedGroupName: string | null;
+  onSelectGroups: (selectedGroups: string[]) => void;
+  selectedGroupNames: string[];
 }
 
 const DropdownMenuGroups: React.FC<DropdownMenuGroupsProps> = ({
   branchId,
   programId,
-  onSelectGroup,
-  selectedGroupName,
+  onSelectGroups,
+  selectedGroupNames,
 }) => {
-  const [selectedGroups, setSelectedGroups] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const { groups, loading, error } = useGroups(branchId, programId);
 
-  useEffect(() => {
-    if (selectedGroupName) {
-      setSelectedGroups(selectedGroupName);
-    }
-  }, [selectedGroupName]);
+  const handleSelect = (group: string) => {
+    const updatedSelectedGroups = selectedGroupNames.includes(group)
+      ? selectedGroupNames.filter((name) => name !== group)
+      : [...selectedGroupNames, group];
+    onSelectGroups(updatedSelectedGroups);
+  };
 
   if (!branchId || !programId) {
     return <p>Select a branch and program to load groups.</p>;
@@ -46,15 +45,6 @@ const DropdownMenuGroups: React.FC<DropdownMenuGroupsProps> = ({
   if (error) {
     return <p>Error loading groups: {error}</p>;
   }
-
-  const handleSelect = (value: string) => {
-    setSelectedGroups(value);
-    const selectedGroup = groups.find((group) => group.name === value);
-    if (selectedGroup) {
-      onSelectGroup(selectedGroup.id, selectedGroup.name);
-      localStorage.setItem("selectedGroupId", selectedGroup.id);
-    }
-  };
 
   return (
     <div className="mb-4 w-48">
@@ -72,21 +62,20 @@ const DropdownMenuGroups: React.FC<DropdownMenuGroupsProps> = ({
             Select Group
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={selectedGroups}
-            onValueChange={handleSelect}
-          >
-            {groups.map((group) => (
-              <DropdownMenuRadioItem key={group.id} value={group.name}>
-                {group.name}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
+          {groups.map((group) => (
+            <DropdownMenuCheckboxItem
+              key={group.id}
+              checked={selectedGroupNames.includes(group.name)}
+              onCheckedChange={() => handleSelect(group.name)}
+            >
+              {group.name}
+            </DropdownMenuCheckboxItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedGroups && (
+      {selectedGroupNames.length > 0 && (
         <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedGroups}
+          {selectedGroupNames.join(", ")}
         </div>
       )}
     </div>

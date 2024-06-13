@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../Components/ui/dropdown-menu";
@@ -15,29 +14,27 @@ import useCourses from "../../Components/Hooks/useCourses";
 interface DropdownMenuCoursesProps {
   branchId: string | null;
   programId: string | null;
-  onSelectCourse: (courseId: string, courseName: string) => void;
-  selectedCourseName: string | null;
+  onSelectCourses: (selectedCourses: string[]) => void;
+  selectedCourseNames: string[];
   allCourseNames: string[];
 }
 
 const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
   branchId,
   programId,
-  onSelectCourse,
-  selectedCourseName,
+  onSelectCourses,
+  selectedCourseNames,
   allCourseNames,
 }) => {
-  const [selectedCourses, setSelectedCourses] = useState(
-    selectedCourseName || ""
-  );
   const [isOpen, setIsOpen] = useState(false);
   const { courses, loading, error } = useCourses(branchId, programId);
 
-  useEffect(() => {
-    if (selectedCourseName) {
-      setSelectedCourses(selectedCourseName);
-    }
-  }, [selectedCourseName]);
+  const handleSelect = (course: string) => {
+    const updatedSelectedCourses = selectedCourseNames.includes(course)
+      ? selectedCourseNames.filter((name) => name !== course)
+      : [...selectedCourseNames, course];
+    onSelectCourses(updatedSelectedCourses);
+  };
 
   if (!branchId || !programId) {
     return <p>Select a branch and program to load courses.</p>;
@@ -50,19 +47,6 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
   if (error) {
     return <p>Error loading courses: {error}</p>;
   }
-
-  const handleSelect = (value: string) => {
-    setSelectedCourses(value);
-    const selectedCourse = courses.find((course) => course.course === value);
-    if (selectedCourse) {
-      onSelectCourse(selectedCourse.id, selectedCourse.course);
-      localStorage.setItem("selectedCourseId", selectedCourse.id);
-      localStorage.setItem("selectedCourseName", selectedCourse.course);
-    } else {
-      onSelectCourse("", value);
-      localStorage.setItem("selectedCourseName", value);
-    }
-  };
 
   return (
     <div className="mb-4 w-48">
@@ -80,21 +64,20 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
             Select Course
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup
-            value={selectedCourses}
-            onValueChange={handleSelect}
-          >
-            {allCourseNames.map((course, index) => (
-              <DropdownMenuRadioItem key={index} value={course}>
-                {course}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
+          {allCourseNames.map((course, index) => (
+            <DropdownMenuCheckboxItem
+              key={index}
+              checked={selectedCourseNames.includes(course)}
+              onCheckedChange={() => handleSelect(course)}
+            >
+              {course}
+            </DropdownMenuCheckboxItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      {selectedCourses && (
+      {selectedCourseNames.length > 0 && (
         <div className="overflow-auto whitespace-nowrap mt-2 text-sm text-gray-700 font-medium border border-gray-300 p-2 rounded">
-          {selectedCourses}
+          {selectedCourseNames.join(", ")}
         </div>
       )}
     </div>
