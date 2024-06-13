@@ -17,6 +17,7 @@ interface DropdownMenuCoursesProps {
   programId: string | null;
   onSelectCourse: (courseId: string, courseName: string) => void;
   selectedCourseName: string | null;
+  allCourseNames: string[];
 }
 
 const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
@@ -24,6 +25,7 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
   programId,
   onSelectCourse,
   selectedCourseName,
+  allCourseNames,
 }) => {
   const [selectedCourses, setSelectedCourses] = useState(
     selectedCourseName || ""
@@ -56,6 +58,9 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
       onSelectCourse(selectedCourse.id, selectedCourse.course);
       localStorage.setItem("selectedCourseId", selectedCourse.id);
       localStorage.setItem("selectedCourseName", selectedCourse.course);
+    } else {
+      onSelectCourse("", value);
+      localStorage.setItem("selectedCourseName", value);
     }
   };
 
@@ -79,9 +84,9 @@ const DropdownMenuCourses: React.FC<DropdownMenuCoursesProps> = ({
             value={selectedCourses}
             onValueChange={handleSelect}
           >
-            {courses.map((course) => (
-              <DropdownMenuRadioItem key={course.id} value={course.course}>
-                {course.course}
+            {allCourseNames.map((course, index) => (
+              <DropdownMenuRadioItem key={index} value={course}>
+                {course}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

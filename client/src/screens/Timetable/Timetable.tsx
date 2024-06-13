@@ -84,33 +84,53 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(null);
+  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
+    null
+  );
+  const [allCourseNames, setAllCourseNames] = useState<string[]>([]);
   const calendarRef = useRef<FullCalendar>(null);
 
   // dropdowns
-  const [selectedFacultyId, setSelectedFacultyId] = useState(() => localStorage.getItem("selectedFacultyId") || "");
-  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(null);
+  const [selectedFacultyId, setSelectedFacultyId] = useState(
+    () => localStorage.getItem("selectedFacultyId") || ""
+  );
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
+    null
+  );
   const { faculties } = useFaculties();
 
-  const [programId, setProgramId] = useState<string | null>(() => localStorage.getItem("selectedProgramId") || null);
-  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(null);
+  const [programId, setProgramId] = useState<string | null>(
+    () => localStorage.getItem("selectedProgramId") || null
+  );
+  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
+    null
+  );
   const { programs } = usePrograms(selectedFacultyId);
 
   const [programDuration, setProgramDuration] = useState<number | null>(null);
 
-  const [selectedYear, setSelectedYear] = useState<number | null>(() => Number(localStorage.getItem("selectedYearId")) || null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(
+    () => Number(localStorage.getItem("selectedYearId")) || null
+  );
   const [selectedYearName, setSelectedYearName] = useState<string | null>(null);
 
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(() => localStorage.getItem("selectedBranchId") || null);
-  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(
+    () => localStorage.getItem("selectedBranchId") || null
+  );
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
+    null
+  );
 
-  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
+    null
+  );
   const [allGroups, setAllGroups] = useState<Group[]>([]);
 
   const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
 
-  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(null);
-
+  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(
+    null
+  );
 
   const { branches } = useBranches(
     selectedFacultyId,
@@ -182,7 +202,6 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       );
       const formattedEvents: Event[] = response.data.result.map(
         (lecture: any) => {
-
           // Format start time
           const startTime = new Date(lecture.startTime._seconds * 1000);
           const formattedStart = startTime.toISOString().slice(0, 19);
@@ -198,9 +217,15 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
             end: formattedEnd,
             extendedProps: {
               type: lecture.executionType,
-              groups: lecture.group_ids.map((id: string | number) => groupMap[id] || "Unknown Group").join(", "),
-              teacher: lecture.tutor_ids.map((id: string | number) => tutorMap[id] || "Unknown Tutor").join(", "),
-              location: lecture.room_ids.map((id: string | number) => roomMap[id] || "Unknown Room").join(", "),
+              groups: lecture.group_ids
+                .map((id: string | number) => groupMap[id] || "Unknown Group")
+                .join(", "),
+              teacher: lecture.tutor_ids
+                .map((id: string | number) => tutorMap[id] || "Unknown Tutor")
+                .join(", "),
+              location: lecture.room_ids
+                .map((id: string | number) => roomMap[id] || "Unknown Room")
+                .join(", "),
               editable: false,
             },
           };
@@ -208,6 +233,12 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
       );
       setEvents(formattedEvents);
       setFilteredEvents(formattedEvents);
+
+      // Collect unique course names from lectures
+      const uniqueCourses: string[] = Array.from(
+        new Set(response.data.result.map((lecture: any) => lecture.course))
+      );
+      setAllCourseNames(uniqueCourses);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -294,7 +325,6 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     localStorage.removeItem("selectedProgramId");
     localStorage.removeItem("selectedYearId");
     localStorage.removeItem("selectedBranchId");
-
   }, []);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
@@ -466,9 +496,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   };
 
   // saving timetable to dashboard
-  const handleSaveTimetable = () => {
-
-  }
+  const handleSaveTimetable = () => {};
 
   return (
     <div className="w-full p-5">
@@ -538,6 +566,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
               localStorage.setItem("selectedCourseName", name); // Save selected course name to local storage
             }}
             selectedCourseName={selectedCourseName}
+            allCourseNames={allCourseNames}
           />
           <DropdownMenuGroups
             branchId={selectedBranch}
@@ -579,7 +608,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           initialView="timeGridWeek"
           weekends={false}
           eventContent={renderEventContent}
-          eventSources={[{ events: filteredEvents, color: '#4890CB' }, { events: customEvents, color: '#1B364B' }]}
+          eventSources={[
+            { events: filteredEvents, color: "#4890CB" },
+            { events: customEvents, color: "#1B364B" },
+          ]}
           headerToolbar={{
             left: "title",
             center: "",
@@ -606,7 +638,11 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
         >
           Clear Filters
         </button>
-        <SaveButton isAuthenticated={isAuthenticated} uid={uid} events={filteredEvents}/>
+        <SaveButton
+          isAuthenticated={isAuthenticated}
+          uid={uid}
+          events={filteredEvents}
+        />
       </div>
       <CustomModal
         isOpen={open}
