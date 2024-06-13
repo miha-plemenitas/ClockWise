@@ -83,52 +83,32 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
   const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(
-    null
-  );
+  const [selectedCourseName, setSelectedCourseName] = useState<string | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
 
   // dropdowns
-  const [selectedFacultyId, setSelectedFacultyId] = useState(
-    () => localStorage.getItem("selectedFacultyId") || ""
-  );
-  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(
-    null
-  );
+  const [selectedFacultyId, setSelectedFacultyId] = useState(() => localStorage.getItem("selectedFacultyId") || "");
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string | null>(null);
   const { faculties } = useFaculties();
 
-  const [programId, setProgramId] = useState<string | null>(
-    () => localStorage.getItem("selectedProgramId") || null
-  );
-  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(
-    null
-  );
+  const [programId, setProgramId] = useState<string | null>(() => localStorage.getItem("selectedProgramId") || null);
+  const [selectedProgramName, setSelectedProgramName] = useState<string | null>(null);
   const { programs } = usePrograms(selectedFacultyId);
 
   const [programDuration, setProgramDuration] = useState<number | null>(null);
 
-  const [selectedYear, setSelectedYear] = useState<number | null>(
-    () => Number(localStorage.getItem("selectedYearId")) || null
-  );
+  const [selectedYear, setSelectedYear] = useState<number | null>(() => Number(localStorage.getItem("selectedYearId")) || null);
   const [selectedYearName, setSelectedYearName] = useState<string | null>(null);
 
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(
-    () => localStorage.getItem("selectedBranchId") || null
-  );
-  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(
-    null
-  );
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(() => localStorage.getItem("selectedBranchId") || null);
+  const [selectedBranchName, setSelectedBranchName] = useState<string | null>(null);
 
-  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(
-    null
-  );
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
   const [allGroups, setAllGroups] = useState<Group[]>([]);
 
   const [selectedRoomName, setSelectedRoomName] = useState<string | null>(null);
 
-  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(
-    null
-  );
+  const [selectedTutorName, setSelectedTutorName] = useState<string | null>(null);
 
 
   const { branches } = useBranches(
@@ -194,7 +174,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           params: {
             facultyId: selectedFacultyId,
             branchId: selectedBranch,
-            startTime: "2023-09-01T00:00:00Z",
+            startTime: "2023-10-01T00:00:00Z",
           },
           headers: headers,
         }
@@ -216,15 +196,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
             end: formattedEnd,
             extendedProps: {
               type: lecture.executionType,
-              groups: lecture.groups
-                .map((id: string | number) => groupMap[id] || "Unknown Group")
-                .join(", "),
-              teacher: lecture.tutors
-                .map((id: string | number) => tutorMap[id] || "Unknown Tutor")
-                .join(", "),
-              location: lecture.rooms
-                .map((id: string | number) => roomMap[id] || "Unknown Room")
-                .join(", "),
+              groups: lecture.group_ids.map((id: string | number) => groupMap[id] || "Unknown Group").join(", "),
+              teacher: lecture.tutor_ids.map((id: string | number) => tutorMap[id] || "Unknown Tutor").join(", "),
+              location: lecture.room_ids.map((id: string | number) => roomMap[id] || "Unknown Room").join(", "),
               editable: false,
             },
           };
@@ -297,6 +271,28 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     localStorage.removeItem("selectedCourseId");
     localStorage.removeItem("selectedCourseName");
   };
+
+  useEffect(() => {
+    setSelectedFacultyId("");
+    setSelectedFacultyName(null);
+    setProgramId(null);
+    setSelectedProgramName(null);
+    setProgramDuration(null);
+    setSelectedYear(null);
+    setSelectedYearName(null);
+    setSelectedBranch(null);
+    setSelectedBranchName(null);
+    setSelectedCourseName(null);
+    setSelectedGroupName(null);
+    setSelectedRoomName(null);
+    setSelectedTutorName(null);
+
+    localStorage.removeItem("selectedFacultyId");
+    localStorage.removeItem("selectedProgramId");
+    localStorage.removeItem("selectedYearId");
+    localStorage.removeItem("selectedBranchId");
+
+  }, []);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event =
@@ -466,6 +462,11 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
     }
   };
 
+  // saving timetable to dashboard
+  const handleSaveTimetable = () => {
+
+  }
+
   return (
     <div className="w-full p-5">
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
@@ -575,7 +576,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           initialView="timeGridWeek"
           weekends={false}
           eventContent={renderEventContent}
-          eventSources={[{ events: filteredEvents, color: '#4890CB' },{ events: customEvents, color: '#1B364B' }]}
+          eventSources={[{ events: filteredEvents, color: '#4890CB' }, { events: customEvents, color: '#1B364B' }]}
           headerToolbar={{
             left: "title",
             center: "",
@@ -595,12 +596,12 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           select={handleDateSelect}
         />
       </div>
-      <button
-        onClick={clearFilters}
-        className="bg-oranzna text-white hover:bg-oranzna-700 rounded-lg px-4 py-2 flex items-center justify-center"
-      >
-        Clear Filters
-      </button>
+        <button
+          onClick={clearFilters}
+          className="bg-oranzna text-white hover:bg-oranzna-700 rounded-lg px-4 py-2 flex items-center justify-center"
+        >
+          Clear Filters
+        </button>
       <CustomModal
         isOpen={open}
         toggle={handleCloseModal}
