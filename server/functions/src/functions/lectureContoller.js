@@ -1,7 +1,7 @@
 const functions = require("firebase-functions");
 const {
   getLecturesByFilterAndOptionallyDate,
-  findFreeSlots,
+  findAndFormatFreeSlots,
   filterLectures,
 } = require('../service/lectureService');
 const { handleErrors, validateRequestParams, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
@@ -223,7 +223,7 @@ exports.findAvailable = functions
       validateRequestParams({ facultyId, startTime, endTime });
 
       const events = await filterLectures(facultyId, request);
-      const result = findFreeSlots(events, startTime, endTime);
+      const result = findAndFormatFreeSlots(events, startTime, endTime);
 
       response.status(200).json({ result: result });
     } catch (error) {

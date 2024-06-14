@@ -127,12 +127,11 @@ function findFreeSlots(events, startTime, endTime) {
   convertedEvents.sort((a, b) => a.start - b.start);
 
   let freeSlots = [];
-  
+
   startTime = convertToDate(startTime, false);
   endTime = convertToDate(endTime, true);
 
   if (startTime < convertedEvents[0].start) {
-    console.log("nekaj");
     freeSlots.push({ start: startTime, end: new Date(convertedEvents[0].start) });
   }
 
@@ -150,6 +149,51 @@ function findFreeSlots(events, startTime, endTime) {
     start: slot.start.toISOString(),
     end: slot.end.toISOString()
   }));
+}
+
+
+function formatFreeSlots(freeSlots) {
+  const result = {};
+
+  freeSlots.forEach(slot => {
+    const start = new Date(slot.start);
+    const end = new Date(slot.end);
+
+    for (let current = new Date(start); current < end; current.setDate(current.getDate() + 1)) {
+      const currentDate = current.toISOString().slice(0, 10);
+
+      if (!result[currentDate]) {
+        result[currentDate] = [];
+      }
+
+      const currentStart = (current.toISOString().slice(11, 16) < "07:00") ? "07:00" : current.toISOString().slice(11, 16);
+      let currentEnd = (end.toISOString().slice(11, 16) > "21:00" || end.toISOString().slice(0, 10) > currentDate) ? "21:00" : end.toISOString().slice(11, 16);
+      if (current.toISOString().slice(0, 10) < currentDate) {
+        currentEnd = "21:00";
+      }
+
+      const startDateTime = new Date(`${currentDate}T${currentStart}`);
+      const endDateTime = new Date(`${currentDate}T${currentEnd}`);
+      const duration = (endDateTime - startDateTime) / (60 * 60 * 1000);
+
+      if (duration > 0) {
+        result[currentDate].push({
+          start: currentStart,
+          end: currentEnd,
+          duration: duration
+        });
+      }
+    }
+  });
+
+  return result;
+}
+
+function findAndFormatFreeSlots(events, startTime, endTime) {
+  let freeSlots = findFreeSlots(events, startTime, endTime);
+  let formatedSlots = formatFreeSlots(freeSlots);
+
+  return formatedSlots;
 }
 
 
@@ -181,6 +225,6 @@ async function filterLectures(
 
 module.exports = {
   getLecturesByFilterAndOptionallyDate,
-  findFreeSlots,
+  findAndFormatFreeSlots,
   filterLectures,
 }
