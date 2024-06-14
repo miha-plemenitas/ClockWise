@@ -3,7 +3,6 @@ const {
   getLecturesByFilterAndOptionallyDate,
   findFreeSlots,
   filterLectures,
-  prepareSearchFilters
 } = require('../service/lectureService');
 const { handleErrors, validateRequestParams, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
 const { getLectureCollectionName } = require("../utils/apiHelpers");
@@ -220,25 +219,11 @@ exports.findAvailable = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
-      const { facultyId, groupId, startTime, endTime, roomId, tutorId } = request.query;
+      const { facultyId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, startTime, endTime });
 
-      let events = []
-      let filteredLectures;
-
-      if (groupId) {
-        filteredLectures = await getLecturesByFilterAndOptionallyDate(facultyId, "group_ids", Number(groupId), startTime, endTime, "lectures");
-        filteredLectures = Object.values(filteredLectures);
-        events.push(...filteredLectures);
-      }
-      if (roomId) {
-        filteredLectures = await getLecturesByFilterAndOptionallyDate(facultyId, "room_ids", Number(roomId), startTime, endTime, "lectures");
-        filteredLectures = Object.values(filteredLectures);
-        events.push(...filteredLectures);
-      }
-
-      //TODO: Add start and end
-      const result = findFreeSlots(events);
+      const events = await filterLectures(facultyId, request);
+      const result = findFreeSlots(events, startTime, endTime);
 
       response.status(200).json({ result: result });
     } catch (error) {

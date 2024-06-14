@@ -10,9 +10,9 @@ const { db } = require('../utils/firebaseAdmin');
 function convertToDate(dateString, endOfDay = false) {
   const date = new Date(dateString);
   if (endOfDay) {
-    date.setHours(23, 59, 59, 999); // Set to the end of the day.
+    date.setHours(21, 0, 0, 0);
   } else {
-    date.setHours(0, 0, 0, 0); // Set to the start of the day.
+    date.setHours(7, 0, 0, 0);
   }
   return date;
 }
@@ -120,21 +120,30 @@ function convertToDates(event) {
   };
 }
 
-function findFreeSlots(events) {
+
+function findFreeSlots(events, startTime, endTime) {
   let convertedEvents = events.map(convertToDates);
 
   convertedEvents.sort((a, b) => a.start - b.start);
 
   let freeSlots = [];
   
-  let lastEnd = convertedEvents[0].end;
+  startTime = convertToDate(startTime, false);
+  endTime = convertToDate(endTime, true);
 
-  for (let i = 1; i < convertedEvents.length; i++) {
-    let currentStart = convertedEvents[i].start;
-    if (lastEnd < currentStart) {
-      freeSlots.push({ start: new Date(lastEnd), end: new Date(currentStart) });
+  if (startTime < convertedEvents[0].start) {
+    console.log("nekaj");
+    freeSlots.push({ start: startTime, end: new Date(convertedEvents[0].start) });
+  }
+
+  for (let i = 0; i < convertedEvents.length - 1; i++) {
+    if (convertedEvents[i].end < convertedEvents[i + 1].start) {
+      freeSlots.push({ start: new Date(convertedEvents[i].end), end: new Date(convertedEvents[i + 1].start) });
     }
-    lastEnd = new Date(Math.max(lastEnd.getTime(), convertedEvents[i].end.getTime()));
+  }
+
+  if (convertedEvents[convertedEvents.length - 1].end < endTime) {
+    freeSlots.push({ start: new Date(convertedEvents[convertedEvents.length - 1].end), end: endTime });
   }
 
   return freeSlots.map(slot => ({
@@ -146,46 +155,27 @@ function findFreeSlots(events) {
 
 async function filterLectures(
   facultyId,
-  searchFilters,
-  startTime,
-  endTime
+  request
 ) {
-  const facultyRef = db.collection("faculties").doc(facultyId);
-  const facultyDoc = await facultyRef.get();
+  const { groupId, startTime, endTime, roomId, tutorId } = request.query;
+  let events = []
+  let filteredLectures;
 
-  if (!facultyDoc.exists) {
-    throw new Error(`Faculty with id ${facultyId} not found`);
+  if (groupId) {
+    filteredLectures = await getLecturesByFilterAndOptionallyDate(facultyId, "group_ids", Number(groupId), startTime, endTime, "lectures");
+    filteredLectures = Object.values(filteredLectures);
+    events.push(...filteredLectures);
+  } if (roomId) {
+    filteredLectures = await getLecturesByFilterAndOptionallyDate(facultyId, "room_ids", Number(roomId), startTime, endTime, "lectures");
+    filteredLectures = Object.values(filteredLectures);
+    events.push(...filteredLectures);
+  } if (tutorId) {
+    filteredLectures = await getLecturesByFilterAndOptionallyDate(facultyId, "tutor_ids", Number(tutorId), startTime, endTime, "lectures");
+    filteredLectures = Object.values(filteredLectures);
+    events.push(...filteredLectures);
   }
 
-  let lectureQuery = facultyRef.collection("lectures");
-
-  Object.keys(searchFilters).forEach(function (key) {
-    console.log('Key : ' + key + ', Value : ' + searchFilters[key])
-
-    const value = searchFilters[key];
-
-    lectureQuery = lectureQuery.where(key, "array-contains", value);
-  });
-  lectureQuery.where("group_ids", "array-contains", 503);
-
-  lectureQuery = applyDateFilters(lectureQuery, startTime, endTime);
-
-  const snapshot = await lectureQuery.get();
-  const lectures = snapshot.docs.map(doc => doc.data());
-  console.log(lectures);
-
-  return lectures;
-}
-
-
-function prepareSearchFilters(groupId, roomId, tutorId) {
-  let searchFilters = {};
-
-  if (groupId) searchFilters.group_ids = groupId;
-  if (roomId) searchFilters.room_ids = roomId;
-  if (tutorId) searchFilters.tutor_ids = tutorId;
-
-  return searchFilters;
+  return events;
 }
 
 
@@ -193,5 +183,4 @@ module.exports = {
   getLecturesByFilterAndOptionallyDate,
   findFreeSlots,
   filterLectures,
-  prepareSearchFilters,
 }
