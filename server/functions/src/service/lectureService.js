@@ -56,15 +56,15 @@ function applyDateFilters(query, startTime, endTime) {
     const endToday = new Date();
     endToday.setHours(23, 59, 59, 999);
     return query.where("startTime", ">=", today).where("startTime", "<=", endToday);
-  } 
+  }
   else if (startTime && !endTime) {
     const start = convertToDate(startTime);
     return query.where("startTime", ">=", start);
-  } 
+  }
   else if (!startTime && endTime) {
     const end = convertToDate(endTime, true);
     return query.where("startTime", ">=", today).where("startTime", "<=", end);
-  } 
+  }
   else if (startTime && endTime) {
     const start = convertToDate(startTime);
     const end = convertToDate(endTime, true);
@@ -113,7 +113,85 @@ async function getLecturesByFilterAndOptionallyDate(
 }
 
 
+function convertToDates(event) {
+  return {
+    start: new Date(event.startTime._seconds * 1000 + event.startTime._nanoseconds / 1000000),
+    end: new Date(event.endTime._seconds * 1000 + event.endTime._nanoseconds / 1000000),
+  };
+}
+
+function findFreeSlots(events) {
+  let convertedEvents = events.map(convertToDates);
+
+  convertedEvents.sort((a, b) => a.start - b.start);
+
+  let freeSlots = [];
+  
+  let lastEnd = convertedEvents[0].end;
+
+  for (let i = 1; i < convertedEvents.length; i++) {
+    let currentStart = convertedEvents[i].start;
+    if (lastEnd < currentStart) {
+      freeSlots.push({ start: new Date(lastEnd), end: new Date(currentStart) });
+    }
+    lastEnd = new Date(Math.max(lastEnd.getTime(), convertedEvents[i].end.getTime()));
+  }
+
+  return freeSlots.map(slot => ({
+    start: slot.start.toISOString(),
+    end: slot.end.toISOString()
+  }));
+}
+
+
+async function filterLectures(
+  facultyId,
+  searchFilters,
+  startTime,
+  endTime
+) {
+  const facultyRef = db.collection("faculties").doc(facultyId);
+  const facultyDoc = await facultyRef.get();
+
+  if (!facultyDoc.exists) {
+    throw new Error(`Faculty with id ${facultyId} not found`);
+  }
+
+  let lectureQuery = facultyRef.collection("lectures");
+
+  Object.keys(searchFilters).forEach(function (key) {
+    console.log('Key : ' + key + ', Value : ' + searchFilters[key])
+
+    const value = searchFilters[key];
+
+    lectureQuery = lectureQuery.where(key, "array-contains", value);
+  });
+  lectureQuery.where("group_ids", "array-contains", 503);
+
+  lectureQuery = applyDateFilters(lectureQuery, startTime, endTime);
+
+  const snapshot = await lectureQuery.get();
+  const lectures = snapshot.docs.map(doc => doc.data());
+  console.log(lectures);
+
+  return lectures;
+}
+
+
+function prepareSearchFilters(groupId, roomId, tutorId) {
+  let searchFilters = {};
+
+  if (groupId) searchFilters.group_ids = groupId;
+  if (roomId) searchFilters.room_ids = roomId;
+  if (tutorId) searchFilters.tutor_ids = tutorId;
+
+  return searchFilters;
+}
+
 
 module.exports = {
-  getLecturesByFilterAndOptionallyDate
+  getLecturesByFilterAndOptionallyDate,
+  findFreeSlots,
+  filterLectures,
+  prepareSearchFilters,
 }
