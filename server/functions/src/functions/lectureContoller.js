@@ -207,7 +207,20 @@ exports.getAllForTutor = functions
   });
 
 
-exports.findAvailable = functions
+/**
+ * Defines a Firebase Cloud Function deployed in the "europe-west3" region, intended to handle GET requests for finding available lecture slots.
+ * The function configures CORS to allow requests from all origins. It processes the request after validating authentication and the required 
+ * parameters, which include facultyId, startTime, endTime, groupId, tutorId, and roomId. These parameters are used to filter and determine available time slots 
+ * within a specified range.
+ *
+ * @param {functions.https.Request} request - The HTTP request object from Firebase, containing facultyId, startTime, and endTime in the query.
+ * These parameters specify the faculty to filter lectures for and the time range within which to find available slots.
+ * @param {functions.Response} response - The response object used to send back the HTTP response. If available time slots are found,
+ * they are returned in the response; otherwise, an appropriate error response is managed.
+ * @returns {Promise<void>} A promise that resolves when the available slots have been successfully calculated and sent back,
+ * or rejects if an error occurs, with error handling managed internally.
+ */
+exports.findAvailableByIds = functions
   .region("europe-west3")
   .runWith({
     timeoutSeconds: 540
@@ -222,7 +235,7 @@ exports.findAvailable = functions
       const { facultyId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, startTime, endTime });
 
-      const events = await filterLectures(facultyId, request);
+      const events = await filterLectures(facultyId, request, startTime, endTime);
       const result = findAndFormatFreeSlots(events, startTime, endTime);
 
       response.status(200).json({ result: result });

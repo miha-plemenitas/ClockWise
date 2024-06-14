@@ -271,6 +271,18 @@ exports.addRooms = functions
   });
 
 
+/**
+ * Defines a Firebase Cloud Function deployed in the "europe-west3" region, set up to handle POST requests with an increased memory limit of 2GB.
+ * This function duplicates lecture data based on a provided identifier. It handles CORS by allowing requests from all origins.
+ * Authentication and request method validation are performed before proceeding with fetching and duplicating the data.
+ *
+ * @param {functions.https.Request} request - The HTTP request object from Firebase. It should include an identifier in the query string
+ * to specify which lecture data to duplicate. This ID is expected to be provided as a part of the query parameters.
+ * @param {functions.Response} response - The response object used to send back the HTTP response. If the data duplication is successful,
+ * the duplicated data will be returned in the response; otherwise, errors will be handled and appropriate responses will be sent.
+ * @returns {Promise<void>} A promise that resolves when the duplication process is successfully completed and the result is sent back,
+ * or rejects if an error occurs, with error handling managed internally.
+ */
 exports.duplicateLectures = functions
   .region("europe-west3")
   .runWith({

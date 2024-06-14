@@ -3,6 +3,13 @@ const { processItemsInBatch } = require('../utils/batchOperations');
 const { roomData, roomBonusBlankFields } = require("../constants/room");
 
 
+/**
+ * Enhances a room object by updating its size and equipment properties based on matching data from a predefined list.
+ * If no matching entry is found in the list, it assigns default values from another predefined object.
+ * The function modifies the original room object directly and does not return any value.
+ *
+ * @param {Object} room - The room object to be enhanced. Expected to at least have a 'name' property.
+ */
 function enhanceRoomDetails(room) {
   let roomEnhanced = false;
   for (const roomDataEntry of roomData) {

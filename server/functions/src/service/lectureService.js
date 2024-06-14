@@ -113,6 +113,12 @@ async function getLecturesByFilterAndOptionallyDate(
 }
 
 
+/**
+ * Converts event unix timestamps to JavaScript Date objects.
+ *
+ * @param {Object} event - The event object containing timestamp properties.
+ * @returns {Object} An object containing start and end Date objects.
+ */
 function convertToDates(event) {
   return {
     start: new Date(event.startTime._seconds * 1000 + event.startTime._nanoseconds / 1000000),
@@ -121,6 +127,14 @@ function convertToDates(event) {
 }
 
 
+/**
+ * Finds free time slots between lectures.
+ *
+ * @param {Array<Object>} events - An array of lectures.
+ * @param {string} startTime - The start time to consider for finding free slots.
+ * @param {string} endTime - The end time to consider for finding free slots.
+ * @returns {Array<Object>} An array of free time slots, each with start and end properties as ISO strings.
+ */
 function findFreeSlots(events, startTime, endTime) {
   let convertedEvents = events.map(convertToDates);
 
@@ -152,6 +166,12 @@ function findFreeSlots(events, startTime, endTime) {
 }
 
 
+/**
+ * Formats free time slots into a structured object by date.
+ *
+ * @param {Array<Object>} freeSlots - An array of free time slots, each with start and end properties as ISO strings.
+ * @returns {Object} An object where keys are dates (YYYY-MM-DD) and values are arrays of free time slots with start, end, and duration properties.
+ */
 function formatFreeSlots(freeSlots) {
   const result = {};
 
@@ -189,6 +209,15 @@ function formatFreeSlots(freeSlots) {
   return result;
 }
 
+
+/**
+ * Finds and formats free time slots between scheduled events.
+ *
+ * @param {Array<Object>} events - An array of event objects with startTime and endTime properties.
+ * @param {string} startTime - The start time to consider for finding free slots.
+ * @param {string} endTime - The end time to consider for finding free slots.
+ * @returns {Object} An object where keys are dates (YYYY-MM-DD) and values are arrays of free time slots with start, end, and duration properties.
+ */
 function findAndFormatFreeSlots(events, startTime, endTime) {
   let freeSlots = findFreeSlots(events, startTime, endTime);
   let formatedSlots = formatFreeSlots(freeSlots);
@@ -197,11 +226,26 @@ function findAndFormatFreeSlots(events, startTime, endTime) {
 }
 
 
+/**
+ * Filters lectures based on the provided request parameters and time range.
+ *
+ * @param {string} facultyId - The unique identifier of the faculty.
+ * @param {Object} request - The request object containing query parameters.
+ * @param {Object} request.query - The query parameters for filtering.
+ * @param {string} [request.query.groupId] - The group ID to filter lectures by.
+ * @param {string} [request.query.roomId] - The room ID to filter lectures by.
+ * @param {string} [request.query.tutorId] - The tutor ID to filter lectures by.
+ * @param {string} startTime - The start time to filter lectures by.
+ * @param {string} endTime - The end time to filter lectures by.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of filtered lectures.
+ */
 async function filterLectures(
   facultyId,
-  request
+  request,
+  startTime,
+  endTime
 ) {
-  const { groupId, startTime, endTime, roomId, tutorId } = request.query;
+  const { groupId, roomId, tutorId } = request.query;
   let events = []
   let filteredLectures;
 

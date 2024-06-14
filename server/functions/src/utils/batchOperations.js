@@ -60,6 +60,14 @@ async function commitBatch(batch) {
 }
 
 
+/**
+ * Filters an object to only include allowed keys.
+ *
+ * @param {Object} object - The object to be filtered.
+ * @param {Array<string>} allowedKeys - The list of allowed keys.
+ * @returns {Object} The filtered object containing only allowed keys.
+ * @throws {Error} If no valid update fields are provided.
+ */
 function filterForAllowedKeys(object, allowedKeys) {
   const filteredObject = Object.keys(object)
     .filter(key => allowedKeys.includes(key))
@@ -76,6 +84,13 @@ function filterForAllowedKeys(object, allowedKeys) {
 }
 
 
+/**
+ * Converts date fields in the data object to Firestore Timestamp objects.
+ *
+ * @param {Object} data - The data object containing date fields.
+ * @returns {Object} The updated data object with date fields converted to Timestamps.
+ * @throws {Error} If the date fields are not correctly formatted.
+ */
 function convertDatesToTimestamps(data) {
   const dateFields = ['startTime', 'endTime'];
   try {

@@ -165,6 +165,12 @@ function processRoomData(room) {
 }
 
 
+/**
+ * Processes schedule data and returns a formatted object.
+ *
+ * @param {Object} lecture - The lecture data.
+ * @returns {Object} The processed lecture data.
+ */
 function processScheduleData(lecture) {
   const startTime = lecture.date.clone().hour(lecture.timeSlot.start).toDate();
 

@@ -35,7 +35,14 @@ async function fetchLecturesByFacultyDoc(facultyDoc) {
   return log;
 }
 
-
+/**
+ * Duplicates the lectures associated with a given faculty from the original_lectures collection to the lectures collection.
+ * This function first deletes all existing documents in the lectures collection, then it duplicates each lecture from
+ * the original_lectures collection if it exists. Logs are created to indicate success or failure.
+ *
+ * @param {DocumentSnapshot} facultyDoc - A Firestore document snapshot containing faculty data and references to its subcollections.
+ * @returns {Promise<string>} A promise that resolves to a log string indicating the success or failure of the operation.
+ */
 async function duplicateLecturesByFacultyDoc(facultyDoc) {
   const originalLecturesRef = facultyDoc.ref.collection("original_lectures");
   const lecturesRef = facultyDoc.ref.collection("lectures");

@@ -27,6 +27,12 @@ async function findProgramForBranch(facultyRef, branchId) {
   return null;
 }
 
+
+/**
+ * Deletes all documents in a Firestore collection in batches.
+ *
+ * @param {Object} collectionRef - The reference to the Firestore collection.
+ */
 async function deleteAllDocumentsInCollection(collectionRef) {
   const snapshot = await collectionRef.get();
   let batch = db.batch();
@@ -49,6 +55,15 @@ async function deleteAllDocumentsInCollection(collectionRef) {
 }
 
 
+/**
+ * Checks if a document exists in a Firestore collection by reference, collection name, and document ID.
+ *
+ * @param {Object} ref - The reference to the parent Firestore collection.
+ * @param {string} collectionName - The name of the sub-collection.
+ * @param {string} id - The document ID to check for existence.
+ * @returns {Promise<Object>} A promise that resolves to the document reference if it exists.
+ * @throws {Error} If the document does not exist in the specified collection.
+ */
 async function checkIfExistsByRefCollectionNameId(ref, collectionName, id) {
   const foundRef = ref.collection(collectionName).doc(id);
   const doc = await foundRef.get();

@@ -67,6 +67,13 @@ async function fetchFromApi(endpointName, params = null, headers = null) {
 }
 
 
+/**
+ * Determines the collection name for lectures based on the schedule type in the request.
+ *
+ * @param {Object} request - The request object containing query parameters.
+ * @param {string} [request.query.scheduleType] - The schedule type to determine the collection name.
+ * @returns {string} The name of the lecture collection.
+ */
 function getLectureCollectionName(request) {
   const { scheduleType } = request.query;
 

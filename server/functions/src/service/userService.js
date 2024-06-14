@@ -3,6 +3,12 @@ const { filterForAllowedKeys } = require("../utils/batchOperations");
 const { userAllowedKeys } = require("../constants/constants");
 
 
+/**
+ * Saves a user to the database if they do not already exist.
+ *
+ * @param {string} uid - The unique identifier of the user.
+ * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the user already existed.
+ */
 async function saveUser(uid) {
   const userRef = db.collection('users').doc(uid);
   const userDoc = await userRef.get();
@@ -15,6 +21,13 @@ async function saveUser(uid) {
 }
 
 
+/**
+ * Retrieves a user by their unique identifier from the database.
+ *
+ * @param {string} uid - The unique identifier of the user.
+ * @returns {Promise<Object>} A promise that resolves to the user data.
+ * @throws {Error} If the user with the specified uid is not found.
+ */
 async function getUserById(uid) {
   const userDoc = await db.collection("users").doc(uid).get();
 
@@ -27,6 +40,14 @@ async function getUserById(uid) {
 }
 
 
+/**
+ * Updates a user's information in the database.
+ *
+ * @param {string} uid - The unique identifier of the user.
+ * @param {Object} updates - The updates to apply to the user's information.
+ * @returns {Promise<string>} A promise that resolves to a success message.
+ * @throws {Error} If the user with the specified uid is not found.
+ */
 async function updateUser(uid, updates) {
   const userRef = db.collection('users').doc(uid);
 
@@ -45,6 +66,13 @@ async function updateUser(uid, updates) {
 }
 
 
+/**
+ * Deletes a user from the database.
+ *
+ * @param {string} uid - The unique identifier of the user.
+ * @returns {Promise<string>} A promise that resolves to a success message.
+ * @throws {Error} If the user with the specified uid is not found.
+ */
 async function deleteUser(uid) {
   const userRef = db.collection('users').doc(uid);
 
