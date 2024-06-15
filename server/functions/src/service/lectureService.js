@@ -267,8 +267,90 @@ async function filterLectures(
 }
 
 
+async function getLecturesByArrayContainsAny(
+  facultyId,
+  filterFieldName,
+  filterValue,
+  startTime,
+  endTime,
+  collectionName
+) {
+  const facultyRef = db.collection("faculties").doc(facultyId);
+  const facultyDoc = await facultyRef.get();
+
+  if (!facultyDoc.exists) {
+    throw new Error(`Faculty with id ${facultyId} not found`);
+  }
+
+  const lectureRef = facultyRef.collection(collectionName);
+  let lectureQuery = lectureRef.where(filterFieldName, "array-contains-any", filterValue);
+  lectureQuery = applyDateFilters(lectureQuery, startTime, endTime);
+
+  const snapshot = await lectureQuery.get();
+  const lectures = snapshot.docs.map(doc => doc.data());
+
+  return lectures;
+}
+
+
+async function getRoomsBiggerThan(
+  facultyId,
+  roomSize
+) {
+  const facultyRef = db.collection("faculties").doc(facultyId);
+  const facultyDoc = await facultyRef.get();
+
+  if (!facultyDoc.exists) {
+    throw new Error(`Faculty with id ${facultyId} not found`);
+  }
+
+  const roomRef = facultyRef.collection("rooms");
+  let roomQuery = roomRef.where("size", ">=", roomSize);
+
+  const snapshot = await roomQuery.get();
+  const rooms = snapshot.docs.map(doc => doc.data());
+
+  return rooms;
+}
+
+
+async function findLectureForArrayOfItems(
+  arrayOfItems,
+  facultyId,
+  collectionName,
+  startTime,
+  endTime,
+  groupEvents
+) {
+  const data = {};
+  for(const item of arrayOfItems){
+    let itemLectures = await getLecturesByFilterAndOptionallyDate(facultyId, collectionName, Number(item.id), startTime, endTime, "lectures");
+    itemLectures = Object.values(itemLectures);
+    itemLectures.push(...groupEvents);
+
+    data[item.id] = itemLectures;
+  }
+  return data;
+}
+
+
+async function findAndFormatFreeSlotsForObjects(object, startTime, endTime) {
+  const data = {}
+  Object.keys(object).forEach(function(key) {
+    const formatedSlots = findAndFormatFreeSlots(object[key], startTime, endTime);
+    data[key] = formatedSlots;
+  });
+
+  return data;
+}
+
+
 module.exports = {
   getLecturesByFilterAndOptionallyDate,
   findAndFormatFreeSlots,
   filterLectures,
+  getLecturesByArrayContainsAny,
+  getRoomsBiggerThan,
+  findLectureForArrayOfItems,
+  findAndFormatFreeSlotsForObjects
 }

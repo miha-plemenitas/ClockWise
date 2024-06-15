@@ -3,6 +3,10 @@ const {
   getLecturesByFilterAndOptionallyDate,
   findAndFormatFreeSlots,
   filterLectures,
+  getLecturesByArrayContainsAny,
+  findLectureForArrayOfItems,
+  findAndFormatFreeSlotsForObjects,
+  getRoomsBiggerThan
 } = require('../service/lectureService');
 const { handleErrors, validateRequestParams, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
 const { getLectureCollectionName } = require("../utils/apiHelpers");
@@ -237,6 +241,34 @@ exports.findAvailableByIds = functions
 
       const events = await filterLectures(facultyId, request, startTime, endTime);
       const result = findAndFormatFreeSlots(events, startTime, endTime);
+
+      response.status(200).json({ result: result });
+    } catch (error) {
+      handleErrors(error, response);
+    }
+  });
+
+
+exports.findAvailableRoomSizeAndGroupIds = functions
+  .region("europe-west3")
+  .runWith({
+    timeoutSeconds: 540
+  })
+  .https
+  .onRequest(async (request, response) => {
+    response.set("Access-Control-Allow-Origin", "*");
+
+    try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
+      const { facultyId, startTime, endTime, roomSize, groupIds } = request.query;
+      validateRequestParams({ facultyId, startTime, endTime, roomSize });
+
+      let groupArray = groupIds.split("_").map(Number);
+      const groupLectures = await getLecturesByArrayContainsAny(facultyId, "group_ids", groupArray, startTime, endTime, "lectures");
+      const rooms = await getRoomsBiggerThan(facultyId, Number(roomSize));
+      const roomsWithLectures = await findLectureForArrayOfItems(rooms, facultyId, "rooms", startTime, endTime, groupLectures);
+      const result = await findAndFormatFreeSlotsForObjects(roomsWithLectures, startTime, endTime);
 
       response.status(200).json({ result: result });
     } catch (error) {
