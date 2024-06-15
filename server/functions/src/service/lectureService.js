@@ -238,6 +238,7 @@ function findAndFormatFreeSlots(events, startTime, endTime) {
  * @param {string} startTime - The start time to filter lectures by.
  * @param {string} endTime - The end time to filter lectures by.
  * @returns {Promise<Array<Object>>} A promise that resolves to an array of filtered lectures.
+ * @throws {Error} If there weren't any group, room or tutor ids sent.
  */
 async function filterLectures(
   facultyId,
@@ -261,6 +262,10 @@ async function filterLectures(
     filteredLectures = await getLecturesByFilterAndOptionallyDate(facultyId, "tutor_ids", Number(tutorId), startTime, endTime, "lectures");
     filteredLectures = Object.values(filteredLectures);
     events.push(...filteredLectures);
+  }
+
+  if(!filteredLectures){
+    throw new Error("No group, room or tutor ID sent")
   }
 
   return events;
