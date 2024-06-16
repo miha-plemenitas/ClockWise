@@ -6,7 +6,9 @@ const {
   getLecturesByArrayContainsAny,
   findLectureForArrayOfItems,
   findAndFormatFreeSlotsForObjects,
-  getRoomsBiggerThan
+  getRoomsBiggerThan,
+  saveLecture,
+  updateLecture,
 } = require('../service/lectureService');
 const { handleErrors, validateRequestParams, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
 const { getLectureCollectionName } = require("../utils/apiHelpers");
@@ -270,6 +272,54 @@ exports.findAvailableRoomSizeAndGroupIds = functions
       const roomsWithLectures = await findLectureForArrayOfItems(rooms, facultyId, "rooms", startTime, endTime, groupLectures);
       const result = await findAndFormatFreeSlotsForObjects(roomsWithLectures, startTime, endTime);
 
+      response.status(200).json({ result: result });
+    } catch (error) {
+      handleErrors(error, response);
+    }
+  });
+
+
+exports.add = functions
+  .region("europe-west3")
+  .runWith({
+    timeoutSeconds: 540
+  })
+  .https
+  .onRequest(async (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Credentials', 'true');
+
+    try {
+      await checkAuthenticationandMethodForRequest(request, "POST");
+
+      const { facultyId } = request.query;
+      validateRequestParams({ facultyId });
+
+      let lecture = await saveLecture(facultyId, request.body)
+      console.log(`Added a lecture with id ${lecture.id} to faculty ${facultyId}`);
+      response.status(200).json({ result: lecture });
+    } catch (error) {
+      handleErrors(error, response);
+    }
+  });
+
+
+exports.update = functions
+  .region("europe-west3")
+  .runWith({
+    timeoutSeconds: 540
+  })
+  .https
+  .onRequest(async (request, response) => {
+    response.set("Access-Control-Allow-Origin", "*");
+
+    try {
+      await checkAuthenticationandMethodForRequest(request, "PUT");
+
+      const { facultyId } = request.query;
+      validateRequestParams({ facultyId });
+
+      let result = await updateLecture(facultyId, request.body);
       response.status(200).json({ result: result });
     } catch (error) {
       handleErrors(error, response);

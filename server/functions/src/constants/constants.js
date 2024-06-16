@@ -5,6 +5,11 @@ module.exports = {
   eventAllowedKeys: ["startTime", "endTime", "title", "notes", "editable"],
   timetableAllowedKeys: ["events"],
   allowedRoles: ['student', 'professor', 'referat','admin'],
+  lectureAllowedKeys: [
+   "branch_ids", "branches", "course", "courseId", "room_ids", "endTime", 
+   "executionType", "executionTypeId", "group_ids", "groups", "rooms",
+   "startTime", "tutor_ids", "tutors", "exam", "id"
+  ],
   faculties: [
     {
        "schoolCode":"wtt_umpf",
