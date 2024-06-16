@@ -602,9 +602,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
           initialView="timeGridWeek"
           weekends={false}
           eventContent={renderEventContent}
-          eventSources={[
-            { events: filteredEvents, color: "#4890CB" },
-            { events: customEvents, color: "#1B364B" },
+          events={[
+            ...filteredEvents.map((event) => ({ ...event, color: "#4890CB" })),
+            ...customEvents.map((event) => ({ ...event, color: "#1B364B" })),
           ]}
           headerToolbar={{
             left: "title",
