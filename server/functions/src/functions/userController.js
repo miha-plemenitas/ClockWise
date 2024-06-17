@@ -77,7 +77,7 @@ exports.get = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
-      const { uid } = request.body;
+      const { uid } = request.query;
       validateRequestParams({ uid });
 
       const result = await getUserById(uid);

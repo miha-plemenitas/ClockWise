@@ -14,7 +14,7 @@ async function saveUser(uid) {
   const userDoc = await userRef.get();
 
   if (!userDoc.exists) {
-    await userRef.set({ uid });
+    await userRef.set({ uid, role: 'Student' });
     return false;
   }
   return true;
@@ -57,7 +57,7 @@ async function updateUser(uid, updates) {
   if (!userDoc.exists) {
     console.log(`No user found with ID: ${uid}`);
     throw new Error('User not found');
-  } 
+  }
 
   await userRef.update(filteredUpdates);
 
