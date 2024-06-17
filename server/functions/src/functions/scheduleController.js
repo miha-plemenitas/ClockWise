@@ -5,7 +5,6 @@ const {
   validateRequestParams,
   checkAuthenticationandMethodForRequest
 } = require("../utils/endpointHelpers");
-const { generateFullSchedule, saveGeneratedSchedule, enrichLecturesWithRoomData } = require("../scheduler/converter");
 
 
 exports.generate = functions
@@ -21,10 +20,11 @@ exports.generate = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");      
 
-      const { facultyId } = request.query;
+      const { facultyId, iterations } = request.query;
       validateRequestParams({ facultyId });
 
-      const schedule = await generateSchedule(facultyId);
+      const schedule = await generateSchedule(facultyId, iterations);
+      console.log(`Generated and saved a schedule for ${facultyId}`);
 
       response.status(200).json({ result: schedule });
     } catch (error) {

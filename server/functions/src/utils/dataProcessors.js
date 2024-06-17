@@ -168,21 +168,19 @@ function processRoomData(room) {
  * @returns {Object} The processed lecture data.
  */
 function processScheduleData(lecture) {
-  const startTime = lecture.date.clone().hour(lecture.timeSlot.start).toDate();
+  const { startTime, endTime } = setFirestoreTimestampsAndDuration(lecture);
 
-  const endTime = lecture.date.clone().hour(lecture.timeSlot.end).toDate();
-
-  return {
-      id: `S${lecture.lecture.courseId} ${lecture.date.clone().hour(lecture.timeSlot.start).format("YYYY-MM-DDTHH:mm:ss")}`,
-      startTime: Timestamp.fromDate(startTime),
-      endTime: Timestamp.fromDate(endTime),
-      ...lecture.lecture,
-      r: [{
-          id: lecture.room,
-          name: ""
-      }],
-      rooms: [lecture.room]
+  let completeLecture = {
+    id: `S${lecture.courseId} ${lecture.executionTypeId} ${lecture.start_time}`,
+    startTime: startTime,
+    endTime: endTime,
+    ...lecture
   };
+  
+  delete completeLecture.start_time;
+  delete completeLecture.end_time;
+
+  return completeLecture;
 }
 
 

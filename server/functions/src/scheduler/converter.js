@@ -29,39 +29,56 @@ function generateFullSchedule(lectures, dateFrom) {
 }
 
 
-function getNextMonday(dateFrom) {
-  let date = dateFrom ? moment(dateFrom) : moment();
-  let nextMonday = date.isoWeekday() <= 1 ? date.isoWeekday(1) : date.add(1, 'weeks').isoWeekday(1);
-  nextMonday.startOf('day');
-  return nextMonday;
-}
-
-
-async function enrichLecturesWithRoomData(lectures) {
-  const roomData = await getAllFacultyCollectionItems("13", "rooms");
-  const roomMap = new Map(roomData.map(room => [room.roomId, room.roomName]));
+function updateLectureDates(lectures) {
+  const weekDates = getNextWeekdayDates();
 
   return lectures.map(lecture => {
-      const roomName = roomMap.get(lecture.room) || 'Unknown Room';
-      return {
-          ...lecture,
-          roomName
-      };
+      const day = lecture.day;
+      const date = weekDates[day];
+      
+      if (!date) return lecture;
+
+      const startTime = new Date(date);
+      startTime.setHours(lecture.start, 0, 0, 0);
+      
+      const endTime = new Date(date);
+      endTime.setHours(lecture.end, 0, 0, 0);
+
+      lecture.start_time = startTime.toISOString();
+      lecture.end_time = endTime.toISOString();
+
+      return lecture;
   });
 }
 
 
-async function saveGeneratedSchedule(lectures) {
-  const facultyRef = db.collection("faculties").doc("13");
-  console.log("Starting to save")
+function getNextWeekdayDates() {
+  const today = new Date();
+  const nextMonday = new Date(today);
+  nextMonday.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7));
+  
+  const dates = {
+      "Monday": new Date(nextMonday),
+      "Tuesday": new Date(nextMonday.setDate(nextMonday.getDate() + 1)),
+      "Wednesday": new Date(nextMonday.setDate(nextMonday.getDate() + 1)),
+      "Thursday": new Date(nextMonday.setDate(nextMonday.getDate() + 1)),
+      "Friday": new Date(nextMonday.setDate(nextMonday.getDate() + 1))
+  };
+  
+  return dates;
+}
+
+
+
+async function saveGeneratedSchedule(facultyId, lectures) {
+  const facultyRef = db.collection("faculties").doc(facultyId);
 
   await processItemsInBatch(facultyRef.collection("generated_lectures"), lectures, processScheduleData);
-  console.log("Successfuly saved data")
 }
 
 
 module.exports = {
   generateFullSchedule,
   saveGeneratedSchedule,
-  enrichLecturesWithRoomData
+  updateLectureDates
 }

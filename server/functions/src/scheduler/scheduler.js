@@ -1,7 +1,8 @@
 const { db } = require('../utils/firebaseAdmin');
-const { generateTimeSlots, initializeSchedule, findValidSlotSequences } = require("./utilities");
-const { evaluateSchedule, calculateScore } = require("./evaluator");
+const { generateTimeSlots, initializeSchedule } = require("./utilities");
+const { evaluateSchedule } = require("./evaluator");
 const { resetCollectionAndFetchTwoWeekSchedule } = require("./preparer");
+const { updateLectureDates, saveGeneratedSchedule } = require("./converter");
 
 function mutateSchedule(schedule, timeSlots) {
   const newSchedule = [...schedule];
@@ -97,7 +98,7 @@ async function generateSchedule2() {
 }
 
 
-async function generateSchedule(facultyId) {
+async function generateSchedule(facultyId, iterations) {
   const { original_lectures, rooms} = await resetCollectionAndFetchTwoWeekSchedule(facultyId);
 
   const timeSlots = generateTimeSlots();
@@ -106,6 +107,10 @@ async function generateSchedule(facultyId) {
   let score = evaluateSchedule(schedule);
 
   console.log(score);
+
+  schedule = updateLectureDates(schedule);
+
+  await saveGeneratedSchedule(facultyId, schedule);
 
   return schedule;
 }
