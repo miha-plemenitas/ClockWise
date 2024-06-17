@@ -14,7 +14,7 @@ async function saveUser(uid) {
   const userDoc = await userRef.get();
 
   if (!userDoc.exists) {
-    await userRef.set({ uid });
+    await userRef.set({ uid, role: 'Student' });
     return false;
   }
   return true;

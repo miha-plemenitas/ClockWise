@@ -14,6 +14,9 @@ import {
 } from "../../Components/ui/select";
 import { RadioGroup, RadioGroupItem } from "../../Components/ui/radio-group";
 
+import { Button } from "../../Components/ui/button";
+import { Input } from "../../Components/ui/input";
+
 interface CustomizeProps {
   userName: string;
   userEmail: string;
@@ -167,19 +170,29 @@ const Customize: React.FC<CustomizeProps> = ({
           </div>
           <div className="border-t border-gray-200"></div>
           <div className="space-y-2">
-            <h3 className="text-md font-semibold">Select an Option</h3>
+            <h3 className="text-md font-semibold">Select a role</h3>
             <Select value={selectValue} onValueChange={setSelectValue}>
               <SelectTrigger className="w-full mt-1 text-sm">
                 {selectValue}
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="option1">Option 1</SelectItem>
-                <SelectItem value="option2">Option 2</SelectItem>
-                <SelectItem value="option3">Option 3</SelectItem>
+                <SelectItem value="Student">Student</SelectItem>
+                <SelectItem value="Tutor">Tutor</SelectItem>
               </SelectContent>
             </Select>
+            {selectValue === "Tutor" && (
+              <div>
+                <p className="text-sm text-orange-500">
+                  Tutor role requires verification with an official @um.si email address.
+                </p>
+                <Input type="email" placeholder="Enter your @um.si email" className="mt-2" />
+                <Button className="mt-2 bg-modra text-white hover:bg-modra-700 items-center space-x-2">
+                  <span>Save</span>
+                </Button>
+              </div>
+            )}
           </div>
-          <div className="border-t border-gray-200"></div>
+          {/* <div className="border-t border-gray-200"></div>
           <div className="space-y-2">
             <h3 className="text-md font-semibold">Select a Radio Option</h3>
             <RadioGroup
@@ -215,13 +228,10 @@ const Customize: React.FC<CustomizeProps> = ({
                 </label>
               </div>
             </RadioGroup>
-          </div>
+          </div> */}
           <div className="border-t border-gray-200"></div>
           <div>
-            <button
-              onClick={handleLogout}
-              className="text-sm font-medium text-red-600 hover:text-red-800"
-            >
+            <button onClick={handleLogout} className="text-sm font-medium text-orange-600 hover:text-orange-800">
               Sign Out
             </button>
           </div>
