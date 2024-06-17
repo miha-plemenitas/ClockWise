@@ -1,6 +1,10 @@
 const functions = require("firebase-functions");
 const { generateSchedule } = require("../scheduler/scheduler");
-const { handleErrors, checkAuthenticationandMethodForRequest } = require("../utils/endpointHelpers");
+const {
+  handleErrors,
+  validateRequestParams,
+  checkAuthenticationandMethodForRequest
+} = require("../utils/endpointHelpers");
 const { generateFullSchedule, saveGeneratedSchedule, enrichLecturesWithRoomData } = require("../scheduler/converter");
 
 
@@ -17,11 +21,11 @@ exports.generate = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");      
 
-      const schedule = await generateSchedule();
+      const { facultyId } = request.query;
+      validateRequestParams({ facultyId });
 
-      const scheduledLectures = generateFullSchedule(schedule);
+      const schedule = await generateSchedule(facultyId);
 
-      await saveGeneratedSchedule(scheduledLectures);
       response.status(200).json({ result: schedule });
     } catch (error) {
       handleErrors(error, response);

@@ -56,8 +56,8 @@ async function updateUser(uid, updates) {
   const userDoc = await userRef.get();
   if (!userDoc.exists) {
     console.log(`No user found with ID: ${uid}`);
-    throw new Error('User not found');
-  }
+    throw new Error(`No user found with ID: ${uid}`);
+  } 
 
   await userRef.update(filteredUpdates);
 
@@ -78,7 +78,7 @@ async function deleteUser(uid) {
 
   const userDoc = await userRef.get();
   if (!userDoc.exists) {
-    throw new Error(`User with uid ${uid} not found`);
+    throw new Error(`No user found with ID: ${uid}`);
   }
 
   await userRef.delete();

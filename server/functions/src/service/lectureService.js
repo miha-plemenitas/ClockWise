@@ -1,4 +1,8 @@
 const { db } = require('../utils/firebaseAdmin');
+const { processLectureData } = require("../utils/dataProcessors");
+const { filterForAllowedKeys } = require("../utils/batchOperations");
+const { lectureAllowedKeys } = require("../constants/constants");
+const { setFirestoreTimestampsAndDuration } = require("../utils/timeUtils");
 
 
 /**
@@ -238,6 +242,7 @@ function findAndFormatFreeSlots(events, startTime, endTime) {
  * @param {string} startTime - The start time to filter lectures by.
  * @param {string} endTime - The end time to filter lectures by.
  * @returns {Promise<Array<Object>>} A promise that resolves to an array of filtered lectures.
+ * @throws {Error} If there weren't any group, room or tutor ids sent.
  */
 async function filterLectures(
   facultyId,
@@ -261,6 +266,10 @@ async function filterLectures(
     filteredLectures = await getLecturesByFilterAndOptionallyDate(facultyId, "tutor_ids", Number(tutorId), startTime, endTime, "lectures");
     filteredLectures = Object.values(filteredLectures);
     events.push(...filteredLectures);
+  }
+
+  if(!filteredLectures){
+    throw new Error("No group, room or tutor ID sent")
   }
 
   return events;
@@ -345,6 +354,85 @@ async function findAndFormatFreeSlotsForObjects(object, startTime, endTime) {
 }
 
 
+async function saveLecture(facultyId, lecture){
+  const facultyRef = db.collection("faculties").doc(facultyId);
+  const facultyDoc = await facultyRef.get();
+
+  if (!facultyDoc.exists) {
+    throw new Error(`Faculty with id ${facultyId} not found`);
+  }
+
+  const lectureCollectionRef = facultyRef.collection("lectures");
+  let filteredLecture = filterForAllowedKeys(lecture, lectureAllowedKeys);
+  filteredLecture = preprareLectureForProccessing(filteredLecture, true);
+
+  const processedLecture = processLectureData(filteredLecture);
+  if(lecture.hasOwnProperty('exam') && lecture.exam !== undefined){
+    processedLecture.exam = lecture.exam;
+  }
+
+  const docRef = await lectureCollectionRef.add(processedLecture);
+  const updateWithId = { id: docRef.id };
+  await docRef.update(updateWithId);
+
+  const newLectureDoc = await docRef.get();
+  const fullLectureData = newLectureDoc.data();
+
+  fullLectureData.id = newLectureDoc.id;
+
+  return fullLectureData;
+}
+
+
+async function updateLecture(facultyId, lecture){
+  const facultyRef = db.collection("faculties").doc(facultyId);
+  const facultyDoc = await facultyRef.get();
+
+  if (!facultyDoc.exists) {
+    throw new Error(`Faculty with id ${facultyId} not found`);
+  }
+
+  const lectureId = lecture.id;
+  const lectureCollectionRef = facultyRef.collection("lectures").doc(lectureId);
+
+  const lectureDoc = await lectureCollectionRef.get();
+  if (!lectureDoc.exists) {
+    console.log(`No lecture found with ID: ${lectureId}`);
+    throw new Error(`No lecture found with ID: ${lectureId}`);
+  } 
+
+  lecture = preprareLectureForProccessing(lecture);
+  const { startTime, endTime, duration } = setFirestoreTimestampsAndDuration(lecture);
+  lecture = configureTimeKeysLecture(lecture, startTime, endTime, duration);
+
+  await lectureCollectionRef.update(lecture);
+
+  return lecture;
+}
+
+
+function preprareLectureForProccessing(lecture, allCondition = false){
+  lecture.start_time = lecture.startTime;
+  lecture.end_time = lecture.endTime;
+  if(allCondition) {
+    lecture.lecturers = lecture.tutors;
+  }
+
+  return lecture;
+}
+
+
+function configureTimeKeysLecture(lecture, startTime, endTime, duration){
+  lecture.startTime = startTime;
+  lecture.endTime = endTime;
+  lecture.duration = duration;
+  delete lecture.start_time;
+  delete lecture.end_time;
+
+  return lecture
+}
+
+
 module.exports = {
   getLecturesByFilterAndOptionallyDate,
   findAndFormatFreeSlots,
@@ -352,5 +440,7 @@ module.exports = {
   getLecturesByArrayContainsAny,
   getRoomsBiggerThan,
   findLectureForArrayOfItems,
-  findAndFormatFreeSlotsForObjects
+  findAndFormatFreeSlotsForObjects,
+  saveLecture,
+  updateLecture,
 }
