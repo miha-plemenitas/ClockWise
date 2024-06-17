@@ -1,6 +1,6 @@
 const { db } = require('../utils/firebaseAdmin');
 const { generateTimeSlots, initializeSchedule, findValidSlotSequences } = require("./utilities");
-const { evaluateSchedule } = require("./evaluator");
+const { evaluateSchedule, calculateScore } = require("./evaluator");
 const { resetCollectionAndFetchTwoWeekSchedule } = require("./preparer");
 
 function mutateSchedule(schedule, timeSlots) {
@@ -103,6 +103,9 @@ async function generateSchedule(facultyId) {
   const timeSlots = generateTimeSlots();
 
   let schedule = initializeSchedule(original_lectures, timeSlots, rooms);
+  let score = evaluateSchedule(schedule);
+
+  console.log(score);
 
   return schedule;
 }

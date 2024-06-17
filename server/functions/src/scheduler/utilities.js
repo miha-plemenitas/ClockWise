@@ -55,8 +55,9 @@ function findValidTerm(lecture, timeSlots, rooms, schedule) {
       if (!hasConflicts(lecture, room, timeslot, lectureEnd, schedule)) {
         return {
           ...lecture,
+          rooms: [room],
+          room_ids: [room.id],
           roomId: room.roomId,
-          roomName: room.roomName,
           day: timeslot.day,
           start: timeslot.start,
           end: lectureEnd,
