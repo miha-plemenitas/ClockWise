@@ -3,6 +3,7 @@ const { processLectureData } = require("../utils/dataProcessors");
 const { filterForAllowedKeys } = require("../utils/batchOperations");
 const { lectureAllowedKeys } = require("../constants/constants");
 const { setFirestoreTimestampsAndDuration } = require("../utils/timeUtils");
+const { convertToDates } = require("../utils/timeUtils");
 
 
 /**
@@ -116,19 +117,6 @@ async function getLecturesByFilterAndOptionallyDate(
   return lectures;
 }
 
-
-/**
- * Converts event unix timestamps to JavaScript Date objects.
- *
- * @param {Object} event - The event object containing timestamp properties.
- * @returns {Object} An object containing start and end Date objects.
- */
-function convertToDates(event) {
-  return {
-    start: new Date(event.startTime._seconds * 1000 + event.startTime._nanoseconds / 1000000),
-    end: new Date(event.endTime._seconds * 1000 + event.endTime._nanoseconds / 1000000),
-  };
-}
 
 
 /**
