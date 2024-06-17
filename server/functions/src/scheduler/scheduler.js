@@ -1,49 +1,7 @@
 const { db } = require('../utils/firebaseAdmin');
 const { generateTimeSlots, initializeSchedule, findValidSlotSequences } = require("./utilities");
 const { evaluateSchedule } = require("./evaluator");
-const { deleteAllDocumentsInCollection } = require("../utils/firebaseHelpers");
-
-
-async function deleteCollectionAndGetTwoWeekSchedule(facultyId) {
-  const facultyRef = db.collection("faculties").doc(facultyId);
-  const generatedScheduleRef = facultyRef.collection("generated_lectures");
-
-  await deleteAllDocumentsInCollection(generatedScheduleRef);
-
-  const lectures = await getWeekTwoSchedule(facultyRef);
-  return lectures;
-}
-
-
-async function getWeekTwoSchedule(facultyRef) {
-  const lectureRef = facultyRef.collection("original_lectures");
-
-  const startTime = new Date("2024-03-04");
-  const endTime = new Date("2024-03-09");
-
-  startTime.setHours(0, 0, 0, 0);
-  endTime.setHours(0, 0, 0, 0)
-
-  const lectureQuery = lectureRef.where("startTime", ">=", startTime)
-    .where("startTime", "<=", endTime)
-    .where("hasRooms", "==", true)
-    .where("executionTypeId", "!=", "99");
-
-  const snapshot = await lectureQuery.get();
-  const lectures = snapshot.docs.map(doc => {
-    const data = doc.data();
-    delete data.id;
-    delete data.startTime;
-    delete data.endTime;
-    delete data.r;
-    delete data.hasRooms;
-
-    return data;
-  });
-
-  return lectures;
-}
-
+const { resetCollectionAndFetchTwoWeekSchedule } = require("./preparer");
 
 function mutateSchedule(schedule, timeSlots) {
   const newSchedule = [...schedule];
@@ -104,7 +62,7 @@ function simulatedAnnealing(schedule, maxSteps, initialTemp, coolingRate, timeSl
 }
 
 
-async function generateSchedule() {
+async function generateSchedule2() {
   const lectures = await deleteCollectionAndGetTwoWeekSchedule("13");
   const timeSlots = generateTimeSlots();
 
@@ -134,6 +92,17 @@ async function generateSchedule() {
 
   schedule = simulatedAnnealing(bestSchedule, 1000, 100, 0.95, timeSlots);
   schedule = simulatedAnnealing(schedule, 1000, 100, 0.95, timeSlots);
+
+  return schedule;
+}
+
+
+async function generateSchedule(facultyId) {
+  const { original_lectures, rooms} = await resetCollectionAndFetchTwoWeekSchedule(facultyId);
+
+  const timeSlots = generateTimeSlots();
+
+  let schedule = initializeSchedule(original_lectures, timeSlots, rooms);
 
   return schedule;
 }

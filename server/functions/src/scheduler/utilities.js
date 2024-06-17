@@ -23,84 +23,89 @@ function generateTimeSlots() {
 }
 
 
-function initializeSchedule(lectures, timeSlots) {
-  let scheduledLectures = [];
+function initializeSchedule(lectures, timeSlots, rooms) {
+  lectures.sort((a, b) => b.duration - a.duration);
+  rooms.sort((a, b) => a.size - b.size);
+
+  const schedule = [];
+
   for (const lecture of lectures) {
-    const roundedDuration = Math.ceil(lecture.duration);
-    let validSlotSequences = findValidSlotSequences(timeSlots, roundedDuration, scheduledLectures, lecture);
+    const validTerm = findValidTerm(lecture, timeSlots, rooms, schedule);
 
-    let retryCount = 0;
-    while (validSlotSequences.length === 0 && retryCount < 5) {  // Allow some retries
-      console.log(`Retrying to find a valid time slot for lecture with duration ${lecture.duration} hours.`);
-      validSlotSequences = findValidSlotSequences(timeSlots, roundedDuration, scheduledLectures, lecture);
-      retryCount++;
+    if (validTerm) {
+      schedule.push(validTerm);
+    } else {
+      console.error(`Could not schedule lecture: ${lecture.course}`);
     }
-
-    if (validSlotSequences.length === 0) {
-      console.error(`No valid time slots found for lecture after retries. Aborting schedule.`);
-      return null;
-    }
-
-    const chosenSequence = validSlotSequences[Math.floor(Math.random() * validSlotSequences.length)];
-    scheduledLectures.push({
-      lecture: lecture,
-      timeSlot: {
-        day: chosenSequence[0].day,
-        start: chosenSequence[0].start,
-        end: chosenSequence[chosenSequence.length - 1].end
-      },
-      room: lecture.rooms[Math.floor(Math.random() * lecture.rooms.length)]
-    });
   }
-  return scheduledLectures.filter(item => item !== null);
+
+  return schedule;
 }
 
 
-function findValidSlotSequences(timeSlots, duration, scheduledLectures, currentLecture) {
-  let validSequences = [];
-  slotLoop:
-  for (let i = 0; i < timeSlots.length; i++) {
-    let validSequence = [timeSlots[i]];
-    let currentSlot = timeSlots[i];
+function findValidTerm(lecture, timeSlots, rooms, schedule) {
+  for (const room of rooms) {
+    if (lecture.size > room.size) continue;
 
-    for (let j = 1; j < duration; j++) {
-      if (i + j < timeSlots.length && timeSlots[i + j].day === currentSlot.day &&
-          timeSlots[i + j].start === currentSlot.end) {
-        validSequence.push(timeSlots[i + j]);
-        currentSlot = timeSlots[i + j];
-      } else {
-        continue slotLoop;
+    for (const timeslot of timeSlots) {
+      const lectureEnd = timeslot.start + lecture.duration;
+
+      if (lectureEnd > 21) continue;
+
+      if (!hasConflicts(lecture, room, timeslot, lectureEnd, schedule)) {
+        return {
+          ...lecture,
+          roomId: room.roomId,
+          roomName: room.roomName,
+          day: timeslot.day,
+          start: timeslot.start,
+          end: lectureEnd,
+        };
       }
     }
-
-    if (validSequence.length === duration && !hasConflicts(validSequence, scheduledLectures, currentLecture)) {
-      validSequences.push(validSequence);
-    }
   }
-  return validSequences;
+
+  return null;
 }
 
 
-function hasConflicts(sequence, scheduledLectures, currentLecture) {
-  for (const slot of sequence) {
-    for (const scheduled of scheduledLectures) {
-      if (slot.day === scheduled.timeSlot.day &&
-          ((slot.start >= scheduled.timeSlot.start && slot.start < scheduled.timeSlot.end) ||
-           (slot.end > scheduled.timeSlot.start && slot.end <= scheduled.timeSlot.end))) {
-        if (scheduled.lecture.room === currentLecture.room ||
-            scheduled.lecture.tutor === currentLecture.tutor ||
-            scheduled.lecture.group === currentLecture.group) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
+function hasConflicts(lecture, room, timeslot, lectureEnd, schedule) {
+  return (
+    schedule.some(
+      (scheduledLecture) =>
+        scheduledLecture.roomId === room.roomId &&
+        scheduledLecture.day === timeslot.day &&
+        (
+          (scheduledLecture.start < lectureEnd && scheduledLecture.start >= timeslot.start) ||
+          (scheduledLecture.end > timeslot.start && scheduledLecture.end <= lectureEnd) ||
+          (timeslot.start >= scheduledLecture.start && lectureEnd <= scheduledLecture.end)
+        )
+    ) ||
+    schedule.some(
+      (scheduledLecture) =>
+        scheduledLecture.tutor_ids.some(tutorId => lecture.tutor_ids.includes(tutorId)) &&
+        scheduledLecture.day === timeslot.day &&
+        (
+          (scheduledLecture.start < lectureEnd && scheduledLecture.start >= timeslot.start) ||
+          (scheduledLecture.end > timeslot.start && scheduledLecture.end <= lectureEnd) ||
+          (timeslot.start >= scheduledLecture.start && lectureEnd <= scheduledLecture.end)
+        )
+    ) ||
+    schedule.some(
+      (scheduledLecture) =>
+        scheduledLecture.group_ids.some(groupId => lecture.group_ids.includes(groupId)) &&
+        scheduledLecture.day === timeslot.day &&
+        (
+          (scheduledLecture.start < lectureEnd && scheduledLecture.start >= timeslot.start) ||
+          (scheduledLecture.end > timeslot.start && scheduledLecture.end <= lectureEnd) ||
+          (timeslot.start >= scheduledLecture.start && lectureEnd <= scheduledLecture.end)
+        )
+    )
+  );
 }
 
 
 module.exports = {
   generateTimeSlots,
   initializeSchedule,
-  findValidSlotSequences,
 }
