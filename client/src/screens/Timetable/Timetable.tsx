@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -24,6 +25,7 @@ import useTutors from "../../Components/Hooks/useTutors";
 import useRooms from "../../Components/Hooks/useRooms";
 import axios from "axios";
 import SaveButton from "../../Components/SaveButton/SaveButton";
+import { Switch } from "../../Components/ui/switch"; // Import Switch component
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -73,7 +75,14 @@ interface Group {
   name: string;
 }
 
-const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role }) => {
+const Timetable: React.FC<TimetableProps> = ({
+  isAuthenticated,
+  uid,
+  role,
+}) => {
+  const navigate = useNavigate(); // Use useNavigate for navigation
+  const [isTutorMode, setIsTutorMode] = useState(false); // State to track switch
+
   // events on timetable
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
@@ -87,6 +96,13 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role }) => 
   const [selectedCourseNames, setSelectedCourseNames] = useState<string[]>([]);
   const [allCourseNames, setAllCourseNames] = useState<string[]>([]);
   const calendarRef = useRef<FullCalendar>(null);
+
+  // Handle redirect when switch is toggled
+  useEffect(() => {
+    if (isTutorMode) {
+      navigate("/tutortimetable");
+    }
+  }, [isTutorMode, navigate]);
 
   // dropdowns
   const [selectedFacultyId, setSelectedFacultyId] = useState(
@@ -498,58 +514,70 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role }) => 
   return (
     <div className="w-full p-5">
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
-      <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
-        <DropdownMenuFaculties
-          onSelectFaculty={(id) => {
-            setSelectedFacultyId(id);
-            const selectedFaculty = faculties.find(
-              (faculty) => faculty.id === id
-            );
-            setSelectedFacultyName(
-              selectedFaculty ? selectedFaculty.name : null
-            );
-            setSelectedProgramName(null);
-            setSelectedYearName(null);
-            setSelectedBranchName(null);
-          }}
-          selectedFacultyName={selectedFacultyName}
-        />
-        <DropdownMenuPrograms
-          facultyId={selectedFacultyId}
-          onSelectProgram={(id, duration) => {
-            setProgramId(id);
-            setProgramDuration(duration);
-            const selectedProgram = programs.find(
-              (program) => program.id === id
-            );
-            setSelectedProgramName(
-              selectedProgram ? selectedProgram.name : null
-            );
-            setSelectedYearName(null);
-            setSelectedBranchName(null);
-          }}
-          selectedProgramName={selectedProgramName}
-        />
-        <DropdownMenuYear
-          programDuration={programDuration}
-          onSelectYear={(year) => {
-            setSelectedYear(year);
-            setSelectedYearName(year ? year.toString() : null);
-            setSelectedBranchName(null);
-          }}
-          selectedYear={selectedYearName}
-        />
-        <DropdownMenuBranches
-          facultyId={selectedFacultyId}
-          programId={programId || ""}
-          selectedYear={selectedYear}
-          onSelectBranch={(id) => {
-            setSelectedBranch(id);
-            const selectedBranch = branches.find((branch) => branch.id === id);
-            setSelectedBranchName(selectedBranch ? selectedBranch.name : null);
-          }}
-          selectedBranchName={selectedBranchName}
-        />
+      <div className="flex flex-wrap items-center justify-between mb-4">
+        <div className="flex flex-col items-start space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+          <DropdownMenuFaculties
+            onSelectFaculty={(id) => {
+              setSelectedFacultyId(id);
+              const selectedFaculty = faculties.find(
+                (faculty) => faculty.id === id
+              );
+              setSelectedFacultyName(
+                selectedFaculty ? selectedFaculty.name : null
+              );
+              setSelectedProgramName(null);
+              setSelectedYearName(null);
+              setSelectedBranchName(null);
+            }}
+            selectedFacultyName={selectedFacultyName}
+          />
+          <DropdownMenuPrograms
+            facultyId={selectedFacultyId}
+            onSelectProgram={(id, duration) => {
+              setProgramId(id);
+              setProgramDuration(duration);
+              const selectedProgram = programs.find(
+                (program) => program.id === id
+              );
+              setSelectedProgramName(
+                selectedProgram ? selectedProgram.name : null
+              );
+              setSelectedYearName(null);
+              setSelectedBranchName(null);
+            }}
+            selectedProgramName={selectedProgramName}
+          />
+          <DropdownMenuYear
+            programDuration={programDuration}
+            onSelectYear={(year) => {
+              setSelectedYear(year);
+              setSelectedYearName(year ? year.toString() : null);
+              setSelectedBranchName(null);
+            }}
+            selectedYear={selectedYearName}
+          />
+          <DropdownMenuBranches
+            facultyId={selectedFacultyId}
+            programId={programId || ""}
+            selectedYear={selectedYear}
+            onSelectBranch={(id) => {
+              setSelectedBranch(id);
+              const selectedBranch = branches.find(
+                (branch) => branch.id === id
+              );
+              setSelectedBranchName(
+                selectedBranch ? selectedBranch.name : null
+              );
+            }}
+            selectedBranchName={selectedBranchName}
+          />
+        </div>
+        {role === "Tutor" && (
+          <div className="flex items-center">
+            <label className="mr-2">Switch 1</label>
+            <Switch checked={isTutorMode} onCheckedChange={setIsTutorMode} />
+          </div>
+        )}
       </div>
       {selectedBranch && (
         <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">

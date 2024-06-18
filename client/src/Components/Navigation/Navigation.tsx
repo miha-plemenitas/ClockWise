@@ -18,7 +18,12 @@ interface NavigationProps {
   role: string;
 }
 
-const Navigation: React.FC<NavigationProps> = ({  isAuthenticated,  onLogout,  uid,  role}) => {
+const Navigation: React.FC<NavigationProps> = ({
+  isAuthenticated,
+  onLogout,
+  uid,
+  role,
+}) => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
   const [userPhotoURL, setUserPhotoURL] = useState("");
@@ -80,6 +85,13 @@ const Navigation: React.FC<NavigationProps> = ({  isAuthenticated,  onLogout,  u
             <NavigationMenuTrigger>Timetable</NavigationMenuTrigger>
           </NavigationMenuLink>
         </NavigationMenuItem>
+        {role === "Tutor" && (
+          <NavigationMenuItem>
+            <NavigationMenuLink href="/tutortimetable">
+              <NavigationMenuTrigger>Tutor Timetable</NavigationMenuTrigger>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        )}
       </NavigationMenuList>
       <NavigationMenuList className="flex items-center">
         {isAuthenticated ? (
