@@ -14,12 +14,11 @@ import { auth } from "../../Config/firebase";
 interface NavigationProps {
   isAuthenticated: boolean;
   onLogout: () => void;
+  uid: string | null;
+  role: string;
 }
 
-const Navigation: React.FC<NavigationProps> = ({
-  isAuthenticated,
-  onLogout,
-}) => {
+const Navigation: React.FC<NavigationProps> = ({  isAuthenticated,  onLogout,  uid,  role}) => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
   const [userPhotoURL, setUserPhotoURL] = useState("");
@@ -91,6 +90,8 @@ const Navigation: React.FC<NavigationProps> = ({
               userPhotoURL={userPhotoURL}
               handleLogout={handleLogout}
               getInitials={getInitials}
+              uid={uid}
+              role={role}
             />
           </NavigationMenuItem>
         ) : (

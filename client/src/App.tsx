@@ -13,7 +13,7 @@ import { Buffer } from "buffer";
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [uid, setUid] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<string>('');
 
   const fetchUserRole = async () => {
     try {
@@ -71,10 +71,10 @@ const App = () => {
   return (
     <div>
       <BrowserRouter>
-        <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} />
+        <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} uid={uid} role={role}/>
         <Routes>
-          <Route path="/dashboard" element={<Dashboard isAuthenticated={isAuthenticated} uid={uid} />} />
-          <Route path="/" element={<Timetable isAuthenticated={isAuthenticated} uid={uid} />} />
+          <Route path="/dashboard" element={<Dashboard isAuthenticated={isAuthenticated} uid={uid} role={role}/>} />
+          <Route path="/" element={<Timetable isAuthenticated={isAuthenticated} uid={uid} role={role}/>} />
           <Route path="/signin" element={<Signin onSignin={handleSignin} />} />
           <Route path="/forgot" element={<ForgotPassword />} />
         </Routes>

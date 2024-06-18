@@ -36,9 +36,10 @@ interface Event {
 interface DashboardProps {
   isAuthenticated: boolean;
   uid: string | null;
+  role: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ isAuthenticated, uid }) => {
+const Dashboard: React.FC<DashboardProps> = ({ isAuthenticated, uid, role }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);

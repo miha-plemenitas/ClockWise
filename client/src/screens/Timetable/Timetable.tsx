@@ -37,6 +37,7 @@ function renderEventContent(eventInfo: EventContentArg) {
 interface TimetableProps {
   isAuthenticated: boolean;
   uid: string | null;
+  role: string;
 }
 
 interface Event {
@@ -72,7 +73,7 @@ interface Group {
   name: string;
 }
 
-const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid }) => {
+const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role }) => {
   // events on timetable
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
