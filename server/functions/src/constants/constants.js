@@ -1,7 +1,7 @@
 module.exports = {
   wttUrl: "https://wise-tt.com/WTTWebRestAPI/ws/rest/",
   bufferedCredentials: Buffer.from("wtt_api_user_a:H50lsd2$XejBIBv7t"),
-  userAllowedKeys: ["facultyId", "programId", "branchId", "groupIds"],
+  userAllowedKeys: ["facultyId", "programId", "branchId", "group_ids", "email", "notificationToken"],
   eventAllowedKeys: ["startTime", "endTime", "title", "notes", "editable"],
   timetableAllowedKeys: ["events"],
   allowedRoles: ['student', 'professor', 'referat','admin'],

@@ -1,6 +1,7 @@
 const { db } = require('../utils/firebaseAdmin');
 const { filterForAllowedKeys } = require("../utils/batchOperations");
 const { userAllowedKeys } = require("../constants/constants");
+const { convertToDates } = require("../utils/timeUtils");
 
 
 /**
@@ -57,7 +58,7 @@ async function updateUser(uid, updates) {
   if (!userDoc.exists) {
     console.log(`No user found with ID: ${uid}`);
     throw new Error(`No user found with ID: ${uid}`);
-  } 
+  }
 
   await userRef.update(filteredUpdates);
 
@@ -87,9 +88,56 @@ async function deleteUser(uid) {
 }
 
 
+async function notifyUsers(context, change) {
+  const lectureId = context.params.lectureId;
+  const lectureData = change.after.exists ? change.after.data() : null;
+
+  if (!lectureData) {
+    return null;
+  }
+
+  const groupIds = lectureData.group_ids;
+
+  const usersRef = db.collection('users');
+  const querySnapshot = await usersRef
+    .where('group_ids', 'array-contains-any', groupIds)
+    .get();
+
+  const tokens = [];
+
+  querySnapshot.forEach((doc) => {
+    const userData = doc.data();
+    if (userData.notificationToken) {
+      tokens.push(userData.notificationToken);
+    }
+  });
+
+  const {start, end } = convertToDates(lectureData);
+
+  if (tokens.length > 0) {
+    const payload = {
+      notification: {
+        title: 'Lecture Updated',
+        body: `A lecture you're part of has been updated. Start: ${start}, end: ${end}, room: ${roomName}`,
+      },
+      data: {
+        start: start,
+        end: end,
+        roomName: lectureData.rooms[0].name
+      }
+    };
+
+    await admin.messaging().sendToDevice(tokens, payload);
+  }
+
+  return null;
+}
+
+
 module.exports = {
   saveUser,
   getUserById,
   updateUser,
   deleteUser,
+  notifyUsers
 }

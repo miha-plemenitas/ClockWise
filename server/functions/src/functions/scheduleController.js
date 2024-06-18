@@ -11,7 +11,8 @@ const { getHeatMap } = require("../utils/timeUtils");
 exports.generate = functions
   .region("europe-west3")
   .runWith({
-    timeoutSeconds: 540
+    timeoutSeconds: 540,
+    memory: '2GB'
   })
   .https
   .onRequest(async (request, response) => {
