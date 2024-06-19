@@ -72,10 +72,6 @@ async function getHeatMap(facultyId, collectionName, type) {
     }
   });
 
-  if (type === "count"){
-    return heatmap
-  }
-
   for (const day in heatmap) {
     for (const hour in heatmap[day]) {
       const count = heatmap[day][hour];
@@ -83,7 +79,7 @@ async function getHeatMap(facultyId, collectionName, type) {
 
       if (type === "both") {
         heatmap[day][hour] = [count, frequency];
-      } else{
+      } else if (type == "frequency"){
         heatmap[day][hour] = frequency;
       }
     }
