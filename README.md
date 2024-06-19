@@ -2,6 +2,18 @@
 
 Pameten-Urnik is a smart scheduling application designed to help users efficiently manage their time with advanced planning tools and intuitive interfaces.
 
+## Initialization
+
+### Firebase project
+1. Create a new Firebase project: [Firebase console](https://console.firebase.google.com/u/0/)
+2. Change the plan from Spark to Blaze (Pay as you go)
+3. Enable Firebase functionalities:
+  - Authentication: Build -> Authentication -> Get started -> Native providers: Email/Password and Additional providers: Google
+  - Firestore: Build -> Firestore Database -> Create database -> Start in **test mode** 
+  - Functions: Build -> Functions -> Get started
+4. Registration of the web app:
+  - Project Overview -> Add app -> Web app  -> copy the body of the firebaseConfig for the 9th point
+
 ### Local project
 You require [Node.js](https://nodejs.org/en/download).
 
