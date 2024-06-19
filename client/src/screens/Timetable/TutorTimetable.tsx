@@ -61,9 +61,11 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
   const calendarRef = useRef<FullCalendar>(null);
 
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
-    null
+    localStorage.getItem("selectedFacultyId")
   );
-  const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
+  const [selectedTutors, setSelectedTutors] = useState<{ id: string, name: string }[]>(
+    JSON.parse(localStorage.getItem("selectedTutors") || "[]")
+  );
 
   const { faculties } = useFaculties();
   const { tutors } = useTutors(selectedFacultyId || "");
@@ -74,7 +76,7 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
   }, {} as Record<string, string>);
 
   const fetchData = async () => {
-    if (!selectedFacultyId || !selectedTutorId) return;
+    if (!selectedFacultyId || selectedTutors.length === 0) return;
     try {
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
@@ -91,12 +93,14 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
         {
           params: {
             facultyId: selectedFacultyId,
-            tutorId: selectedTutorId,
+            tutorId: selectedTutors[0].id,
             startTime: "2023-10-01T00:00:00Z",
+            endTime: "2024-06-14T23:59:59Z",
           },
           headers: headers,
         }
       );
+
       const formattedEvents: Event[] = response.data.result.map(
         (lecture: any) => {
           const startTime = new Date(lecture.startTime._seconds * 1000);
@@ -129,10 +133,10 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
   };
 
   useEffect(() => {
-    if (selectedFacultyId && selectedTutorId) {
+    if (selectedFacultyId && selectedTutors.length > 0) {
       fetchData();
     }
-  }, [selectedFacultyId, selectedTutorId]);
+  }, [selectedFacultyId, selectedTutors]);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event =
@@ -313,6 +317,7 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
           <DropdownMenuFaculties
             onSelectFaculty={(id) => {
               setSelectedFacultyId(id);
+              localStorage.setItem("selectedFacultyId", id);
             }}
             selectedFacultyName={
               faculties.find((f) => f.id === selectedFacultyId)?.name || null
@@ -320,14 +325,13 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
           />
           <DropdownMenuTutors
             facultyId={selectedFacultyId || ""}
-            onSelectTutors={(ids) => {
-              if (ids.length > 0) {
-                setSelectedTutorId(ids[0]);
-              } else {
-                setSelectedTutorId(null);
-              }
+            onSelectTutors={(tutors) => {
+              setSelectedTutors(tutors);
+              const selectedTutorNames = tutors.map(t => t.name);
+              const selectedTutorIds = tutors.map(t => t.id);
+              localStorage.setItem("selectedTutors", JSON.stringify(tutors));
             }}
-            selectedTutorNames={selectedTutorId ? [selectedTutorId] : []}
+            selectedTutorNames={selectedTutors.map(t => t.name)}
           />
         </div>
       </div>
