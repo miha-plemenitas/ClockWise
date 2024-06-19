@@ -4,8 +4,8 @@ const Buffer = require("buffer").Buffer;
 
 const loginUrl =
   "https://europe-west3-pameten-urnik.cloudfunctions.net/auth-login";
-const username = process.env.APP_USERNAME;
-const password = process.env.APP_PASSWORD;
+const username = process.env.REACT_APP_USERNAME;
+const password = process.env.REACT_APP_PASSWORD;
 
 console.log("Username from env file:", username);
 console.log("Password from env file:", password);

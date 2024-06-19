@@ -5,6 +5,7 @@ import Signin from "./screens/Signin/Signin";
 import Navigation from "./Components/Navigation/Navigation";
 import "./App.css";
 import ForgotPassword from "./screens/ForgotPassword/ForgotPassword";
+import TutorTimetable from "./screens/Timetable/TutorTimetable"; // Import the TutorTimetable component
 import { useEffect, useState } from "react";
 import { auth } from "./Config/firebase";
 import axios from "axios";
@@ -13,7 +14,7 @@ import { Buffer } from "buffer";
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [uid, setUid] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<string>("");
 
   const fetchUserRole = async () => {
     try {
@@ -34,7 +35,7 @@ const App = () => {
           headers: headers,
         }
       );
-      setRole(response.data.result.role)
+      setRole(response.data.result.role);
     } catch (error: any) {
       console.error("Error fetching data:", error);
     }
@@ -45,7 +46,6 @@ const App = () => {
       if (user) {
         setIsAuthenticated(true);
         setUid(user.uid);
-
       } else {
         setIsAuthenticated(false);
         setUid(null);
@@ -71,12 +71,46 @@ const App = () => {
   return (
     <div>
       <BrowserRouter>
-        <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} />
+        <Navigation
+          isAuthenticated={isAuthenticated}
+          onLogout={handleLogout}
+          uid={uid}
+          role={role}
+        />
         <Routes>
-          <Route path="/dashboard" element={<Dashboard isAuthenticated={isAuthenticated} uid={uid} />} />
-          <Route path="/" element={<Timetable isAuthenticated={isAuthenticated} uid={uid} />} />
+          <Route
+            path="/dashboard"
+            element={
+              <Dashboard
+                isAuthenticated={isAuthenticated}
+                uid={uid}
+                role={role}
+              />
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <Timetable
+                isAuthenticated={isAuthenticated}
+                uid={uid}
+                role={role}
+              />
+            }
+          />
           <Route path="/signin" element={<Signin onSignin={handleSignin} />} />
           <Route path="/forgot" element={<ForgotPassword />} />
+          <Route
+            path="/tutortimetable"
+            element={
+              <TutorTimetable
+                isAuthenticated={isAuthenticated}
+                uid={uid}
+                role={role}
+              />
+            }
+          />{" "}
+          {/* Add the route for TutorTimetable */}
         </Routes>
       </BrowserRouter>
     </div>

@@ -106,10 +106,17 @@ function convertDatesToTimestamps(data) {
   } 
 }
 
+function isValidEmail(email) {
+  // @um.si 
+  const emailRegex = /^[^\s@]+@um\.si$/;
+  return emailRegex.test(email);
+}
+
 
 module.exports = {
   processItemsInBatch,
   commitBatch,
   filterForAllowedKeys,
-  convertDatesToTimestamps
+  convertDatesToTimestamps,
+  isValidEmail
 }

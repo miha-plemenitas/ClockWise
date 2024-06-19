@@ -14,11 +14,15 @@ import { auth } from "../../Config/firebase";
 interface NavigationProps {
   isAuthenticated: boolean;
   onLogout: () => void;
+  uid: string | null;
+  role: string;
 }
 
 const Navigation: React.FC<NavigationProps> = ({
   isAuthenticated,
   onLogout,
+  uid,
+  role,
 }) => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState("");
@@ -81,6 +85,13 @@ const Navigation: React.FC<NavigationProps> = ({
             <NavigationMenuTrigger>Timetable</NavigationMenuTrigger>
           </NavigationMenuLink>
         </NavigationMenuItem>
+        {role === "Tutor" && (
+          <NavigationMenuItem>
+            <NavigationMenuLink href="/tutortimetable">
+              <NavigationMenuTrigger>Tutor Timetable</NavigationMenuTrigger>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        )}
       </NavigationMenuList>
       <NavigationMenuList className="flex items-center">
         {isAuthenticated ? (
@@ -91,6 +102,8 @@ const Navigation: React.FC<NavigationProps> = ({
               userPhotoURL={userPhotoURL}
               handleLogout={handleLogout}
               getInitials={getInitials}
+              uid={uid}
+              role={role}
             />
           </NavigationMenuItem>
         ) : (

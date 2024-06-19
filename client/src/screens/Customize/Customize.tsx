@@ -1,21 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Sheet, SheetTrigger, SheetContent } from "../../Components/ui/sheet";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "../../Components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback, } from "../../Components/ui/avatar";
 import { Switch } from "../../Components/ui/switch";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-} from "../../Components/ui/select";
-import { RadioGroup, RadioGroupItem } from "../../Components/ui/radio-group";
-
+import { Select, SelectTrigger, SelectContent, SelectItem, } from "../../Components/ui/select";
 import { Button } from "../../Components/ui/button";
 import { Input } from "../../Components/ui/input";
+import axios from "axios";
+import { Buffer } from "buffer";
 
 interface CustomizeProps {
   userName: string;
@@ -23,15 +14,11 @@ interface CustomizeProps {
   userPhotoURL: string;
   handleLogout: () => void;
   getInitials: (name: string, email: string) => string;
+  uid: string | null;
+  role: string;
 }
 
-const Customize: React.FC<CustomizeProps> = ({
-  userName,
-  userEmail,
-  userPhotoURL,
-  handleLogout,
-  getInitials,
-}) => {
+const Customize: React.FC<CustomizeProps> = ({ userName, userEmail, userPhotoURL, handleLogout, getInitials, uid, role }) => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [switchStates, setSwitchStates] = useState({
     switch1: false,
@@ -40,8 +27,14 @@ const Customize: React.FC<CustomizeProps> = ({
     switch4: false,
     switch5: false,
   });
-  const [selectValue, setSelectValue] = useState("option1");
-  const [radioValue, setRadioValue] = useState("option1");
+  const [selectValue, setSelectValue] = useState<string>(role);
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error' | ''>('');
+
+  useEffect(() => {
+    if (role) {
+      setSelectValue(role);
+    }
+  }, [role]);
 
   // Load states from localStorage on mount
   useEffect(() => {
@@ -49,28 +42,13 @@ const Customize: React.FC<CustomizeProps> = ({
     if (savedSwitchStates) {
       setSwitchStates(JSON.parse(savedSwitchStates));
     }
-    const savedSelectValue = localStorage.getItem("selectValue");
-    if (savedSelectValue) {
-      setSelectValue(savedSelectValue);
-    }
-    const savedRadioValue = localStorage.getItem("radioValue");
-    if (savedRadioValue) {
-      setRadioValue(savedRadioValue);
-    }
+
   }, []);
 
   // Save states to localStorage on change
   useEffect(() => {
     localStorage.setItem("switchStates", JSON.stringify(switchStates));
   }, [switchStates]);
-
-  useEffect(() => {
-    localStorage.setItem("selectValue", selectValue);
-  }, [selectValue]);
-
-  useEffect(() => {
-    localStorage.setItem("radioValue", radioValue);
-  }, [radioValue]);
 
   const toggleSheet = () => {
     setIsSheetOpen(!isSheetOpen);
@@ -81,6 +59,68 @@ const Customize: React.FC<CustomizeProps> = ({
       ...prevState,
       [switchId]: !prevState[switchId],
     }));
+  };
+
+  const updateRole = async () => {
+    try {
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = await axios.put("https://europe-west3-pameten-urnik.cloudfunctions.net/user-update",
+        { uid: uid, role: selectValue },
+        { headers: headers }
+      );
+    } catch (error: any) {
+      console.error("Error updating role:", error);
+    }
+  }
+
+  useEffect(() => {
+    if (selectValue != role && selectValue == 'Student') {
+      updateRole();
+    }
+  }, [selectValue]);
+
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSendVerificationEmail = async () => {
+    const email = emailInputRef.current?.value;
+
+    try {
+      setVerificationStatus('pending');
+
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/user-verify",
+        { uid: uid, email: email },
+        { headers: headers }
+      );
+
+      if (response.data.success) {
+        updateRole();
+        setVerificationStatus('success');
+      } else {
+        setVerificationStatus('error');
+      }
+    } catch (error: any) {
+      setVerificationStatus('error');
+      console.error("Error fetching data:", error);
+    }
   };
 
   return (
@@ -180,55 +220,21 @@ const Customize: React.FC<CustomizeProps> = ({
                 <SelectItem value="Tutor">Tutor</SelectItem>
               </SelectContent>
             </Select>
-            {selectValue === "Tutor" && (
+            {selectValue === "Tutor" && role !== "Tutor" && (
               <div>
                 <p className="text-sm text-orange-500">
                   Tutor role requires verification with an official @um.si email address.
                 </p>
-                <Input type="email" placeholder="Enter your @um.si email" className="mt-2" />
-                <Button className="mt-2 bg-modra text-white hover:bg-modra-700 items-center space-x-2">
+                <Input type="email" placeholder="Enter your @um.si email" className="mt-2" ref={emailInputRef} />
+                <Button onClick={handleSendVerificationEmail} className="mt-2 bg-modra text-white hover:bg-modra-700 items-center space-x-2">
                   <span>Save</span>
                 </Button>
+                {verificationStatus === 'pending' && <p>Verifying...</p>}
+                {verificationStatus === 'success' && <p>Verification successful!</p>}
+                {verificationStatus === 'error' && <p>Verification failed. Check your email.</p>}
               </div>
             )}
           </div>
-          {/* <div className="border-t border-gray-200"></div>
-          <div className="space-y-2">
-            <h3 className="text-md font-semibold">Select a Radio Option</h3>
-            <RadioGroup
-              value={radioValue}
-              onValueChange={setRadioValue}
-              className="mt-1 space-y-2"
-            >
-              <div className="flex items-center">
-                <RadioGroupItem value="option1" id="radio1" />
-                <label
-                  htmlFor="radio1"
-                  className="ml-2 text-sm font-medium text-gray-700"
-                >
-                  Option 1
-                </label>
-              </div>
-              <div className="flex items-center">
-                <RadioGroupItem value="option2" id="radio2" />
-                <label
-                  htmlFor="radio2"
-                  className="ml-2 text-sm font-medium text-gray-700"
-                >
-                  Option 2
-                </label>
-              </div>
-              <div className="flex items-center">
-                <RadioGroupItem value="option3" id="radio3" />
-                <label
-                  htmlFor="radio3"
-                  className="ml-2 text-sm font-medium text-gray-700"
-                >
-                  Option 3
-                </label>
-              </div>
-            </RadioGroup>
-          </div> */}
           <div className="border-t border-gray-200"></div>
           <div>
             <button onClick={handleLogout} className="text-sm font-medium text-orange-600 hover:text-orange-800">

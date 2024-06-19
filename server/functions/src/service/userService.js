@@ -1,5 +1,5 @@
 const { db } = require('../utils/firebaseAdmin');
-const { filterForAllowedKeys } = require("../utils/batchOperations");
+const { filterForAllowedKeys, isValidEmail } = require("../utils/batchOperations");
 const { userAllowedKeys } = require("../constants/constants");
 
 
@@ -86,10 +86,28 @@ async function deleteUser(uid) {
   return 'User deleted successfully';
 }
 
+async function verifyUser(uid, email) {
+  const userRef = db.collection('users').doc(uid);
+  const userDoc = await userRef.get();
+
+  if (!userDoc.exists) {
+    throw new Error('User not found');
+  }
+
+  if (!isValidEmail(email)) {
+    throw new Error('Invalid email address');
+  }
+  
+  //Send verification email or trigger other actions
+
+  return true; 
+}
+
 
 module.exports = {
   saveUser,
   getUserById,
   updateUser,
   deleteUser,
+  verifyUser
 }

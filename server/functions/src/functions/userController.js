@@ -1,5 +1,5 @@
 const functions = require("firebase-functions");
-const { saveUser, getUserById, updateUser, deleteUser } = require("../service/userService");
+const { saveUser, getUserById, updateUser, deleteUser, verifyUser } = require("../service/userService");
 const {
   handleErrors,
   validateRequestParams,
@@ -159,6 +159,34 @@ exports.delete = functions
       const result = await deleteUser(uid);
       console.log(`Found and deleted user with id ${uid}`);
       response.status(200).json({ result: result });
+    } catch (error) {
+      handleErrors(error, response);
+    }
+  });
+
+
+  exports.verify = functions
+  .region("europe-west3")
+  .runWith({
+    timeoutSeconds: 540
+  })
+  .https
+  .onRequest(async (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Credentials', 'true');
+
+    try {
+      await checkAuthenticationandMethodForRequest(request, "POST");
+
+      const { uid, email } = request.body;
+      validateRequestParams({ uid });
+
+      const verified = await verifyUser(uid, email);
+      if (verified) {
+        response.status(200).json({ success: true, message: 'Verification successful' });
+      } else {
+        response.status(400).json({ success: false, message: 'Verification failed' }); 
+      }
     } catch (error) {
       handleErrors(error, response);
     }
