@@ -91,7 +91,9 @@ const Timetable: React.FC<TimetableProps> = ({
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
   const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([]);
-  const [selectedTutorNames, setSelectedTutorNames] = useState<string[]>([]);
+  const [selectedTutors, setSelectedTutors] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [selectedRoomNames, setSelectedRoomNames] = useState<string[]>([]);
   const [selectedCourseNames, setSelectedCourseNames] = useState<string[]>([]);
   const [allCourseNames, setAllCourseNames] = useState<string[]>([]);
@@ -270,10 +272,10 @@ const Timetable: React.FC<TimetableProps> = ({
       );
     }
 
-    if (selectedTutorNames.length > 0) {
+    if (selectedTutors.length > 0) {
       filtered = filtered.filter((event) =>
-        selectedTutorNames.some((name) =>
-          event.extendedProps.teacher.includes(name)
+        selectedTutors.some((tutor) =>
+          event.extendedProps.teacher.includes(tutor.name)
         )
       );
     }
@@ -295,7 +297,7 @@ const Timetable: React.FC<TimetableProps> = ({
     setFilteredEvents(filtered);
   }, [
     selectedGroupNames,
-    selectedTutorNames,
+    selectedTutors,
     selectedRoomNames,
     selectedCourseNames,
     events,
@@ -303,13 +305,13 @@ const Timetable: React.FC<TimetableProps> = ({
 
   const clearFilters = () => {
     setSelectedGroupNames([]);
-    setSelectedTutorNames([]);
+    setSelectedTutors([]);
     setSelectedRoomNames([]);
     setSelectedCourseNames([]);
     setFilteredEvents(events);
 
     localStorage.removeItem("selectedGroupNames");
-    localStorage.removeItem("selectedTutorNames");
+    localStorage.removeItem("selectedTutors");
     localStorage.removeItem("selectedRoomNames");
     localStorage.removeItem("selectedCourseNames");
   };
@@ -328,7 +330,7 @@ const Timetable: React.FC<TimetableProps> = ({
     setSelectedCourseNames([]);
     setSelectedGroupNames([]);
     setSelectedRoomNames([]);
-    setSelectedTutorNames([]);
+    setSelectedTutors([]);
 
     localStorage.removeItem("selectedFacultyId");
     localStorage.removeItem("selectedProgramId");
@@ -337,7 +339,7 @@ const Timetable: React.FC<TimetableProps> = ({
     localStorage.removeItem("selectedCourseNames");
     localStorage.removeItem("selectedGroupNames");
     localStorage.removeItem("selectedRoomNames");
-    localStorage.removeItem("selectedTutorNames");
+    localStorage.removeItem("selectedTutors");
   }, []);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
@@ -475,7 +477,7 @@ const Timetable: React.FC<TimetableProps> = ({
         fetchCustomEvents();
       }
     } catch (error: any) {
-      console.error("Error fetching data:", error);
+      console.error("Error updating event:", error);
     }
   };
 
@@ -504,7 +506,7 @@ const Timetable: React.FC<TimetableProps> = ({
         fetchCustomEvents();
       }
     } catch (error: any) {
-      console.error("Error fetching data:", error);
+      console.error("Error deleting event:", error);
     }
   };
 
@@ -613,11 +615,11 @@ const Timetable: React.FC<TimetableProps> = ({
           />
           <DropdownMenuTutors
             facultyId={selectedFacultyId}
-            onSelectTutors={(names) => {
-              setSelectedTutorNames(names);
-              localStorage.setItem("selectedTutorNames", JSON.stringify(names));
+            onSelectTutors={(tutors) => {
+              setSelectedTutors(tutors);
+              localStorage.setItem("selectedTutors", JSON.stringify(tutors));
             }}
-            selectedTutorNames={selectedTutorNames}
+            selectedTutorNames={selectedTutors.map((t) => t.name)}
           />
         </div>
       )}

@@ -13,7 +13,7 @@ import useTutors from "../../Components/Hooks/useTutors";
 
 interface DropdownMenuTutorsProps {
   facultyId: string;
-  onSelectTutors: (tutorNames: string[]) => void;
+  onSelectTutors: (tutors: { id: string; name: string }[]) => void;
   selectedTutorNames: string[];
 }
 
@@ -22,17 +22,19 @@ const DropdownMenuTutors: React.FC<DropdownMenuTutorsProps> = ({
   onSelectTutors,
   selectedTutorNames,
 }) => {
-  const [selectedTutors, setSelectedTutors] = useState<string[]>([]);
+  const [selectedTutors, setSelectedTutors] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [isOpen, setIsOpen] = useState(false);
   const { tutors, loading, error } = useTutors(facultyId);
 
   useEffect(() => {
-    const storedTutorNames = JSON.parse(
-      localStorage.getItem("selectedTutorNames") || "[]"
+    const storedTutors = JSON.parse(
+      localStorage.getItem("selectedTutors") || "[]"
     );
-    if (storedTutorNames) {
-      setSelectedTutors(storedTutorNames);
-      onSelectTutors(storedTutorNames);
+    if (storedTutors.length > 0) {
+      setSelectedTutors(storedTutors);
+      onSelectTutors(storedTutors);
     }
   }, [tutors, onSelectTutors]);
 
@@ -44,19 +46,19 @@ const DropdownMenuTutors: React.FC<DropdownMenuTutorsProps> = ({
     return <p>Error loading tutors: {error}</p>;
   }
 
-  const handleSelect = (tutorName: string) => {
+  const handleSelect = (tutor: { id: string; name: string }) => {
     let updatedSelectedTutors;
-    if (selectedTutors.includes(tutorName)) {
+    if (selectedTutors.find((selectedTutor) => selectedTutor.id === tutor.id)) {
       updatedSelectedTutors = selectedTutors.filter(
-        (name) => name !== tutorName
+        (selectedTutor) => selectedTutor.id !== tutor.id
       );
     } else {
-      updatedSelectedTutors = [...selectedTutors, tutorName];
+      updatedSelectedTutors = [...selectedTutors, tutor];
     }
     setSelectedTutors(updatedSelectedTutors);
     onSelectTutors(updatedSelectedTutors);
     localStorage.setItem(
-      "selectedTutorNames",
+      "selectedTutors",
       JSON.stringify(updatedSelectedTutors)
     );
   };
@@ -80,11 +82,14 @@ const DropdownMenuTutors: React.FC<DropdownMenuTutorsProps> = ({
           {tutors.map((tutor) => (
             <DropdownMenuCheckboxItem
               key={tutor.tutorId}
-              checked={selectedTutors.includes(
-                `${tutor.firstName} ${tutor.lastName}`
+              checked={selectedTutors.some(
+                (selectedTutor) => selectedTutor.id === tutor.tutorId
               )}
               onCheckedChange={() =>
-                handleSelect(`${tutor.firstName} ${tutor.lastName}`)
+                handleSelect({
+                  id: tutor.tutorId,
+                  name: `${tutor.firstName} ${tutor.lastName}`,
+                })
               }
             >
               {tutor.firstName} {tutor.lastName}
