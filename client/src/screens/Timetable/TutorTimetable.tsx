@@ -17,6 +17,7 @@ import useRooms from "../../Components/Hooks/useRooms";
 import useGroups from "../../Components/Hooks/useGroups";
 import axios from "axios";
 import SaveButton from "../../Components/SaveButton/SaveButton";
+import { Switch } from "../../Components/ui/switch"; // Import Switch component
 
 interface TutorTimetableProps {
   isAuthenticated: boolean;
@@ -62,6 +63,7 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
   const calendarRef = useRef<FullCalendar>(null);
+  const [isTutorMode, setIsTutorMode] = useState(true); // State to track switch
 
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     localStorage.getItem("selectedFacultyId")
@@ -339,6 +341,22 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
     );
   };
 
+  useEffect(() => {
+    const storedMode = localStorage.getItem("isTutorMode");
+    if (storedMode) {
+      setIsTutorMode(storedMode === "true");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isTutorMode) {
+      localStorage.setItem("isTutorMode", "false");
+      navigate("/");
+    } else {
+      localStorage.setItem("isTutorMode", "true");
+    }
+  }, [isTutorMode, navigate]);
+
   return (
     <div className="w-full p-5">
       <h1 className="text-modra text-3xl font-bold mb-4">Tutor Timetable</h1>
@@ -363,6 +381,10 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
             }}
             selectedTutorNames={selectedTutors.map((t) => t.name)}
           />
+        </div>
+        <div className="flex items-center">
+          <label className="mr-2">Enable Tutor Timetable</label>
+          <Switch checked={isTutorMode} onCheckedChange={setIsTutorMode} />
         </div>
       </div>
       <div className="mt-4 w-full bg-white rounded-lg p-4">

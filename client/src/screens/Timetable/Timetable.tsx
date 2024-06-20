@@ -101,8 +101,18 @@ const Timetable: React.FC<TimetableProps> = ({
 
   // Handle redirect when switch is toggled
   useEffect(() => {
+    const storedMode = localStorage.getItem("isTutorMode");
+    if (storedMode) {
+      setIsTutorMode(storedMode === "true");
+    }
+  }, []);
+
+  useEffect(() => {
     if (isTutorMode) {
+      localStorage.setItem("isTutorMode", "true");
       navigate("/tutortimetable");
+    } else {
+      localStorage.setItem("isTutorMode", "false");
     }
   }, [isTutorMode, navigate]);
 
@@ -576,7 +586,7 @@ const Timetable: React.FC<TimetableProps> = ({
         </div>
         {role === "Tutor" && (
           <div className="flex items-center">
-            <label className="mr-2">Switch 1</label>
+            <label className="mr-2">Enable Tutor Timetable</label>
             <Switch checked={isTutorMode} onCheckedChange={setIsTutorMode} />
           </div>
         )}
