@@ -18,6 +18,8 @@ function handleErrors(error, response) {
     response.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
     response.set('Access-Control-Max-Age', '3600');
     response.status(204).send('');
+  }  else if (error.message === "Unauthorized") {
+    response.status(403).send(error.message);
   } else if (
     error.message.includes(" does not exist in ") ||
     error.message.includes(" not found")) {
