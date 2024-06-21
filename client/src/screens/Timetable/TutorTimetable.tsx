@@ -47,11 +47,7 @@ interface CustomEvent {
   };
 }
 
-const TutorTimetable: React.FC<TutorTimetableProps> = ({
-  isAuthenticated,
-  uid,
-  role,
-}) => {
+const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,  role,}) => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
@@ -146,7 +142,7 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
       );
     if (event) {
       setSelectedEvent(event);
-      setMode(event.extendedProps.editable ? "edit" : "view");
+      setMode("edit");
       setOpen(true);
     } else {
       console.error("Event not found");
@@ -300,6 +296,8 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
     }
   };
 
+ const handleUpdateLecture = (eventInfo: any) => {};
+
   const renderEventContent = (eventInfo: EventContentArg) => {
     return (
       <>
@@ -374,8 +372,10 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
         mode={mode}
         onSave={handleAddEvent}
         onUpdate={handleUpdateEvent}
+        onUpdateLecture={handleUpdateLecture}
         onDelete={handleDeleteEvent}
         event={selectedEvent}
+        role={role}
       />
     </div>
   );

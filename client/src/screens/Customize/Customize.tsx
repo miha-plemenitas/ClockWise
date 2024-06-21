@@ -218,6 +218,7 @@ const Customize: React.FC<CustomizeProps> = ({ userName, userEmail, userPhotoURL
               <SelectContent>
                 <SelectItem value="Student">Student</SelectItem>
                 <SelectItem value="Tutor">Tutor</SelectItem>
+                <SelectItem value="Referat">Referat</SelectItem>
               </SelectContent>
             </Select>
             {selectValue === "Tutor" && role !== "Tutor" && (

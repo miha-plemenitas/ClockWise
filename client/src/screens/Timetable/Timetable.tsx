@@ -54,6 +54,7 @@ interface Event {
     teacher: string;
     location: string;
     editable: boolean;
+    lecture: boolean;
   };
 }
 
@@ -65,6 +66,7 @@ interface CustomEvent {
   extendedProps: {
     notes: string;
     editable: boolean;
+    lecture: boolean;
   };
 }
 
@@ -75,11 +77,7 @@ interface Group {
   name: string;
 }
 
-const Timetable: React.FC<TimetableProps> = ({
-  isAuthenticated,
-  uid,
-  role,
-}) => {
+const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) => {
   const navigate = useNavigate(); // Use useNavigate for navigation
   const [isTutorMode, setIsTutorMode] = useState(false); // State to track switch
 
@@ -164,25 +162,25 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   };
 
-  // Use custom hooks to fetch tutor, room, and group data
-  const { tutors } = useTutors(selectedFacultyId);
-  const { rooms } = useRooms(selectedFacultyId);
+  // // Use custom hooks to fetch tutor, room, and group data
+  // const { tutors } = useTutors(selectedFacultyId);
+  // const { rooms } = useRooms(selectedFacultyId);
 
-  // Lookup maps for event info
-  const tutorMap: Record<string, string> = tutors.reduce((acc, tutor) => {
-    acc[tutor.tutorId] = `${tutor.firstName} ${tutor.lastName}`;
-    return acc;
-  }, {} as Record<string, string>);
+  // // Lookup maps for event info
+  // const tutorMap: Record<string, string> = tutors.reduce((acc, tutor) => {
+  //   acc[tutor.tutorId] = `${tutor.firstName} ${tutor.lastName}`;
+  //   return acc;
+  // }, {} as Record<string, string>);
 
-  const roomMap: Record<string, string> = rooms.reduce((acc, room) => {
-    acc[room.id] = room.roomName;
-    return acc;
-  }, {} as Record<string, string>);
+  // const roomMap: Record<string, string> = rooms.reduce((acc, room) => {
+  //   acc[room.id] = room.roomName;
+  //   return acc;
+  // }, {} as Record<string, string>);
 
-  const groupMap: Record<string, string> = allGroups.reduce((acc, group) => {
-    acc[group.id] = group.name;
-    return acc;
-  }, {} as Record<string, string>);
+  // const groupMap: Record<string, string> = allGroups.reduce((acc, group) => {
+  //   acc[group.id] = group.name;
+  //   return acc;
+  // }, {} as Record<string, string>);
 
   const fetchData = async () => {
     try {
@@ -207,8 +205,11 @@ const Timetable: React.FC<TimetableProps> = ({
           headers: headers,
         }
       );
+
       const formattedEvents: Event[] = response.data.result.map(
+
         (lecture: any) => {
+
           // Format start time
           const startTime = new Date(lecture.startTime._seconds * 1000);
           const formattedStart = startTime.toISOString().slice(0, 19);
@@ -223,17 +224,24 @@ const Timetable: React.FC<TimetableProps> = ({
             start: formattedStart,
             end: formattedEnd,
             extendedProps: {
+              courseId: lecture.courseId,
+              duration: lecture.duration,
               type: lecture.executionType,
-              groups: lecture.group_ids
-                .map((id: string | number) => groupMap[id] || "Unknown Group")
-                .join(", "),
-              teacher: lecture.tutor_ids
-                .map((id: string | number) => tutorMap[id] || "Unknown Tutor")
-                .join(", "),
-              location: lecture.room_ids
-                .map((id: string | number) => roomMap[id] || "Unknown Room")
-                .join(", "),
+              executionType: lecture.executionTypeId,
+              groups: lecture.groups.map((group: any) => group.name).join(", "),
+              teacher: lecture.tutors.map((tutor: any) => tutor.name).join(", "),
+              location: lecture.rooms.map((room: any) => room.name).join(", "),
               editable: false,
+              lecture: true,
+              hasRooms: lecture.hasRooms,
+              group_ids: [lecture.group_ids],
+              room_ids: [lecture.room_ids],
+              tutor_ids: [lecture.tutor_ids],
+              groups_arr: [lecture.groups],
+              rooms_arr: [lecture.rooms],
+              tutors_arr: [lecture.tutors],
+              branchIds: [lecture.branch_ids],
+              branches: [lecture.branches]
             },
           };
         }
@@ -348,9 +356,20 @@ const Timetable: React.FC<TimetableProps> = ({
       customEvents.find(
         (event: CustomEvent) => event.id === clickInfo.event.id
       );
-    if (event) {
+
+    if (event && event.extendedProps.lecture) {
+      if (role === 'Student' || !role) {
+        setSelectedEvent(event);
+        setMode("view");
+        setOpen(true);
+      } else {
+        setSelectedEvent(event);
+        setMode("edit");
+        setOpen(true);
+      }
+    } else if (event && !event.extendedProps.lecture) {
       setSelectedEvent(event);
-      setMode(event.extendedProps.editable ? "edit" : "view");
+      setMode("edit");
       setOpen(true);
     } else {
       console.error("Event not found");
@@ -359,12 +378,15 @@ const Timetable: React.FC<TimetableProps> = ({
   };
 
   const handleCloseModal = () => {
-    setSelectedEvent(null);
+    //setSelectedEvent(null);
     setOpen(false);
   };
 
   const handleDateSelect = () => {
-    if (isAuthenticated) {
+    if (isAuthenticated && role !== 'Referat') {
+      setMode("add");
+      setOpen(true);
+    } else if (isAuthenticated && role === 'Referat' && selectedBranch && selectedFacultyId) {
       setMode("add");
       setOpen(true);
     }
@@ -409,6 +431,7 @@ const Timetable: React.FC<TimetableProps> = ({
             extendedProps: {
               notes: eventData.notes,
               editable: eventData.editable,
+              lecture: eventData.lecture
             },
           };
         }
@@ -425,93 +448,172 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   }, [uid]);
 
-  // adding custom event
+  // adding event
   const handleAddEvent = async (eventInfo: any) => {
-    try {
-      const username = process.env.REACT_APP_USERNAME;
-      const password = process.env.REACT_APP_PASSWORD;
 
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
-      const headers = {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/json",
-      };
+    if (eventInfo.lecture && selectedFacultyId && selectedBranch) {
+      // event is lecture
+      eventInfo.branch_ids = [parseInt(selectedBranch, 10)]
+      eventInfo.branches = [{ id: parseInt(selectedBranch, 10) }]
+      console.log("Event is lecture, adding", eventInfo);
 
-      const response = await axios.post(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
-        { uid, ...eventInfo },
-        { headers: headers }
-      );
-      if (response.status === 201) {
-        setOpen(false);
-        fetchCustomEvents();
+      try {
+        const username = process.env.REACT_APP_USERNAME;
+        const password = process.env.REACT_APP_PASSWORD;
+
+        const bufferedCredentials = Buffer.from(`${username}:${password}`);
+        const credentials = bufferedCredentials.toString("base64");
+        const headers = {
+          Authorization: `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        };
+
+        const response = await axios.post(
+          "https://europe-west3-pameten-urnik.cloudfunctions.net/lecture-add",
+          eventInfo,
+          {
+            params: {
+              facultyId: selectedFacultyId,
+            },
+            headers: headers,
+          }
+        );
+        if (response.status === 201) {
+          setOpen(false);
+          fetchData();
+        }
+      } catch (error: any) {
+        console.error("Error fetching data:", error);
       }
-    } catch (error: any) {
-      console.error("Error fetching data:", error);
+    } else {
+      try {
+        const username = process.env.REACT_APP_USERNAME;
+        const password = process.env.REACT_APP_PASSWORD;
+
+        const bufferedCredentials = Buffer.from(`${username}:${password}`);
+        const credentials = bufferedCredentials.toString("base64");
+        const headers = {
+          Authorization: `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        };
+
+        const response = await axios.post(
+          "https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
+          { uid, ...eventInfo },
+          { headers: headers }
+        );
+        if (response.status === 201) {
+          setOpen(false);
+          fetchCustomEvents();
+        }
+      } catch (error: any) {
+        console.error("Error fetching data:", error);
+      }
+
     }
+
   };
 
-  // updating custom event
+  // updating event
   const handleUpdateEvent = async (eventInfo: any) => {
-    try {
-      const username = process.env.REACT_APP_USERNAME;
-      const password = process.env.REACT_APP_PASSWORD;
 
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
-      const headers = {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/json",
-      };
+    if (eventInfo.lecture && selectedFacultyId && selectedBranch) {
+      // event is lecture
+      console.log("Event is lecture, updating", eventInfo);
+      try {
+        const username = process.env.REACT_APP_USERNAME;
+        const password = process.env.REACT_APP_PASSWORD;
 
-      const response = await axios.put(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
-        { uid, eventId: eventInfo.id, ...eventInfo },
-        {
-          headers: headers,
+        const bufferedCredentials = Buffer.from(`${username}:${password}`);
+        const credentials = bufferedCredentials.toString("base64");
+        const headers = {
+          Authorization: `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        };
+
+        const response = await axios.put(
+          "https://europe-west3-pameten-urnik.cloudfunctions.net/lecture-update",
+          eventInfo,
+          {
+            params: {
+              facultyId: selectedFacultyId,
+            },
+            headers: headers,
+          }
+        );
+        if (response.status === 200) {
+          setOpen(false);
+          fetchData();
         }
-      );
-      if (response.status === 200) {
-        setOpen(false);
-        fetchCustomEvents();
+      } catch (error: any) {
+        console.error("Error updating event:", error);
       }
-    } catch (error: any) {
-      console.error("Error updating event:", error);
+    } else {
+      console.log("Event is custom, updating", eventInfo);
+
+      try {
+        const username = process.env.REACT_APP_USERNAME;
+        const password = process.env.REACT_APP_PASSWORD;
+
+        const bufferedCredentials = Buffer.from(`${username}:${password}`);
+        const credentials = bufferedCredentials.toString("base64");
+        const headers = {
+          Authorization: `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        };
+
+        const response = await axios.put(
+          "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
+          { uid, eventId: eventInfo.id, ...eventInfo },
+          {
+            headers: headers,
+          }
+        );
+        if (response.status === 200) {
+          setOpen(false);
+          fetchCustomEvents();
+        }
+      } catch (error: any) {
+        console.error("Error updating event:", error);
+      }
     }
   };
 
-  // deleting custom event
+  // deleting event
   const handleDeleteEvent = async (eventId: any) => {
-    try {
-      const username = process.env.REACT_APP_USERNAME;
-      const password = process.env.REACT_APP_PASSWORD;
 
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
-      const headers = {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/json",
-      };
+    if (events.find((event: Event) => event.id === eventId)) {
+      // event is lecture
+    } else {
+      // event is custom event
+      try {
+        const username = process.env.REACT_APP_USERNAME;
+        const password = process.env.REACT_APP_PASSWORD;
 
-      const response = await axios.delete(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
-        {
-          data: { uid, eventId },
-          headers: headers,
+        const bufferedCredentials = Buffer.from(`${username}:${password}`);
+        const credentials = bufferedCredentials.toString("base64");
+        const headers = {
+          Authorization: `Basic ${credentials}`,
+          "Content-Type": "application/json",
+        };
+
+        const response = await axios.delete(
+          "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
+          {
+            data: { uid, eventId },
+            headers: headers,
+          }
+        );
+        if (response.status === 200) {
+          setOpen(false);
+          fetchCustomEvents();
         }
-      );
-      if (response.status === 200) {
-        setOpen(false);
-        fetchCustomEvents();
+      } catch (error: any) {
+        console.error("Error deleting event:", error);
       }
-    } catch (error: any) {
-      console.error("Error deleting event:", error);
+
     }
   };
-
-  // saving timetable to dashboard
-  const handleSaveTimetable = () => {};
 
   return (
     <div className="w-full p-5">
@@ -677,6 +779,7 @@ const Timetable: React.FC<TimetableProps> = ({
         onUpdate={handleUpdateEvent}
         onDelete={handleDeleteEvent}
         event={selectedEvent}
+        role={role}
       />
     </div>
   );

@@ -176,6 +176,7 @@ const Dashboard: React.FC<DashboardProps> = ({ isAuthenticated, uid, role }) => 
             toggle={handleCloseModal}
             mode={mode}
             event={selectedEvent}
+            role={role}
           />
         </div>
       )}
