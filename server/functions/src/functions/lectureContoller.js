@@ -266,10 +266,14 @@ exports.findAvailableRoomSizeAndGroupIds = functions
       const { facultyId, startTime, endTime, roomSize, groupIds } = request.query;
       validateRequestParams({ facultyId, startTime, endTime, roomSize });
 
-      let groupArray = groupIds.split("_").map(Number);
-      const groupLectures = await getLecturesByArrayContainsAny(facultyId, "group_ids", groupArray, startTime, endTime, "lectures");
+      let groupLectures = [];
+      if (typeof groupIds !== 'undefined') {
+        let groupArray = groupIds.split("_").map(Number);
+        groupLectures = await getLecturesByArrayContainsAny(facultyId, "group_ids", groupArray, startTime, endTime, "lectures");
+      }
+
       const rooms = await getRoomsBiggerThan(facultyId, Number(roomSize));
-      const roomsWithLectures = await findLectureForArrayOfItems(rooms, facultyId, "rooms", startTime, endTime, groupLectures);
+      const roomsWithLectures = await findLectureForArrayOfItems(rooms, facultyId, "room_ids", startTime, endTime, groupLectures);
       const result = await findAndFormatFreeSlotsForObjects(roomsWithLectures, startTime, endTime);
 
       response.status(200).json({ result: result });

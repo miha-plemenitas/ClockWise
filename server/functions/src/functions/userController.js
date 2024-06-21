@@ -1,5 +1,5 @@
 const functions = require("firebase-functions");
-const { saveUser, getUserById, updateUser, deleteUser, verifyUser } = require("../service/userService");
+const { saveUser, getUserById, updateUser, deleteUser, notifyUsers, verifyUser } = require("../service/userService");
 const {
   handleErrors,
   validateRequestParams,
@@ -190,4 +190,15 @@ exports.delete = functions
     } catch (error) {
       handleErrors(error, response);
     }
+  });
+
+
+  exports.notifyUsersOnLectureUpdate = functions
+  .region("europe-west3")
+  .firestore
+  .document('lectures/{lectureId}')
+  .onWrite(async (change, context) => {
+    await notifyUsers(context, change);
+
+    return null;
   });

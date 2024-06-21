@@ -322,6 +322,10 @@ async function findLectureForArrayOfItems(
   const data = {};
   for(const item of arrayOfItems){
     let itemLectures = await getLecturesByFilterAndOptionallyDate(facultyId, collectionName, Number(item.id), startTime, endTime, "lectures");
+    if(itemLectures.length == 0){
+      continue;
+    }
+
     itemLectures = Object.values(itemLectures);
     itemLectures.push(...groupEvents);
 

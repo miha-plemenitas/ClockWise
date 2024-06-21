@@ -25,7 +25,7 @@ async function fetchDataForFaculty(facultyParam, dataType) {
     const facultyRef = db.collection("faculties").doc(facultyParam);
     facultyDoc = await facultyRef.get();
     if (!facultyDoc) {
-      return "Faculty with this ID could not be found";
+      throw new Error("Faculty with this ID was not found");
     }
   } else {
     facultyDoc = facultyParam; // If facultyParam is a DocumentSnapshot
