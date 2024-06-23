@@ -36,10 +36,10 @@ exports.add = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
 
-      const { uid } = request.body;
+      const { uid, email } = request.body;
       validateRequestParams({ uid });
 
-      const existing = await saveUser(uid);
+      const existing = await saveUser(uid, email);
       if (existing) {
         return response.status(200).send({ message: 'User already exists' });
       } else {
