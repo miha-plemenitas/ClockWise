@@ -385,6 +385,9 @@ async function updateLecture(facultyId, lecture){
   }
 
   const lectureId = lecture.id;
+  if (!lectureId){
+    throw new Error("No lecture ID sent in request body");
+  }
   const lectureCollectionRef = facultyRef.collection("lectures").doc(lectureId);
 
   const lectureDoc = await lectureCollectionRef.get();

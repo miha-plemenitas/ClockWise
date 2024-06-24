@@ -23,7 +23,7 @@ const {
  * @param {functions.Request} request - The HTTP request object, containing the query parameters.
  * @param {functions.Response} response - The HTTP response object used to send back data or errors.
  */
-exports.getOneById = functions
+exports.get = functions
   .region("europe-west3")
   .runWith({
     timeoutSeconds: 540
