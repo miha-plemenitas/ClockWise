@@ -10,15 +10,33 @@ const { convertToDates } = require("../utils/timeUtils");
  * @param {string} uid - The unique identifier of the user.
  * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the user already existed.
  */
-async function saveUser(uid) {
+async function saveUser(uid, email) {
   const userRef = db.collection('users').doc(uid);
   const userDoc = await userRef.get();
 
-  if (!userDoc.exists) {
-    await userRef.set({ uid, role: 'Student' });
-    return false;
+  const domain = email.split('@')[1];
+
+  let role = 'Student'; // Default role
+  
+  if (domain === 'student.um.si') {
+    role = 'Student';
+  } else if (domain === 'um.si') {
+    role = 'Tutor';
   }
-  return true;
+
+  const referatQuery = db.collection('referat').where('email', '==', email);
+  const referatSnapshot = await referatQuery.get();
+
+  if (!referatSnapshot.empty) {
+    role = 'Referat';
+  }
+
+  if (!userDoc.exists) {
+    await userRef.set({ uid, role });
+    return false; 
+  }
+
+  return true; 
 }
 
 

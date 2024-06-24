@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -13,7 +13,11 @@ import DropdownMenuTutors from "../../Components/Dropdowns/DropdownMenuTutors";
 
 import useFaculties from "../../Components/Hooks/useFaculties";
 import useTutors from "../../Components/Hooks/useTutors";
+import useRooms from "../../Components/Hooks/useRooms";
+import useGroups from "../../Components/Hooks/useGroups";
 import axios from "axios";
+import SaveButton from "../../Components/SaveButton/SaveButton";
+import { Switch } from "../../Components/ui/switch"; // Import Switch component
 
 interface TutorTimetableProps {
   isAuthenticated: boolean;
@@ -47,11 +51,7 @@ interface CustomEvent {
   };
 }
 
-const TutorTimetable: React.FC<TutorTimetableProps> = ({
-  isAuthenticated,
-  uid,
-  role,
-}) => {
+const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,  role,}) => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
@@ -59,24 +59,42 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
   const calendarRef = useRef<FullCalendar>(null);
+  const [isTutorMode, setIsTutorMode] = useState(true); // State to track switch
 
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     localStorage.getItem("selectedFacultyId")
   );
-  const [selectedTutors, setSelectedTutors] = useState<{ id: string, name: string }[]>(
-    JSON.parse(localStorage.getItem("selectedTutors") || "[]")
-  );
+  const [selectedTutors, setSelectedTutors] = useState<
+    { id: string; name: string }[]
+  >(JSON.parse(localStorage.getItem("selectedTutors") || "[]"));
 
   const { faculties } = useFaculties();
   const { tutors } = useTutors(selectedFacultyId || "");
+  const { rooms } = useRooms(selectedFacultyId || "");
+  const { groups } = useGroups(selectedFacultyId || "", "");
 
   const tutorMap: Record<string, string> = tutors.reduce((acc, tutor) => {
     acc[tutor.tutorId] = `${tutor.firstName} ${tutor.lastName}`;
     return acc;
   }, {} as Record<string, string>);
 
-  const fetchData = async () => {
+  const roomMap: Record<string, string> = rooms.reduce((acc, room) => {
+    acc[room.id] = room.roomName;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const groupMap: Record<string, string> = groups.reduce((acc, group) => {
+    acc[group.id] = group.name;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const fetchOnce = useRef(false);
+
+  const fetchData = useCallback(async () => {
     if (!selectedFacultyId || selectedTutors.length === 0) return;
+    if (fetchOnce.current) return;
+    fetchOnce.current = true;
+
     try {
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
@@ -116,27 +134,37 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
             end: formattedEnd,
             extendedProps: {
               type: lecture.executionType,
-              groups: lecture.group_ids.join(", "),
+              groups: lecture.group_ids
+                .map((id: string | number) => groupMap[id] || "Unknown Group")
+                .join(", "),
               teacher: lecture.tutor_ids
                 .map((id: string | number) => tutorMap[id] || "Unknown Tutor")
                 .join(", "),
-              location: lecture.room_ids.join(", "),
+              location: lecture.room_ids
+                .map((id: string | number) => roomMap[id] || "Unknown Room")
+                .join(", "),
               editable: false,
             },
           };
         }
       );
-      setEvents(formattedEvents);
+      setEvents((prevEvents) => {
+        // Only update events if they have changed
+        if (JSON.stringify(prevEvents) !== JSON.stringify(formattedEvents)) {
+          return formattedEvents;
+        }
+        return prevEvents;
+      });
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  };
+  }, [selectedFacultyId, selectedTutors, tutorMap, roomMap, groupMap]);
 
   useEffect(() => {
     if (selectedFacultyId && selectedTutors.length > 0) {
       fetchData();
     }
-  }, [selectedFacultyId, selectedTutors]);
+  }, [selectedFacultyId, selectedTutors, fetchData]);
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event =
@@ -146,7 +174,7 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
       );
     if (event) {
       setSelectedEvent(event);
-      setMode(event.extendedProps.editable ? "edit" : "view");
+      setMode("edit");
       setOpen(true);
     } else {
       console.error("Event not found");
@@ -300,6 +328,8 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
     }
   };
 
+ const handleUpdateLecture = (eventInfo: any) => {};
+
   const renderEventContent = (eventInfo: EventContentArg) => {
     return (
       <>
@@ -308,6 +338,22 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
       </>
     );
   };
+
+  useEffect(() => {
+    const storedMode = localStorage.getItem("isTutorMode");
+    if (storedMode) {
+      setIsTutorMode(storedMode === "true");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isTutorMode) {
+      localStorage.setItem("isTutorMode", "false");
+      navigate("/");
+    } else {
+      localStorage.setItem("isTutorMode", "true");
+    }
+  }, [isTutorMode, navigate]);
 
   return (
     <div className="w-full p-5">
@@ -327,12 +373,16 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
             facultyId={selectedFacultyId || ""}
             onSelectTutors={(tutors) => {
               setSelectedTutors(tutors);
-              const selectedTutorNames = tutors.map(t => t.name);
-              const selectedTutorIds = tutors.map(t => t.id);
+              const selectedTutorNames = tutors.map((t) => t.name);
+              const selectedTutorIds = tutors.map((t) => t.id);
               localStorage.setItem("selectedTutors", JSON.stringify(tutors));
             }}
-            selectedTutorNames={selectedTutors.map(t => t.name)}
+            selectedTutorNames={selectedTutors.map((t) => t.name)}
           />
+        </div>
+        <div className="flex items-center">
+          <label className="mr-2">Enable Tutor Timetable</label>
+          <Switch checked={isTutorMode} onCheckedChange={setIsTutorMode} />
         </div>
       </div>
       <div className="mt-4 w-full bg-white rounded-lg p-4">
@@ -368,14 +418,23 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({
           select={handleDateSelect}
         />
       </div>
+      <div className="flex space-x-2">
+        <SaveButton
+          isAuthenticated={isAuthenticated}
+          uid={uid}
+          events={events}
+        />
+      </div>
       <CustomModal
         isOpen={open}
         toggle={handleCloseModal}
         mode={mode}
         onSave={handleAddEvent}
         onUpdate={handleUpdateEvent}
+        onUpdateLecture={handleUpdateLecture}
         onDelete={handleDeleteEvent}
         event={selectedEvent}
+        role={role}
       />
     </div>
   );

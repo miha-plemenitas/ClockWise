@@ -26,9 +26,24 @@ const SaveButton: React.FC<SaveButtonProps> = ({ isAuthenticated, uid, events })
     const handleSaveTimetable = async () => {
         // eslint-disable-next-line no-restricted-globals
         const confirmOverwrite = confirm("Are you sure you want to save this timetable? If you already have a saved timetable, it will be overwritten.");
-
+        console.log(events)
         if (confirmOverwrite) {
             try {
+                // Format events
+                const formattedEvents = events.map(event => ({
+                    id: event.id,
+                    start: event.start,
+                    end: event.end,
+                    title: event.title,
+                    extendedProps: {
+                        editable: event.extendedProps.editable,
+                        groups: event.extendedProps.groups,
+                        location: event.extendedProps.location,
+                        teacher: event.extendedProps.teacher,
+                        type: event.extendedProps.type,
+                    }
+                }));
+
                 const username = process.env.REACT_APP_USERNAME;
                 const password = process.env.REACT_APP_PASSWORD;
 
@@ -40,7 +55,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({ isAuthenticated, uid, events })
                 };
                 const response = await axios.post(
                     "https://europe-west3-pameten-urnik.cloudfunctions.net/timetable-add",
-                    { uid: uid, events: events },
+                    { uid: uid, events: formattedEvents },
                     { headers: headers }
                 );
 
