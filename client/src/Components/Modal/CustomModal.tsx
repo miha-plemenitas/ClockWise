@@ -94,6 +94,7 @@ export default function CustomModal({
     const [room, setRoom] = useState('');
     const [tutor, setTutor] = useState('');
     const [group, setGroup] = useState('');
+    const [repeatCount, setRepeatCount] = useState(0);
 
     const formatDate = (dateString: string) => format(new Date(dateString), 'EEEE, d. M. yyyy', { locale: sl });
     const formatTime = (startString: string, endString: string) => {
@@ -110,25 +111,36 @@ export default function CustomModal({
         let eventDetails = {};
 
         if (role === 'Referat') {
-            eventDetails = {
-                "course": title || '',
-                "startTime": updatedStartTime ? updatedStartTime.format('YYYY-MM-DDTHH:mm:ss') : null,
-                "endTime": updatedEndTime ? updatedEndTime.format('YYYY-MM-DDTHH:mm:ss') : null,
-                "executionType": type || '',
-                "executionTypeId": '',
-                "duration": '',
-                "courseId": '',
-                "hasRooms": true,
-                "branch_ids": [], // doloci v timetable
-                "branches": [],
-                "tutors": [{ name: tutor, id: '' }],
-                "tutor_ids": [],
-                "rooms": [{ name: room, id: '' }],
-                "room_ids": [],
-                "groups": [{ name: group, id: '' }],
-                "group_ids": [],
-                "lecture": true,
-            };
+            const eventDetailsList = [];
+            for (let i = 0; i <= repeatCount; i++) {
+                const eventStart = updatedStartTime ? updatedStartTime.add(i, 'week') : null;
+                const eventEnd = updatedEndTime ? updatedEndTime.add(i, 'week') : null;
+    
+                eventDetailsList.push({
+                    "course": title || '',
+                    "startTime": eventStart ? eventStart.format('YYYY-MM-DDTHH:mm:ss') : null,
+                    "endTime": eventEnd ? eventEnd.format('YYYY-MM-DDTHH:mm:ss') : null,
+                    "executionType": type || '',
+                    "executionTypeId": '',
+                    "duration": '',
+                    "courseId": '',
+                    "hasRooms": true,
+                    "branch_ids": [], // doloci v timetable
+                    "branches": [],
+                    "tutors": [{ name: tutor, id: '' }],
+                    "tutor_ids": [],
+                    "rooms": [{ name: room, id: '' }],
+                    "room_ids": [],
+                    "groups": [{ name: group, id: '' }],
+                    "group_ids": [],
+                    "lecture": true,
+                });
+            }
+    
+            if (onSave) {
+                eventDetailsList.forEach(eventDetails => onSave(eventDetails));
+            }
+
         } else {
             eventDetails = {
                 "startTime": updatedStartTime ? updatedStartTime.format('YYYY-MM-DDTHH:mm:ss') : null,
@@ -153,6 +165,7 @@ export default function CustomModal({
         setGroup('');
         setType('');
         setRoom('');
+        setRepeatCount(0);
     }
 
     const handleUpdateEvent = () => {
@@ -673,6 +686,14 @@ export default function CustomModal({
                                 label="Location"
                                 value={room}
                                 onChange={(e) => setRoom(e.target.value)}
+                            />
+                            <TextField
+                                fullWidth
+                                margin="normal"
+                                label="Repeat for (weeks)"
+                                type="number"
+                                value={repeatCount}
+                                onChange={(e) => setRepeatCount(Number(e.target.value))}
                             />
                         </Box>
                     </>
