@@ -11,3 +11,4 @@ exports.user = require('./src/functions/userController');
 exports.event = require('./src/functions/eventController');
 exports.timetable = require('./src/functions/timetableController');
 exports.schedule = require("./src/functions/scheduleController");
+exports.admin = require("./src/functions/adminController");
