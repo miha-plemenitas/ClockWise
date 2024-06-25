@@ -10,6 +10,7 @@ import { Buffer } from "buffer";
 import axios from "axios";
 import { Button } from "../../Components/ui/button";
 import Plot from 'react-plotly.js';
+import Admin from "./Admin";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -224,14 +225,18 @@ const Dashboard: React.FC<DashboardProps> = ({ isAuthenticated, uid, role }) => 
         </div>
       )}
       {!isAuthenticated && (
-        <div className="flex flex-col items-center pt-40">
-          <p className="text-xl text-center font-bold mb-2">
-            <h2 className="text-modra text-3xl font-bold">Your Timetable Awaits!</h2>
-          </p>
-          <p className="text-center text-gray-700 mb-4">
-            <a href="/signin" className="text-oranzna hover:text-modra">Sign in</a> to access your saved timetable and more.
-          </p>
-        </div>
+        // <div className="flex flex-col items-center pt-40">
+        //   <p className="text-xl text-center font-bold mb-2">
+        //     <h2 className="text-modra text-3xl font-bold">Your Timetable Awaits!</h2>
+        //   </p>
+        //   <p className="text-center text-gray-700 mb-4">
+        //     <a href="/signin" className="text-oranzna hover:text-modra">Sign in</a> to access your saved timetable and more.
+        //   </p>
+        // </div>
+
+
+        // Za testiranje
+        <Admin/>
       )}
 
     </div>

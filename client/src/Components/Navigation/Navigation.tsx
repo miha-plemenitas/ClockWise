@@ -85,13 +85,13 @@ const Navigation: React.FC<NavigationProps> = ({
             <NavigationMenuTrigger>Timetable</NavigationMenuTrigger>
           </NavigationMenuLink>
         </NavigationMenuItem>
-        {role === "Tutor" && (
+       {/*  {role === "Tutor" && (
           <NavigationMenuItem>
             <NavigationMenuLink href="/tutortimetable">
               <NavigationMenuTrigger>Tutor Timetable</NavigationMenuTrigger>
             </NavigationMenuLink>
           </NavigationMenuItem>
-        )}
+        )}*/}
       </NavigationMenuList>
       <NavigationMenuList className="flex items-center">
         {isAuthenticated ? (

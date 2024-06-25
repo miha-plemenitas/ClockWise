@@ -16,6 +16,8 @@ const Signup: React.FC<SignunProps> = ({ onSignin, toggleForm }) => {
     const [authenticating, setAuthenticating] = useState<boolean>(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [name, setName] = useState("");
+    const [lastName, setLastName] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -33,8 +35,18 @@ const Signup: React.FC<SignunProps> = ({ onSignin, toggleForm }) => {
         setConfirmPassword(e.target.value);
     };
 
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setName(e.target.value);
+    };
+
+    const handleLastNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setLastName(e.target.value);
+    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
+
+        
 
         e.preventDefault();
         setAuthenticating(true);
@@ -68,7 +80,7 @@ const Signup: React.FC<SignunProps> = ({ onSignin, toggleForm }) => {
                     const uid = user.uid;
                     try {
                         const response = await axios.post("https://europe-west3-pameten-urnik.cloudfunctions.net/user-add",
-                            { uid, email },
+                            { uid: uid, email: email, name: `${name} ${lastName}` },
                             { headers: headers }
                         );
                         console.log('Response:', response.data);
@@ -84,6 +96,8 @@ const Signup: React.FC<SignunProps> = ({ onSignin, toggleForm }) => {
             console.error("Sign-up error: ", error);
             setEmail('');
             setPassword('');
+            setName('');
+            setLastName('');
             setConfirmPassword('');
             setAuthenticating(false);
         } finally {
@@ -103,6 +117,28 @@ const Signup: React.FC<SignunProps> = ({ onSignin, toggleForm }) => {
                         </div>
                     )}
                     <form className="space-y-6">
+                    <div>
+                            <Input
+                                id="name"
+                                type="text"
+                                value={name}
+                                onChange={handleNameChange}
+                                placeholder="First Name"
+                                className="w-full px-4 py-2 rounded-lg border-gray-300"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <Input
+                                id="lastName"
+                                type="text"
+                                value={lastName}
+                                onChange={handleLastNameChange}
+                                placeholder="Last Name"
+                                className="w-full px-4 py-2 rounded-lg border-gray-300"
+                                required
+                            />
+                        </div>
                         <div>
                             <Input
                                 id="email"

@@ -37,6 +37,7 @@ interface Event {
     teacher: string;
     location: string;
     editable: boolean;
+    lecture: boolean;
   };
 }
 
@@ -48,6 +49,7 @@ interface CustomEvent {
   extendedProps: {
     notes: string;
     editable: boolean;
+    lecture: boolean;
   };
 }
 
@@ -133,17 +135,24 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,
             start: formattedStart,
             end: formattedEnd,
             extendedProps: {
+              courseId: lecture.courseId,
+              duration: lecture.duration,
               type: lecture.executionType,
-              groups: lecture.group_ids
-                .map((id: string | number) => groupMap[id] || "Unknown Group")
-                .join(", "),
-              teacher: lecture.tutor_ids
-                .map((id: string | number) => tutorMap[id] || "Unknown Tutor")
-                .join(", "),
-              location: lecture.room_ids
-                .map((id: string | number) => roomMap[id] || "Unknown Room")
-                .join(", "),
+              executionType: lecture.executionTypeId,
+              groups: lecture.groups.map((group: any) => group.name).join(", "),
+              teacher: lecture.tutors.map((tutor: any) => tutor.name).join(", "),
+              location: lecture.rooms.map((room: any) => room.name).join(", "),
               editable: false,
+              lecture: true,
+              hasRooms: lecture.hasRooms,
+              group_ids: [lecture.group_ids],
+              room_ids: [lecture.room_ids],
+              tutor_ids: [lecture.tutor_ids],
+              groups_arr: [lecture.groups],
+              rooms_arr: [lecture.rooms],
+              tutors_arr: [lecture.tutors],
+              branchIds: [lecture.branch_ids],
+              branches: [lecture.branches]
             },
           };
         }
@@ -172,7 +181,18 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,
       customEvents.find(
         (event: CustomEvent) => event.id === clickInfo.event.id
       );
-    if (event) {
+
+    if (event && event.extendedProps.lecture) {
+      if (role === 'Student' || !role) {
+        setSelectedEvent(event);
+        setMode("view");
+        setOpen(true);
+      } else {
+        setSelectedEvent(event);
+        setMode("edit");
+        setOpen(true);
+      }
+    } else if (event && !event.extendedProps.lecture) {
       setSelectedEvent(event);
       setMode("edit");
       setOpen(true);
@@ -183,7 +203,7 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,
   };
 
   const handleCloseModal = () => {
-    setSelectedEvent(null);
+    //setSelectedEvent(null);
     setOpen(false);
   };
 
@@ -344,6 +364,13 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,
     if (storedMode) {
       setIsTutorMode(storedMode === "true");
     }
+
+    setSelectedFacultyId('');
+    setSelectedTutors([]);
+    localStorage.removeItem("selectedFacultyId");
+    localStorage.removeItem("selectedTutors");
+
+
   }, []);
 
   useEffect(() => {

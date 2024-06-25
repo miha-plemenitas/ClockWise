@@ -1,5 +1,5 @@
 const functions = require("firebase-functions");
-const { saveUser, getUserById, updateUser, deleteUser, notifyUsers, verifyUser } = require("../service/userService");
+const { saveUser, getUserById, getUnverifiedUsers, updateUser, deleteUser, notifyUsers, verifyUser } = require("../service/userService");
 const {
   handleErrors,
   validateRequestParams,
@@ -36,10 +36,10 @@ exports.add = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
 
-      const { uid, email } = request.body;
+      const { uid, email, name } = request.body;
       validateRequestParams({ uid });
 
-      const existing = await saveUser(uid, email);
+      const existing = await saveUser(uid, email, name);
       if (existing) {
         return response.status(200).send({ message: 'User already exists' });
       } else {
@@ -88,6 +88,25 @@ exports.get = functions
     }
   });
 
+
+  exports.getUnverified = functions
+  .region("europe-west3")
+  .runWith({
+    timeoutSeconds: 540
+  })
+  .https
+  .onRequest(async (request, response) => {
+    response.set("Access-Control-Allow-Origin", "*");
+
+    try {
+      await checkAuthenticationandMethodForRequest(request, "GET");
+
+      const result = await getUnverifiedUsers();
+      response.status(200).json({ result: result });
+    } catch (error) {
+      handleErrors(error, response);
+    }
+  });
 
 /**
  * Defines a Firebase Cloud Function deployed in the "europe-west3" region, intended to handle PUT requests for updating a user's information.
