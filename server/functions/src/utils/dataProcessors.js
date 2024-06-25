@@ -19,6 +19,14 @@ function processLectureData(lecture) {
 
   const extractIds = (items) => items.map(item => item.id);
 
+  let hasRooms = false;
+  if (Array.isArray(lecture.rooms)) {
+    hasRooms = lecture.rooms.length > 0;
+  }
+
+  if(!lecture.rooms || !lecture.lecturers || !lecture.groups || !lecture.branches){
+    throw new Error("No rooms, tutors, groups or branches sent");
+  }
 
   return {
     id: `${lecture.id} ${lecture.start_time}`,
@@ -37,7 +45,7 @@ function processLectureData(lecture) {
     groups: lecture.groups,
     branches: lecture.branches,
     duration: duration,
-    hasRooms: lecture.rooms.length > 0
+    hasRooms: hasRooms
   };
 }
 
@@ -176,7 +184,7 @@ function processScheduleData(lecture) {
     endTime: endTime,
     ...lecture
   };
-  
+
   delete completeLecture.start_time;
   delete completeLecture.end_time;
 
