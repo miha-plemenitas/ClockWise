@@ -77,7 +77,11 @@ interface Group {
   name: string;
 }
 
-const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) => {
+const Timetable: React.FC<TimetableProps> = ({
+  isAuthenticated,
+  uid,
+  role,
+}) => {
   const navigate = useNavigate(); // Use useNavigate for navigation
   const [isTutorMode, setIsTutorMode] = useState(false); // State to track switch
 
@@ -217,9 +221,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
       );
 
       const formattedEvents: Event[] = response.data.result.map(
-
         (lecture: any) => {
-
           // Format start time
           const startTime = new Date(lecture.startTime._seconds * 1000);
           const formattedStart = startTime.toISOString().slice(0, 19);
@@ -239,7 +241,9 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
               type: lecture.executionType,
               executionType: lecture.executionTypeId,
               groups: lecture.groups.map((group: any) => group.name).join(", "),
-              teacher: lecture.tutors.map((tutor: any) => tutor.name).join(", "),
+              teacher: lecture.tutors
+                .map((tutor: any) => tutor.name)
+                .join(", "),
               location: lecture.rooms.map((room: any) => room.name).join(", "),
               editable: false,
               lecture: true,
@@ -251,13 +255,16 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
               rooms_arr: [lecture.rooms],
               tutors_arr: [lecture.tutors],
               branchIds: [lecture.branch_ids],
-              branches: [lecture.branches]
+              branches: [lecture.branches],
             },
           };
         }
       );
       setEvents(formattedEvents);
       setFilteredEvents(formattedEvents);
+
+      // Log the fetched events
+      console.log("Fetched lectures:", formattedEvents);
 
       // Collect unique course names from lectures
       const uniqueCourses: string[] = Array.from(
@@ -368,7 +375,7 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
       );
 
     if (event && event.extendedProps.lecture) {
-      if (role === 'Student' || !role) {
+      if (role === "Student" || !role) {
         setSelectedEvent(event);
         setMode("view");
         setOpen(true);
@@ -393,10 +400,15 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
   };
 
   const handleDateSelect = () => {
-    if (isAuthenticated && role !== 'Referat') {
+    if (isAuthenticated && role !== "Referat") {
       setMode("add");
       setOpen(true);
-    } else if (isAuthenticated && role === 'Referat' && selectedBranch && selectedFacultyId) {
+    } else if (
+      isAuthenticated &&
+      role === "Referat" &&
+      selectedBranch &&
+      selectedFacultyId
+    ) {
       setMode("add");
       setOpen(true);
     }
@@ -441,12 +453,15 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
             extendedProps: {
               notes: eventData.notes,
               editable: eventData.editable,
-              lecture: eventData.lecture
+              lecture: eventData.lecture,
             },
           };
         }
       );
       setCustomEvents(formattedEvents);
+
+      // Log the fetched custom events
+      console.log("Fetched custom events:", formattedEvents);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -460,11 +475,10 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
 
   // adding event
   const handleAddEvent = async (eventInfo: any) => {
-
     if (eventInfo.lecture && selectedFacultyId && selectedBranch) {
       // event is lecture
-      eventInfo.branch_ids = [parseInt(selectedBranch, 10)]
-      eventInfo.branches = [{ id: parseInt(selectedBranch, 10) }]
+      eventInfo.branch_ids = [parseInt(selectedBranch, 10)];
+      eventInfo.branches = [{ id: parseInt(selectedBranch, 10) }];
       console.log("Event is lecture, adding", eventInfo);
 
       try {
@@ -519,17 +533,14 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
       } catch (error: any) {
         console.error("Error fetching data:", error);
       }
-
     }
-
   };
 
   // updating event
   const handleUpdateEvent = async (eventInfo: any) => {
-
     if (eventInfo.lecture && selectedFacultyId && selectedBranch) {
-      // event is lecture
-      console.log("Event is lecture, updating", eventInfo);
+      // Event is a lecture
+      console.log("Event is a lecture, updating", eventInfo);
       try {
         const username = process.env.REACT_APP_USERNAME;
         const password = process.env.REACT_APP_PASSWORD;
@@ -551,16 +562,16 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
             headers: headers,
           }
         );
+        console.log("Response from lecture-update:", response);
         if (response.status === 200) {
           setOpen(false);
           fetchData();
         }
       } catch (error: any) {
-        console.error("Error updating event:", error);
+        console.error("Error updating event:", error.response || error.message);
       }
     } else {
       console.log("Event is custom, updating", eventInfo);
-
       try {
         const username = process.env.REACT_APP_USERNAME;
         const password = process.env.REACT_APP_PASSWORD;
@@ -579,19 +590,19 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
             headers: headers,
           }
         );
+        console.log("Response from event-update:", response);
         if (response.status === 200) {
           setOpen(false);
           fetchCustomEvents();
         }
       } catch (error: any) {
-        console.error("Error updating event:", error);
+        console.error("Error updating event:", error.response || error.message);
       }
     }
   };
 
   // deleting event
   const handleDeleteEvent = async (eventId: any) => {
-
     if (events.find((event: Event) => event.id === eventId)) {
       // event is lecture
     } else {
@@ -621,7 +632,6 @@ const Timetable: React.FC<TimetableProps> = ({ isAuthenticated, uid, role, }) =>
       } catch (error: any) {
         console.error("Error deleting event:", error);
       }
-
     }
   };
 

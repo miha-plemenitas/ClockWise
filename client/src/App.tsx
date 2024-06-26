@@ -10,11 +10,14 @@ import { useEffect, useState } from "react";
 import { auth } from "./Config/firebase";
 import axios from "axios";
 import { Buffer } from "buffer";
+import { ToastProvider } from "src/Components/ui/toast";
+import { Toaster } from "src/Components/ui/toaster"; // Ensure correct import for Toaster
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [uid, setUid] = useState<string | null>(null);
   const [role, setRole] = useState<string>("");
+  const [facultyId, setFacultyId] = useState<string | null>(null);
 
   const fetchUserRole = async () => {
     try {
@@ -36,6 +39,7 @@ const App = () => {
         }
       );
       setRole(response.data.result.role);
+      setFacultyId(response.data.result.facultyId);
     } catch (error: any) {
       console.error("Error fetching data:", error);
     }
@@ -70,49 +74,56 @@ const App = () => {
 
   return (
     <div>
-      <BrowserRouter>
-        <Navigation
-          isAuthenticated={isAuthenticated}
-          onLogout={handleLogout}
-          uid={uid}
-          role={role}
-        />
-        <Routes>
-          <Route
-            path="/dashboard"
-            element={
-              <Dashboard
-                isAuthenticated={isAuthenticated}
-                uid={uid}
-                role={role}
-              />
-            }
+      <ToastProvider>
+        <BrowserRouter>
+          <Navigation
+            isAuthenticated={isAuthenticated}
+            onLogout={handleLogout}
+            uid={uid}
+            role={role}
           />
-          <Route
-            path="/"
-            element={
-              <Timetable
-                isAuthenticated={isAuthenticated}
-                uid={uid}
-                role={role}
-              />
-            }
-          />
-          <Route path="/signin" element={<Signin onSignin={handleSignin} />} />
-          <Route path="/forgot" element={<ForgotPassword />} />
-          <Route
-            path="/tutortimetable"
-            element={
-              <TutorTimetable
-                isAuthenticated={isAuthenticated}
-                uid={uid}
-                role={role}
-              />
-            }
-          />{" "}
-          {/* Add the route for TutorTimetable */}
-        </Routes>
-      </BrowserRouter>
+          <Routes>
+            <Route
+              path="/dashboard"
+              element={
+                <Dashboard
+                  facultyId={facultyId}
+                  isAuthenticated={isAuthenticated}
+                  uid={uid}
+                  role={role}
+                />
+              }
+            />
+            <Route
+              path="/"
+              element={
+                <Timetable
+                  isAuthenticated={isAuthenticated}
+                  uid={uid}
+                  role={role}
+                />
+              }
+            />
+            <Route
+              path="/signin"
+              element={<Signin onSignin={handleSignin} />}
+            />
+            <Route path="/forgot" element={<ForgotPassword />} />
+            <Route
+              path="/tutortimetable"
+              element={
+                <TutorTimetable
+                  isAuthenticated={isAuthenticated}
+                  uid={uid}
+                  role={role}
+                />
+              }
+            />{" "}
+            {/* Add the route for TutorTimetable */}
+          </Routes>
+        </BrowserRouter>
+        <Toaster /> {/* Add Toaster to render the toast messages */}
+      </ToastProvider>
     </div>
   );
 };

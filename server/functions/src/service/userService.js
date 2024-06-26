@@ -10,7 +10,7 @@ const { convertToDates } = require("../utils/timeUtils");
  * @param {string} uid - The unique identifier of the user.
  * @returns {Promise<boolean>} A promise that resolves to a boolean indicating whether the user already existed.
  */
-async function saveUser(uid, email) {
+async function saveUser(uid, email, name) {
   const userRef = db.collection('users').doc(uid);
   const userDoc = await userRef.get();
 
@@ -32,7 +32,7 @@ async function saveUser(uid, email) {
   }
 
   if (!userDoc.exists) {
-    await userRef.set({ uid, role });
+    await userRef.set({ uid, email, name, role, isVerified: false });
     return false; 
   }
 
@@ -58,6 +58,17 @@ async function getUserById(uid) {
   return user;
 }
 
+
+async function getUnverifiedUsers() {
+  const userSnapshot = await db.collection("users").where("isVerified", "==", false).get();
+
+  const users = userSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+
+  return users;
+}
 
 /**
  * Updates a user's information in the database.
@@ -172,6 +183,7 @@ async function notifyUsers(context, change) {
 module.exports = {
   saveUser,
   getUserById,
+  getUnverifiedUsers,
   updateUser,
   deleteUser,
   verifyUser,
