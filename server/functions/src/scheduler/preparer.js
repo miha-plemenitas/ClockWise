@@ -3,6 +3,7 @@ const { deleteAllDocumentsInCollection } = require("../utils/firebaseHelpers");
 const { getAllFacultyCollectionItems } = require("../service/facultyCollections");
 
 
+// Dobiš sobe, brez default(za diplome) in MS teams
 async function getAvailableRooms(facultyId){
   const rooms = await getAllFacultyCollectionItems(facultyId, "rooms");
 
@@ -11,6 +12,7 @@ async function getAvailableRooms(facultyId){
 }
 
 
+// Gets weeks number (used it in the visualization, not needed anymore)
 function getWeekNumber(date) {
   const startDate = new Date(date.getFullYear(), 0, 1);
   const dayOfWeek = startDate.getDay() || 7;
@@ -20,7 +22,13 @@ function getWeekNumber(date) {
 };
 
 
+// Prepares lecture, filtered out those without .room_ids (residual ones)
+// Adds sizes to lectures and fixes execution types
+// Also sets up the ones that shouldnt be scheduled
 function prepareLecture(data, rooms) {
+  if(!data.room_ids){
+    console.log(data);
+  }
 
   const roomSizes = rooms
     .filter(room => data.room_ids.includes(room.roomId))
@@ -48,31 +56,38 @@ function prepareLecture(data, rooms) {
   data.week = getWeekNumber(date);
 
   delete data.id;
-  if (!data.executionTypeId in ["102", "116", "110", "93"]){
+
+  const nonSchedulableExecutionTypeIds = ["102", "116", "110", "93"];
+  if (!nonSchedulableExecutionTypeIds.includes(data.executionTypeId)) {
     delete data.endTime;
     delete data.room_ids;
     delete data.rooms;
+    data.schedulable = 1;
   } else {
-    data.schedulable = false;
+    data.schedulable = -1;
   }
 
   return data;
 }
 
 
+//Deletam ze zgenerirano kolekcijo, pridobim sobe in celoten urnik
+//TODO - lahko dodam nov boolean ki samo deleta vse v kolekciji
 async function resetCollectionAndFetchSchedule(facultyId) {
   const facultyRef = db.collection("faculties").doc(facultyId);
   const generatedLecturesRef = facultyRef.collection("generated_lectures");
 
   await deleteAllDocumentsInCollection(generatedLecturesRef);
 
-  const rooms = await getAvailableRooms(facultyId);
-  const original_lectures = await fetchWholeSchedule(facultyRef, rooms);
+  const rooms = await getAvailableRooms(facultyId); //iz sob sam vmes se deletam ms teams pa default sobo za diplomo n shit
+  const original_lectures = await fetchWholeSchedule(facultyRef, rooms); //vsi lecturji razen tipa 99
 
   return { original_lectures, rooms };
 }
 
 
+//pridobi vse iz original_lectures, ki nimajo executionTypeId = 99
+//vmes jih deleta, na koncu pa jim da se id od indexa
 async function fetchWholeSchedule(facultyRef, rooms) {
   const lecturesRef = facultyRef.collection("original_lectures");
 
@@ -80,12 +95,24 @@ async function fetchWholeSchedule(facultyRef, rooms) {
     .where("executionTypeId", "!=", "99");
 
   const snapshot = await lectureQuery.get();
+
+  const batch = facultyRef.firestore.batch();
+
+  const filteredDocs = snapshot.docs.filter(doc => {
+    const data = doc.data();
+    if (!data.room_ids) {
+      batch.delete(doc.ref);
+      return false;
+    }
+    return true;
+  });
+  await batch.commit();
+
   let index = 0;
-  const lectures = snapshot.docs.map(doc => {
+  const lectures = filteredDocs.map(doc => {
     let lecture = prepareLecture(doc.data(), rooms);
     lecture.id = index;
     index++;
-    
     return lecture;
   });
 
@@ -93,6 +120,7 @@ async function fetchWholeSchedule(facultyRef, rooms) {
 }
 
 
+//Ponavljajocim predavanjam oz tipom lecturjem dam next id, da se bo lahko schedulal zaporedno vsak tedn
 async function expandLectureData(groupedLectures, lectures){
   for(const key in groupedLectures){
     const groupedLecture = groupedLectures[key];

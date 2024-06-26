@@ -3,46 +3,50 @@ const { generateTimeSlots, initializeSchedule, groupLectures } = require("./util
 const { evaluateSchedule } = require("./evaluator");
 const { resetCollectionAndFetchSchedule, expandLectureData } = require("./preparer");
 const { updateLectureDates, saveGeneratedSchedule } = require("./converter");
+const fs = require('fs');
+const path = require('path');
 
 
-async function generateSchedule(facultyId, iterations) {
-  const { original_lectures, rooms } = await resetCollectionAndFetchSchedule(facultyId);
+//Da nea brezzveze fetcham podatkov cel čas, če obstaja json file vzamem iz jsona, drugače fetch
+async function getLecturesAndRooms(facultyId){ 
+  const lecturesPath = path.resolve(__dirname, '../data/lectures.json');
+  const roomsPath = path.resolve(__dirname, '../data/rooms.json');
 
-  const typeMap = new Map();
-  let numberOfMissingCourses = 0;
-  let numberOfMissingRooms = 0;
-  let numberOfWeekends = 0;
-  const daysMap = new Map();
+  let original_lectures, rooms;
 
-  for (const lecture of original_lectures) {
-    if (!lecture.course || lecture.course === "") {
-      numberOfMissingCourses++;
-    }
+  if (fs.existsSync(lecturesPath) && fs.existsSync(roomsPath)) {
+    original_lectures = JSON.parse(fs.readFileSync(lecturesPath, 'utf8'));
+    rooms = JSON.parse(fs.readFileSync(roomsPath, 'utf8'));
+  } else {
+    const schedule = await resetCollectionAndFetchSchedule(facultyId);  //TO GLEJ drugo ni pomembno
+    original_lectures = schedule.original_lectures;
+    rooms = schedule.rooms;
 
-    if (!lecture.hasRooms) {
-      numberOfMissingRooms++;
-    }
-
-    const lectureType = lecture.executionType + " " + lecture.executionTypeId;
-    if (typeMap.has(lectureType)) {
-      typeMap.set(lectureType, typeMap.get(lectureType) + 1);
-    } else {
-      typeMap.set(lectureType, 1);
-    }
+    fs.writeFileSync(lecturesPath, JSON.stringify(original_lectures, null, 2));
+    fs.writeFileSync(roomsPath, JSON.stringify(rooms, null, 2));
   }
 
-  //console.log(typeMap);
-  //console.log(`Number of lecture with missing courses: ${numberOfMissingCourses}, number of missing rooms: ${numberOfMissingRooms}`);
-  //console.log(numberOfWeekends);
-  //console.log(daysMap);
-  //console.log(original_lectures.length);
+  return { original_lectures, rooms };
+}
 
-  const timeSlots = await generateTimeSlots(original_lectures);
-  const groupedLectures = groupLectures(original_lectures);
+
+
+async function generateSchedule(facultyId) {
+  const { original_lectures, rooms } = await getLecturesAndRooms(facultyId);
+
+  const timeSlots = await generateTimeSlots(original_lectures); //array timeSlotov, vsak ma day:"2024-06-14", pa array hours (od 7-21 oz srede 10-21)
+  const groupedLectures = groupLectures(original_lectures); //groupira lecturje glede na course, groups, tutors... s tem delam pol nextId
   expandLectureData(groupedLectures, original_lectures);
   console.log(timeSlots.length);
+  console.log(original_lectures.length);
+  console.log(original_lectures[0]);
 
-  return groupedLectures;
+  const selectedLectures = original_lectures.filter(lecture => lecture.course === "MODELIRANJE IN VODENJE ELEKTROMEHANSKIH SISTEMOV"); //samo za testiranje
+  console.log(selectedLectures.length);
+
+  const schedule = initializeSchedule(selectedLectures, timeSlots, rooms);
+
+  return schedule;
 }
 
 
