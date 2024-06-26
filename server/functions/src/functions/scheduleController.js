@@ -25,6 +25,32 @@ exports.generate = functions
       const { facultyId, iterations } = request.query;
       validateRequestParams({ facultyId });
 
+      const result = await generateSchedule(facultyId, iterations);
+
+      response.status(200).json({ result: result });
+    } catch (error) {
+      handleErrors(error, response);
+    }
+  });
+
+
+exports.generate2 = functions
+  .region("europe-west3")
+  .runWith({
+    timeoutSeconds: 540,
+    memory: '2GB'
+  })
+  .https
+  .onRequest(async (request, response) => {
+    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Credentials', 'true');
+
+    try {
+      await checkAuthenticationandMethodForRequest(request, "POST");
+
+      const { facultyId, iterations } = request.query;
+      validateRequestParams({ facultyId });
+
       const schedule = await generateSchedule(facultyId, iterations);
       console.log(`Generated and saved a schedule for ${facultyId}`);
 

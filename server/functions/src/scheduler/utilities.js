@@ -1,25 +1,81 @@
-function generateTimeSlots() {
-  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-  const timeSlots = [];
-  const regularStartTime = 7;
-  const regularEndTime = 21;
+const { getWeekNumber } = require("./preparer");
 
-  for (let day of daysOfWeek) {
-      let dayStartTime = regularStartTime;
+function getDateFromTimestamp(timestamp) {
+  const date = new Date(timestamp * 1000);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
 
-      if (day === "Wednesday") {
-          dayStartTime = 10;
-      }
 
-      for (let hour = dayStartTime; hour < regularEndTime; hour++) {
-          timeSlots.push({
-              day: day,
-              start: hour,
-              end: hour + 1
-          });
-      }
+function getDatesInRange(startDate, endDate){
+  const dateArray = [];
+  let currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+      dateArray.push(new Date(currentDate));
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
   }
-  return timeSlots;
+  return dateArray;
+};
+
+
+async function generateTimeSlots(lectures) {
+  //get dates tofilter out
+  const dates = lectures.map(lecture => getDateFromTimestamp(lecture.startTime._seconds));
+
+  const minDate = new Date(Math.min(...dates));
+  const maxDate = new Date(Math.max(...dates));
+
+  const allDates = getDatesInRange(minDate, maxDate);
+  console.log(minDate);
+  console.log(maxDate);
+
+  const result = allDates.map(date => {
+    const hasLecture = dates.some(lectureDate => lectureDate.getTime() === date.getTime());
+    const week = getWeekNumber(date);
+
+    let startTime = 7;
+    if (date.getDay() === 3){
+      startTime = 10;
+    }
+
+    let hours = new Array();
+    for(let index = startTime; index < 22; index++){
+      hours.push(index);
+    }
+
+    return {
+      date: date,
+      week: week,
+      hasLecture: hasLecture,
+      hours: hours
+    };
+  });
+  
+  return result;
+}
+
+
+function groupLectures(lectures) {
+  const dataType = new Map();
+
+  for (const lecture of lectures) {
+    let data = `C${lecture.courseId} E${lecture.executionTypeId} S${lecture.size} T${lecture.tutor_ids.join(",")} G${lecture.group_ids.join(",")}`;
+
+    let lectureInfo = dataType.get(data);
+    if (!lectureInfo) {
+      lectureInfo = [];
+      dataType.set(data, lectureInfo);
+    }
+
+    const lastLecture = lectureInfo[lectureInfo.length - 1];
+    const duration = lastLecture ? lastLecture.duration + lecture.duration : lecture.duration;
+
+    lectureInfo.push({ id: lecture.id, weekNo: lecture.week, duration: duration });
+  }
+
+  const json = Object.fromEntries(dataType);
+  return json;
 }
 
 
@@ -109,4 +165,5 @@ function hasConflicts(lecture, room, timeslot, lectureEnd, schedule) {
 module.exports = {
   generateTimeSlots,
   initializeSchedule,
+  groupLectures
 }
