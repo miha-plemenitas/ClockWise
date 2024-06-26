@@ -17,6 +17,7 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [uid, setUid] = useState<string | null>(null);
   const [role, setRole] = useState<string>("");
+  const [facultyId, setFacultyId] = useState<string | null>(null);
 
   const fetchUserRole = async () => {
     try {
@@ -38,6 +39,7 @@ const App = () => {
         }
       );
       setRole(response.data.result.role);
+      setFacultyId(response.data.result.facultyId);
     } catch (error: any) {
       console.error("Error fetching data:", error);
     }
@@ -85,6 +87,7 @@ const App = () => {
               path="/dashboard"
               element={
                 <Dashboard
+                  facultyId={facultyId}
                   isAuthenticated={isAuthenticated}
                   uid={uid}
                   role={role}

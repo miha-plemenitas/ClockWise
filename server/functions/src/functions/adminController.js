@@ -20,7 +20,9 @@ exports.getAll = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
-      const result = await getDaysOff();
+      const { facultyId } = request.query;
+
+      const result = await getDaysOff(facultyId);
       console.log(`Found and sent days.`);
       response.status(200).json({ result: result });
     } catch (error) {
@@ -42,7 +44,9 @@ exports.addDay = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
 
-      const dayId = await saveDayOff(request.body);
+      const { facultyId } = request.body;
+
+      const dayId = await saveDayOff(facultyId, request.body);
       return response.status(201).send({ id: dayId });
     } catch (error) {
       handleErrors(error, response);
@@ -62,10 +66,8 @@ exports.addDay = functions
     try {
       await checkAuthenticationandMethodForRequest(request, "DELETE");
 
-      const { dayId } = request.body;
-      validateRequestParams({ dayId });
-
-      const result = await deleteDayOff(dayId);
+      const { facultyId, dayId } = request.body;
+      const result = await deleteDayOff(facultyId, dayId);
       console.log(`Deleted day with id ${dayId}`);
       response.status(200).json({ result: result });
     } catch (error) {
