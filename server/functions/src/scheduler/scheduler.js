@@ -1,5 +1,9 @@
 const { db } = require('../utils/firebaseAdmin');
-const { generateTimeSlots, initializeSchedule, groupLectures } = require("./utilities");
+const {
+  generateTimeSlots,
+  initializeSchedule,
+  splitAndSortRooms
+} = require("./utilities");
 const { evaluateSchedule } = require("./evaluator");
 const { resetCollectionAndFetchSchedule, expandLectureData } = require("./preparer");
 const { updateLectureDates, saveGeneratedSchedule } = require("./converter");
@@ -26,25 +30,27 @@ async function getLecturesAndRooms(facultyId){
     fs.writeFileSync(roomsPath, JSON.stringify(rooms, null, 2));
   }
 
-  return { original_lectures, rooms };
+  splitAndSortRooms(rooms);
+
+  return original_lectures;
 }
 
 
 
 async function generateSchedule(facultyId) {
-  const { original_lectures, rooms } = await getLecturesAndRooms(facultyId);
+  const original_lectures = await getLecturesAndRooms(facultyId);
 
-  const timeSlots = await generateTimeSlots(original_lectures); //array timeSlotov, vsak ma day:"2024-06-14", pa array hours (od 7-21 oz srede 10-21)
-  const groupedLectures = groupLectures(original_lectures); //groupira lecturje glede na course, groups, tutors... s tem delam pol nextId
-  expandLectureData(groupedLectures, original_lectures);
-  console.log(timeSlots.length);
+  await generateTimeSlots(original_lectures); //array timeSlotov, vsak ma day:"2024-06-14", pa array hours (od 7-21 oz srede 10-21)
+  expandLectureData(original_lectures); //groupira lecturje glede na course, groups, tutors... s tem delam pol nextId
+
   console.log(original_lectures.length);
   console.log(original_lectures[0]);
 
-  const selectedLectures = original_lectures.filter(lecture => lecture.course === "MODELIRANJE IN VODENJE ELEKTROMEHANSKIH SISTEMOV"); //samo za testiranje
-  console.log(selectedLectures.length);
+  //const selectedLectures = original_lectures.filter(lecture => lecture.course === "MODELIRANJE IN VODENJE ELEKTROMEHANSKIH SISTEMOV"); //samo za testiranje
+  //console.log(selectedLectures.length);
 
-  const schedule = initializeSchedule(selectedLectures, timeSlots, rooms);
+  const schedule = initializeSchedule(original_lectures);
+  schedule.sort((a, b) => a.id - b.id);
 
   return schedule;
 }

@@ -58,13 +58,17 @@ function prepareLecture(data, rooms) {
   delete data.id;
 
   const nonSchedulableExecutionTypeIds = ["102", "116", "110", "93"];
-  if (!nonSchedulableExecutionTypeIds.includes(data.executionTypeId)) {
+  if (data.course == "PRAKTIČNO USPOSABLJANJE in DIPLOMSKO DELO"){
+    console.log("1")
+  }
+
+  if (nonSchedulableExecutionTypeIds.includes(data.executionTypeId) || data.size != null) {
+    data.schedulable = -1;
+  } else {
     delete data.endTime;
     delete data.room_ids;
     delete data.rooms;
     data.schedulable = 1;
-  } else {
-    data.schedulable = -1;
   }
 
   return data;
@@ -91,8 +95,7 @@ async function resetCollectionAndFetchSchedule(facultyId) {
 async function fetchWholeSchedule(facultyRef, rooms) {
   const lecturesRef = facultyRef.collection("original_lectures");
 
-  const lectureQuery = lecturesRef
-    .where("executionTypeId", "!=", "99");
+  const lectureQuery = lecturesRef;
 
   const snapshot = await lectureQuery.get();
 
@@ -120,8 +123,34 @@ async function fetchWholeSchedule(facultyRef, rooms) {
 }
 
 
+//grupira po tutors, course, execution type.... dobesedno samo za nextId
+function groupLectures(lectures) {
+  const dataType = new Map();
+
+  for (const lecture of lectures) {
+    let data = `C${lecture.courseId} E${lecture.executionTypeId} S${lecture.size} T${lecture.tutor_ids.join(",")} G${lecture.group_ids.join(",")}`;
+
+    let lectureInfo = dataType.get(data);
+    if (!lectureInfo) {
+      lectureInfo = [];
+      dataType.set(data, lectureInfo);
+    }
+
+    const lastLecture = lectureInfo[lectureInfo.length - 1];
+    const duration = lastLecture ? lastLecture.duration + lecture.duration : lecture.duration;
+
+    lectureInfo.push({ id: lecture.id, weekNo: lecture.week, duration: duration });
+  }
+
+  const json = Object.fromEntries(dataType);
+  return json;
+}
+
+
 //Ponavljajocim predavanjam oz tipom lecturjem dam next id, da se bo lahko schedulal zaporedno vsak tedn
-async function expandLectureData(groupedLectures, lectures){
+async function expandLectureData(lectures){
+  const groupedLectures = groupLectures(lectures);
+
   for(const key in groupedLectures){
     const groupedLecture = groupedLectures[key];
     const length = groupedLecture.length;
@@ -130,7 +159,17 @@ async function expandLectureData(groupedLectures, lectures){
       const groupL = groupedLecture[i];
       const id = groupL.id;
       const lecture = lectures[id];
-    
+      
+      // Assigning prevId
+      if (i - 1 >= 0) {
+        const prevGroupL = groupedLecture[i - 1];
+        const prevId = prevGroupL.id;
+        lecture.prevId = prevId;
+      } else {
+        lecture.prevId = -1;
+      }
+
+      // Assigning nextId
       if (i + 1 < length) {
         const nextGroupL = groupedLecture[i + 1];
         const nextId = nextGroupL.id;
@@ -141,6 +180,7 @@ async function expandLectureData(groupedLectures, lectures){
     }
   }
 }
+
 
 
 module.exports = {
