@@ -5,12 +5,12 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import CustomModal from "../../Components/Modal/CustomModal";
 import { Dayjs } from "dayjs";
-import { Buffer } from "buffer";
 import axios from "axios";
 import Admin from "./Admin";
 import Referat from "./Referat";
 import { Card } from "../../Components/ui/card"; // Import Shadcn Card component
 import { Button } from "../../Components/ui/button"; // Import Shadcn Button component
+import GenerateModal from "../../Components/Modal/GenerateModal"; // Import GenerateModal
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -59,8 +59,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
 
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
+      const credentials = window.btoa(`${username}:${password}`);
       const headers = {
         Authorization: `Basic ${credentials}`,
         "Content-Type": "application/json",
@@ -141,9 +140,12 @@ const Dashboard: React.FC<DashboardProps> = ({
         </Card>
       )}
       {isAuthenticated && role === "Referat" && (
-        <Card className="bg-modra w-full p-4">
-          <Referat facultyId={facultyId} />
-        </Card>
+        <div>
+          <Card className="bg-modra w-full p-4">
+            <Referat facultyId={facultyId} />
+          </Card>
+          <GenerateModal uid={uid!} />
+        </div>
       )}
       {!isAuthenticated && (
         <div className="flex flex-col items-center pt-40">
