@@ -1,5 +1,6 @@
 const { schedule } = require("firebase-functions/v1/pubsub");
 const { getWeekNumber } = require("./preparer");
+const { getAllFacultyCollectionItems } = require("../service/facultyCollections");
 
 let globalTimeSlots;
 let globalLArooms;
@@ -59,10 +60,12 @@ function getDatesInRange(startDate, endDate, freeDays) {
                 20,
                 21
             ]
-        }, ...
+        }, ...<
  * TODO get daysOff
- */ 
-async function generateTimeSlots(lectures) {
+ */
+async function generateTimeSlots(facultyId, lectures) {
+  const daysOff = await getAllFacultyCollectionItems(facultyId, "daysOff");
+
   const dates = lectures.map(lecture => getDateFromTimestamp(lecture.startTime._seconds));
 
   const minDate = new Date(Math.min(...dates));
@@ -92,9 +95,23 @@ async function generateTimeSlots(lectures) {
     };
   });
 
-  globalTimeSlots = result;
+  const filteredResult = result.filter(slot => {
+    const slotDate = new Date(slot.date);
+    return !daysOff.some(dayOff => {
+      const startDate = new Date(dayOff.startDate);
+      const endDate = dayOff.endDate ? new Date(dayOff.endDate) : null;
 
-  return result;
+      if (endDate) {
+        return slotDate >= startDate && slotDate <= endDate;
+      } else {
+        return slotDate.getTime() === startDate.getTime();
+      }
+    });
+  });
+
+  globalTimeSlots = filteredResult;
+
+  return filteredResult;
 }
 
 
@@ -225,7 +242,7 @@ function scheduleLecture(lecture, lectures, failSafe) {
 
   if (lecture.prevId != -1) {
     const previousLecture = lectures.find(element => element.id == lecture.prevId);
-    if (previousLecture.schedulable != 0){
+    if (previousLecture.schedulable != 0) {
       scheduleLecture(previousLecture, lectures, failSafe);
     }
   }
@@ -274,9 +291,10 @@ function initializeSchedule(lectures) {
   });
 
   for (const unschedulable of unschedulables) { //najprej zrihtam diplome/prakse....
-    let validTerm = setUnschedulables(unschedulable);
-    globalSchedule.push(validTerm);
+    setUnschedulables(unschedulable);
   }
+
+  console.log("Done with unshedulables");
 
   for (const lecture of filteredAndSortedLectures) {
     scheduleLecture(lecture, filteredAndSortedLectures, 0); //HELL, lp
@@ -294,9 +312,11 @@ function setUnschedulables(lecture) {
   const hour = start.getHours();
   const end = hour + lecture.duration;
 
+  let scheduled;
+
   for (const timeSlot of globalTimeSlots) {
     if (timeSlot.date === date) {
-      return {
+      scheduled =  {
         ...lecture,
         rooms: lecture.rooms,
         room_ids: lecture.room_ids,
@@ -305,6 +325,10 @@ function setUnschedulables(lecture) {
         end: end,
       };
     }
+  }
+
+  if(schedule){
+    globalSchedule.push(scheduled);
   }
 }
 
