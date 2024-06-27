@@ -144,6 +144,9 @@ const Dashboard: React.FC<DashboardProps> = ({
             mode={mode}
             event={selectedEvent}
             role={role}
+            selectedFacultyId=""
+            branchId=""
+            programId=""
           />
         </div>
       )}

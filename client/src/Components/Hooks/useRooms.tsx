@@ -4,6 +4,7 @@ import { firestore } from "../../Config/firebase";
 interface Room {
   id: string;
   roomName: string;
+  name: string;
 }
 
 const useRooms = (facultyId: string | null) => {
@@ -21,12 +22,19 @@ const useRooms = (facultyId: string | null) => {
             .doc(facultyId)
             .collection("rooms")
             .get();
+
           const allRooms = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           })) as Room[];
 
-          allRooms.sort((a, b) => a.roomName.localeCompare(b.roomName));
+
+          const roomsWithName = allRooms.map(room => ({
+            ...room,
+            name: room.roomName
+          }));
+
+          roomsWithName.sort((a, b) => a.roomName.localeCompare(b.roomName));
 
           setRooms(allRooms);
         } else {

@@ -10,13 +10,20 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/sl";
-
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { truncate } from "fs";
+import useRooms from "../Hooks/useRooms";
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { StringifyOptions } from "querystring";
+import useGroups from "../Hooks/useGroups";
+import useTutors from "../Hooks/useTutors";
+import { Chip } from "@mui/material";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -49,10 +56,6 @@ interface CustomModalProps {
     end: string;
     extendedProps: {
       date: Dayjs;
-      type: string;
-      groups: string;
-      teacher: string;
-      location: string;
       notes: string;
       editable: boolean;
       lecture: boolean;
@@ -61,17 +64,33 @@ interface CustomModalProps {
       duration?: string;
       courseId?: string;
       hasRooms?: boolean;
-      branchIds?: string[];
+      branch_ids?: string[];
       branches?: string[];
-      tutors_arr?: { name: string; id: string }[];
+      tutors: { name: string; id: string }[];
       tutor_ids?: string[];
-      rooms_arr?: { name: string; id: string }[];
+      rooms: { name: string; id: string }[];
       room_ids?: string[];
-      groups_arr?: { name: string; id: string }[];
+      groups: { name: string; id: string }[];
       group_ids?: string[];
     };
   };
   role: string;
+  selectedFacultyId: string;
+  branchId: string | null;
+  programId: string | null;
+  allGroups?: Group[];
+}
+
+interface Room {
+  id: string;
+  name: string;
+}
+
+interface Group {
+  id: string;
+  branchId: number;
+  programId: number;
+  name: string;
 }
 
 export default function CustomModal({
@@ -84,6 +103,10 @@ export default function CustomModal({
   onDelete,
   event,
   role,
+  selectedFacultyId,
+  branchId,
+  programId,
+  allGroups
 }: CustomModalProps) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState<Dayjs | null>(null);
@@ -91,13 +114,73 @@ export default function CustomModal({
   const [endTime, setEndTime] = useState<Dayjs | null>(null);
   const [notes, setNotes] = useState("");
   const [type, setType] = useState("");
-  const [room, setRoom] = useState("");
-  const [tutor, setTutor] = useState("");
-  const [group, setGroup] = useState("");
+  const [room, setRoom] = useState<Room[]>([]);
+  const [tutor, setTutor] = useState<{ name: string; id: string }[]>([]);
+  const [group, setGroup] = useState<{ name: string; id: string }[]>([]);
   const [repeatCount, setRepeatCount] = useState(0);
+  const [groups, setGroups] = useState<Group[]>([]); // all groups
 
-  const formatDate = (dateString: string) =>
-    format(new Date(dateString), "EEEE, d. M. yyyy", { locale: sl });
+  useEffect(() => {
+    if (event && event.extendedProps && event.extendedProps.tutors) {
+      const initialTutors = event.extendedProps.tutors.map(tutor => ({
+        id: tutor.id,
+        name: tutor.name
+      }));
+      setTutor(initialTutors);
+    }
+
+    if (event && event.extendedProps && event.extendedProps.groups) {
+      const initialGroups = event.extendedProps.groups.map(group => ({
+        id: group.id,
+        name: group.name
+      }));
+      setGroup(initialGroups);
+    }
+
+    if (event && event.extendedProps && event.extendedProps.rooms) {
+      const initialRooms = event.extendedProps.rooms.map(room => ({
+        id: room.id,
+        name: room.name
+      }));
+      setRoom(initialRooms);
+    }
+
+    if (allGroups) {
+      setGroups(allGroups);
+    }
+  }, [event]);
+
+  const { rooms } = useRooms(selectedFacultyId);
+  const { tutors } = useTutors(selectedFacultyId);
+
+  const handleRoomChange = (event: any) => {
+    const selectedValues = event.target.value;
+    const newSelectedRoom = rooms
+      .filter(room => selectedValues.includes(room.id.toString()))
+      .map(room => ({ id: room.id, name: room.roomName }));
+
+    setRoom(newSelectedRoom);
+  };
+
+  const handleGroupChange = (event: any) => {
+    const selectedValues = event.target.value;
+    const newSelectedGroups = groups
+      .filter(group => selectedValues.includes(group.id.toString()))
+      .map(group => ({ id: group.id, name: group.name }));
+
+    setGroup(newSelectedGroups);
+  };
+
+  const handleTutorChange = (event: any) => {
+    const selectedValues = event.target.value;
+    const newSelectedTutors = tutors
+      .filter(tutor => selectedValues.includes(tutor.id.toString()))
+      .map(tutor => ({ id: tutor.id, name: tutor.name }));
+
+    setTutor(newSelectedTutors);
+  };
+
+  const formatDate = (dateString: string) => format(new Date(dateString), "EEEE, d. M. yyyy", { locale: sl });
   const formatTime = (startString: string, endString: string) => {
     const startTime = format(new Date(startString), "HH:mm");
     const endTime = format(new Date(endString), "HH:mm");
@@ -109,15 +192,15 @@ export default function CustomModal({
 
     const updatedStartTime = startTime
       ? startTime
-          .set("year", date.year())
-          .set("month", date.month())
-          .set("date", date.date())
+        .set("year", date.year())
+        .set("month", date.month())
+        .set("date", date.date())
       : null;
     const updatedEndTime = endTime
       ? endTime
-          .set("year", date.year())
-          .set("month", date.month())
-          .set("date", date.date())
+        .set("year", date.year())
+        .set("month", date.month())
+        .set("date", date.date())
       : null;
     let eventDetails = {};
 
@@ -131,9 +214,7 @@ export default function CustomModal({
 
         eventDetailsList.push({
           course: title || "",
-          startTime: eventStart
-            ? eventStart.format("YYYY-MM-DDTHH:mm:ss")
-            : null,
+          startTime: eventStart ? eventStart.format("YYYY-MM-DDTHH:mm:ss") : null,
           endTime: eventEnd ? eventEnd.format("YYYY-MM-DDTHH:mm:ss") : null,
           executionType: type || "",
           executionTypeId: "",
@@ -142,12 +223,12 @@ export default function CustomModal({
           hasRooms: true,
           branch_ids: [], // doloci v timetable
           branches: [],
-          tutors: [{ name: tutor, id: "" }],
-          tutor_ids: [],
-          rooms: [{ name: room, id: "" }],
-          room_ids: [],
-          groups: [{ name: group, id: "" }],
-          group_ids: [],
+          tutors: tutor,
+          tutor_ids: tutor.map((tutor: { id: any; }) => tutor.id),
+          rooms: room,
+          room_ids: room.map((room: { id: any; }) => room.id),
+          groups: group,
+          group_ids: group.map((group: { id: any; }) => group.id),
           lecture: true,
         });
       }
@@ -155,6 +236,7 @@ export default function CustomModal({
       if (onSave) {
         eventDetailsList.forEach((eventDetails) => onSave(eventDetails));
       }
+
     } else {
       eventDetails = {
         startTime: updatedStartTime
@@ -179,10 +261,10 @@ export default function CustomModal({
     setStartTime(null);
     setEndTime(null);
     setNotes("");
-    setTutor("");
-    setGroup("");
+    setTutor([]);
+    setGroup([]);
     setType("");
-    setRoom("");
+    setRoom([]);
     setRepeatCount(0);
   };
 
@@ -193,49 +275,44 @@ export default function CustomModal({
 
     const updatedStartTime = startTime
       ? startTime
-          .set("year", newdate.year())
-          .set("month", newdate.month())
-          .set("date", newdate.date())
+        .set("year", newdate.year())
+        .set("month", newdate.month())
+        .set("date", newdate.date())
       : newStart
-          .set("year", newdate.year())
-          .set("month", newdate.month())
-          .set("date", newdate.date());
+        .set("year", newdate.year())
+        .set("month", newdate.month())
+        .set("date", newdate.date());
     const updatedEndTime = endTime
       ? endTime
-          .set("year", newdate.year())
-          .set("month", newdate.month())
-          .set("date", newdate.date())
+        .set("year", newdate.year())
+        .set("month", newdate.month())
+        .set("date", newdate.date())
       : newEnd
-          .set("year", newdate.year())
-          .set("month", newdate.month())
-          .set("date", newdate.date());
+        .set("year", newdate.year())
+        .set("month", newdate.month())
+        .set("date", newdate.date());
     let eventDetails = {};
 
     if (event.extendedProps.lecture) {
       eventDetails = {
         id: event.id,
         course: title || event.title,
-        startTime: updatedStartTime
-          ? updatedStartTime.format("YYYY-MM-DDTHH:mm:ss")
-          : null,
-        endTime: updatedEndTime
-          ? updatedEndTime.format("YYYY-MM-DDTHH:mm:ss")
-          : null,
-        executionType: type || event.extendedProps.type,
-        executionTypeId: event.extendedProps.executionType,
+        startTime: updatedStartTime ? updatedStartTime.format("YYYY-MM-DDTHH:mm:ss") : null,
+        endTime: updatedEndTime ? updatedEndTime.format("YYYY-MM-DDTHH:mm:ss") : null,
+        executionType: type || event.extendedProps.executionType,
+        executionTypeId: event.extendedProps.executionTypeId,
         duration: event.extendedProps.duration,
         courseId: event.extendedProps.courseId,
         hasRooms: event.extendedProps.hasRooms,
+        tutors: tutor && tutor.length > 0 ? tutor : event.extendedProps.tutors,
+        tutor_ids: tutor && tutor.length > 0 ? tutor.map((tutor: { id: any; }) => tutor.id) : event.extendedProps.tutor_ids,
+        rooms: room && room.length > 0 ? room : event.extendedProps.rooms,
+        room_ids: room && room.length > 0 ? room.map((room: { id: any; }) => room.id) : event.extendedProps.room_ids,
+        groups: group && group.length > 0 ? group : event.extendedProps.groups,
+        group_ids: group && group.length > 0 ? group.map((group: { id: any; }) => group.id) : event.extendedProps.group_ids,
 
-        // "tutors": tutor ? [{ name: tutor, id: '' }] : event.extendedProps.tutors_arr,
-        // "tutor_ids": tutor ? [] : event.extendedProps.tutor_ids,
-        // "rooms": room ? [{ name: room, id: '' }] : event.extendedProps.rooms_arr,
-        // "room_ids": room ? [] : event.extendedProps.room_ids,
-        // "groups": group ? [{ name: group, id: '' }] : event.extendedProps.groups_arr,
-        // "group_ids": group ? [] : event.extendedProps.group_ids,
-        // "branch_ids": event.extendedProps.branchIds,
-        // "branches": event.extendedProps.branches,
-
+        branch_ids: event.extendedProps.branch_ids,
+        branches: event.extendedProps.branches,
         lecture: true,
       };
     } else {
@@ -254,18 +331,20 @@ export default function CustomModal({
       };
     }
 
+    
     if (onUpdate) {
       onUpdate(eventDetails);
     }
+    
     setTitle("");
     setDate(null);
     setStartTime(null);
     setEndTime(null);
     setNotes("");
-    setTutor("");
-    setGroup("");
+    setTutor([]);
+    setGroup([]);
     setType("");
-    setRoom("");
+    setRoom([]);
   };
 
   const handleDeleteEvent = () => {
@@ -323,7 +402,7 @@ export default function CustomModal({
               fullWidth
               margin="normal"
               label="Teacher"
-              defaultValue={event.extendedProps.teacher}
+              defaultValue={event.extendedProps.tutors.map((tutor: any) => tutor.name).join(", ")}
               InputProps={{
                 readOnly: true,
               }}
@@ -338,7 +417,7 @@ export default function CustomModal({
               fullWidth
               margin="normal"
               label="Groups"
-              defaultValue={event.extendedProps.groups}
+              defaultValue={event.extendedProps.groups.map((group: any) => group.name).join(", ")}
               InputProps={{
                 readOnly: true,
               }}
@@ -354,7 +433,7 @@ export default function CustomModal({
                 fullWidth
                 margin="normal"
                 label="Type"
-                defaultValue={event.extendedProps.type}
+                defaultValue={event.extendedProps.executionType}
                 InputProps={{
                   readOnly: true,
                 }}
@@ -369,7 +448,7 @@ export default function CustomModal({
                 fullWidth
                 margin="normal"
                 label="Location"
-                defaultValue={event.extendedProps.location}
+                defaultValue={event.extendedProps.rooms.map((room: any) => room.name).join(", ")}
                 InputProps={{
                   readOnly: true,
                 }}
@@ -384,195 +463,249 @@ export default function CustomModal({
           </>
         )}
 
-        {mode === "edit" &&
-          event.extendedProps.lecture &&
-          role === "Tutor" &&
-          event && (
-            <>
-              <Typography id="custom-modal-title" variant="h4" component="h2">
-                Edit Lecture
-              </Typography>
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Title"
-                defaultValue={event.title}
-                InputProps={{
-                  readOnly: true,
-                }}
-                disabled
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              />
-              <Box sx={{ marginTop: 1 }}>
-                <LocalizationProvider
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="sl"
-                >
-                  <DatePicker
-                    label="Date"
-                    value={dayjs(event.start)}
-                    onChange={(newValue) => setDate(newValue)}
-                    sx={{ width: "100%" }}
-                  />
-                </LocalizationProvider>
-              </Box>
-              <Box sx={{ display: "flex", gap: 2, marginTop: 2 }}>
-                <LocalizationProvider
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="sl"
-                >
-                  <TimePicker
-                    label="Start time"
-                    value={dayjs(event.start)}
-                    onChange={(newValue) => setStartTime(newValue)}
-                  />
-                </LocalizationProvider>
-                <LocalizationProvider
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="sl"
-                >
-                  <TimePicker
-                    label="End time"
-                    value={dayjs(event.end)}
-                    onChange={(newValue) => setEndTime(newValue)}
-                  />
-                </LocalizationProvider>
-              </Box>
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Teacher"
-                defaultValue={event.extendedProps.teacher}
-                InputProps={{
-                  readOnly: true,
-                }}
-                disabled
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              />
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Groups"
-                defaultValue={event.extendedProps.groups}
-                InputProps={{
-                  readOnly: true,
-                }}
-                disabled
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                }}
-              />
-              <Box sx={{ display: "flex", gap: 2 }}>
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label="Type"
-                  defaultValue={event.extendedProps.type}
-                  onChange={(e) => setType(e.target.value)}
+        {mode === "edit" && event.extendedProps.lecture && role === "Tutor" && event && (
+          <>
+            <Typography id="custom-modal-title" variant="h4" component="h2">
+              Edit Lecture
+            </Typography>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Title"
+              defaultValue={event.title}
+              InputProps={{
+                readOnly: true,
+              }}
+              disabled
+              sx={{
+                "& .MuiInputBase-input.Mui-disabled": {
+                  WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                },
+              }}
+            />
+            <Box sx={{ marginTop: 1 }}>
+              <LocalizationProvider
+                dateAdapter={AdapterDayjs}
+                adapterLocale="sl"
+              >
+                <DatePicker
+                  label="Date"
+                  value={dayjs(event.start)}
+                  onChange={(newValue) => setDate(newValue)}
+                  sx={{ width: "100%" }}
                 />
-                <TextField
-                  fullWidth
-                  margin="normal"
+              </LocalizationProvider>
+            </Box>
+            <Box sx={{ display: "flex", gap: 2, marginTop: 2 }}>
+              <LocalizationProvider
+                dateAdapter={AdapterDayjs}
+                adapterLocale="sl"
+              >
+                <TimePicker
+                  label="Start time"
+                  value={dayjs(event.start)}
+                  onChange={(newValue) => setStartTime(newValue)}
+                />
+              </LocalizationProvider>
+              <LocalizationProvider
+                dateAdapter={AdapterDayjs}
+                adapterLocale="sl"
+              >
+                <TimePicker
+                  label="End time"
+                  value={dayjs(event.end)}
+                  onChange={(newValue) => setEndTime(newValue)}
+                />
+              </LocalizationProvider>
+            </Box>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Teacher"
+              defaultValue={event.extendedProps.tutors.map((tutor: any) => tutor.name).join(", ")}
+              InputProps={{
+                readOnly: true,
+              }}
+              disabled
+              sx={{
+                "& .MuiInputBase-input.Mui-disabled": {
+                  WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                },
+              }}
+            />
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Groups"
+              defaultValue={event.extendedProps.groups.map((group: any) => group.name).join(", ")}
+              InputProps={{
+                readOnly: true,
+              }}
+              disabled
+              sx={{
+                "& .MuiInputBase-input.Mui-disabled": {
+                  WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                },
+              }}
+            />
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Type"
+                defaultValue={event.extendedProps.executionType}
+                onChange={(e) => setType(e.target.value)}
+              />
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="room-select-label">Location</InputLabel>
+                <Select
+                  labelId="room-select-label"
+                  id="room-select"
+                  defaultValue={event.extendedProps.rooms.map((room: any) => room.id).join(", ")}
                   label="Location"
-                  defaultValue={event.extendedProps.location}
-                  onChange={(e) => setRoom(e.target.value)}
-                />
-              </Box>
-            </>
-          )}
+                  onChange={(e) => handleRoomChange(e.target.value)}
+                >
+                  {rooms.map((room) => (
+                    <MenuItem key={room.id} value={room.id}>
+                      {room.roomName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </>
+        )}
 
-        {mode === "edit" &&
-          event.extendedProps.lecture &&
-          role === "Referat" &&
-          event && (
-            <>
-              <Typography id="custom-modal-title" variant="h4" component="h2">
-                Edit Lecture
-              </Typography>
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Title"
-                defaultValue={event.title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-              <Box sx={{ marginTop: 1 }}>
-                <LocalizationProvider
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="sl"
-                >
-                  <DatePicker
-                    label="Date"
-                    value={dayjs(event.start)}
-                    onChange={(newValue) => setDate(newValue)}
-                    sx={{ width: "100%" }}
-                  />
-                </LocalizationProvider>
-              </Box>
-              <Box sx={{ display: "flex", gap: 2, marginTop: 2 }}>
-                <LocalizationProvider
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="sl"
-                >
-                  <TimePicker
-                    label="Start time"
-                    value={dayjs(event.start)}
-                    onChange={(newValue) => setStartTime(newValue)}
-                  />
-                </LocalizationProvider>
-                <LocalizationProvider
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="sl"
-                >
-                  <TimePicker
-                    label="End time"
-                    value={dayjs(event.end)}
-                    onChange={(newValue) => setEndTime(newValue)}
-                  />
-                </LocalizationProvider>
-              </Box>
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Teacher"
-                defaultValue={event.extendedProps.teacher}
-                onChange={(e) => setTutor(e.target.value)}
-              />
-              <TextField
-                fullWidth
-                margin="normal"
+        {mode === "edit" && event.extendedProps.lecture && role === "Referat" && event && (
+          <>
+            <Typography id="custom-modal-title" variant="h4" component="h2">
+              Edit Lecture
+            </Typography>
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Title"
+              defaultValue={event.title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <Box sx={{ marginTop: 1 }}>
+              <LocalizationProvider
+                dateAdapter={AdapterDayjs}
+                adapterLocale="sl"
+              >
+                <DatePicker
+                  label="Date"
+                  value={dayjs(event.start)}
+                  onChange={(newValue) => setDate(newValue)}
+                  sx={{ width: "100%" }}
+                />
+              </LocalizationProvider>
+            </Box>
+            <Box sx={{ display: "flex", gap: 2, marginTop: 2 }}>
+              <LocalizationProvider
+                dateAdapter={AdapterDayjs}
+                adapterLocale="sl"
+              >
+                <TimePicker
+                  label="Start time"
+                  value={dayjs(event.start)}
+                  onChange={(newValue) => setStartTime(newValue)}
+                />
+              </LocalizationProvider>
+              <LocalizationProvider
+                dateAdapter={AdapterDayjs}
+                adapterLocale="sl"
+              >
+                <TimePicker
+                  label="End time"
+                  value={dayjs(event.end)}
+                  onChange={(newValue) => setEndTime(newValue)}
+                />
+              </LocalizationProvider>
+            </Box>
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="tutor-select-label">Tutors</InputLabel>
+              <Select
+                labelId="tutor-select-label"
+                id="tutor-select"
+                multiple // Allow multiple selections
+                value={tutor.map(tutor => tutor.id.toString())} // Array of selected IDs
+                label="Tutors"
+                onChange={handleTutorChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={tutors.find(tutor => tutor.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
+              >
+                {tutors.map((tutor) => (
+                  <MenuItem key={tutor.id} value={tutor.id}>
+                    {tutor.firstName} {tutor.lastName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="group-select-label">Groups</InputLabel>
+              <Select
+                labelId="group-select-label"
+                id="group-select"
+                multiple
+                value={group.map(group => group.id.toString())}
                 label="Groups"
-                defaultValue={event.extendedProps.groups}
-                onChange={(e) => setGroup(e.target.value)}
+                onChange={handleGroupChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={groups.find(group => group.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
+              >
+                {groups.map((group) => (
+                  <MenuItem key={group.id} value={group.id}>
+                    {group.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Type"
+                defaultValue={event.extendedProps.executionType}
+                onChange={(e) => setType(e.target.value)}
               />
-              <Box sx={{ display: "flex", gap: 2 }}>
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label="Type"
-                  defaultValue={event.extendedProps.type}
-                  onChange={(e) => setType(e.target.value)}
-                />
-                <TextField
-                  fullWidth
-                  margin="normal"
-                  label="Location"
-                  defaultValue={event.extendedProps.location}
-                  onChange={(e) => setRoom(e.target.value)}
-                />
-              </Box>
-            </>
-          )}
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="room-select-label">Rooms</InputLabel>
+                <Select
+                  labelId="room-select-label"
+                  id="room-select"
+                  multiple // Allow multiple selections
+                  value={room.map(room => room.id.toString())} // Array of selected IDs
+                  label="Rooms"
+                  onChange={handleRoomChange}
+                  renderValue={(selected) => (
+                    <div>
+                      {selected.map((value) => (
+                        <Chip key={value} label={room.find(room => room.id.toString() === value)?.name} />
+                      ))}
+                    </div>
+                  )}
+                >
+                  {rooms.map((room) => (
+                    <MenuItem key={room.id} value={room.id}>
+                      {room.roomName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </>
+        )}
 
         {mode === "edit" && !event.extendedProps.lecture && event && (
           <>
@@ -695,7 +828,7 @@ export default function CustomModal({
           </>
         )}
 
-        {mode === "add" && role === "Referat" && (
+        {mode === "add" && role === "Referat" && ( // TUTORS AND GROUPS
           <>
             <Typography id="custom-modal-title" variant="h4" component="h2">
               Add New Lecture
@@ -742,20 +875,54 @@ export default function CustomModal({
                 />
               </LocalizationProvider>
             </Box>
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Teacher"
-              value={tutor}
-              onChange={(e) => setTutor(e.target.value)}
-            />
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Groups"
-              value={group}
-              onChange={(e) => setGroup(e.target.value)}
-            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="tutor-select-label">Tutors</InputLabel>
+              <Select
+                labelId="tutor-select-label"
+                id="tutor-select"
+                multiple
+                value={tutor.map(tutor => tutor.id.toString())}
+                label="Tutors"
+                onChange={handleTutorChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={tutors.find(tutor => tutor.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
+              >
+                {tutors.map((tutor) => (
+                  <MenuItem key={tutor.id} value={tutor.id}>
+                    {tutor.firstName} {tutor.lastName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="group-select-label">Groups</InputLabel>
+              <Select
+                labelId="group-select-label"
+                id="group-select"
+                multiple
+                value={group.map(group => group.id.toString())}
+                label="Groups"
+                onChange={handleGroupChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={groups.find(group => group.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
+              >
+                {groups.map((group) => (
+                  <MenuItem key={group.id} value={group.id}>
+                    {group.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <Box sx={{ display: "flex", gap: 2 }}>
               <TextField
                 fullWidth
@@ -764,13 +931,30 @@ export default function CustomModal({
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               />
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Location"
-                value={room}
-                onChange={(e) => setRoom(e.target.value)}
-              />
+              <FormControl fullWidth margin="normal">
+              <InputLabel id="room-select-label">Rooms</InputLabel>
+              <Select
+                labelId="room-select-label"
+                id="room-select"
+                multiple
+                value={room.map(room => room.id.toString())}
+                label="Rooms"
+                onChange={handleTutorChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={rooms.find(room => room.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
+              >
+                {rooms.map((room) => (
+                  <MenuItem key={room.id} value={room.id}>
+                    {room.roomName} 
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
               <TextField
                 fullWidth
                 margin="normal"

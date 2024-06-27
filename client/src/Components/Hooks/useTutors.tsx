@@ -6,6 +6,7 @@ interface Tutor {
   firstName: string;
   lastName: string;
   tutorId: string;
+  name: string;
 }
 
 const useTutors = (facultyId: string) => {
@@ -23,18 +24,24 @@ const useTutors = (facultyId: string) => {
           .doc(facultyId)
           .collection("tutors")
           .get();
+
         const tutorsData = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Tutor[];
 
-        tutorsData.sort((a, b) => {
+        const tutorsWithName = tutorsData.map(tutor => ({
+          ...tutor,
+          name: `${tutor.firstName} ${tutor.lastName}`.toUpperCase()
+        }));
+
+        tutorsWithName.sort((a, b) => {
           const nameA = `${a.firstName} ${a.lastName}`.toUpperCase();
           const nameB = `${b.firstName} ${b.lastName}`.toUpperCase();
           return nameA.localeCompare(nameB);
         });
 
-        setTutors(tutorsData);
+        setTutors(tutorsWithName);
       } catch (error) {
         setError("Failed to load tutors");
       } finally {

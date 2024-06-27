@@ -2,25 +2,12 @@ import axios from "axios";
 import { Buffer } from "buffer";
 import { toast } from "src/Components/ui/use-toast";
 import { ToastClose } from "src/Components/ui/toast";
-
-interface Event {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-  extendedProps: {
-    type: string;
-    groups: string;
-    teacher: string;
-    location: string;
-    editable: boolean;
-  };
-}
+import { Dayjs } from "dayjs";
 
 interface SaveButtonProps {
   isAuthenticated: boolean;
   uid: string | null;
-  events: Event[];
+  events: any[];
 }
 
 const SaveButton: React.FC<SaveButtonProps> = ({
@@ -38,7 +25,6 @@ const SaveButton: React.FC<SaveButtonProps> = ({
           className="inline-flex h-8 items-center justify-center rounded-md border border-white bg-white px-3 text-sm font-medium text-modra transition-colors hover:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-ring disabled:pointer-events-none disabled:opacity-50"
           onClick={async () => {
             try {
-              // Format events
               const formattedEvents = events.map((event) => ({
                 id: event.id,
                 start: event.start,
@@ -47,9 +33,9 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                 extendedProps: {
                   editable: event.extendedProps.editable,
                   groups: event.extendedProps.groups,
-                  location: event.extendedProps.location,
-                  teacher: event.extendedProps.teacher,
-                  type: event.extendedProps.type,
+                  rooms: event.extendedProps.rooms,
+                  tutors: event.extendedProps.tutors,
+                  type: event.extendedProps.executionType,
                 },
               }));
 
