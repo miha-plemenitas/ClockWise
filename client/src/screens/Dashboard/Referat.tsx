@@ -48,7 +48,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
             headerName: '',
             width: 100,
             renderCell: (params) => (
-                <Button onClick={() => handleRemoveDayOff(params.row.id)} >
+                <Button className="bg-oranzna text-white mr-2 hover:bg-modra-700 items-center space-x-2" onClick={() => handleRemoveDayOff(params.row.id)} >
                     Remove
                 </Button>
             ),
@@ -211,18 +211,30 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <div className="flex gap-2 items-center">
                                 <DatePicker
+                                    className="no-border-date-picker"
+                                    sx={{
+                                      "& .MuiOutlinedInput-notchedOutline": {
+                                        border: "none !important",
+                                      },
+                                    }}
                                     label="Start date"
                                     value={startDate}
                                     onChange={(newValue) => setStartDate(newValue)}
 
                                 />
                                 <DatePicker
+                                    className="no-border-date-picker"
+                                    sx={{
+                                      "& .MuiOutlinedInput-notchedOutline": {
+                                        border: "none !important",
+                                      },
+                                    }}
                                     label="End date (optional)"
                                     value={endDate}
                                     onChange={(newValue) => setEndDate(newValue)}
 
                                 />
-                                <Button className="bg-blue-500 text-white hover:bg-blue-700" onClick={handleAddDayOff}>
+                                <Button className="bg-modra text-white mr-2 hover:bg-modra-700 items-center space-x-2" onClick={handleAddDayOff}>
                                     Add
                                 </Button>
                             </div>

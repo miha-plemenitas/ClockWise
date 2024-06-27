@@ -33,9 +33,15 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                 extendedProps: {
                   editable: event.extendedProps.editable,
                   groups: event.extendedProps.groups,
+                  group_ids: event.extendedProps.group_ids,
+                  room_ids: event.extendedProps.room_ids,
                   rooms: event.extendedProps.rooms,
                   tutors: event.extendedProps.tutors,
-                  type: event.extendedProps.executionType,
+                  tutor_ids: event.extendedProps.tutor_ids,
+                  executionType: event.extendedProps.executionType,
+                  executionTypeId: event.extendedProps.executionTypeId,
+                  branch_ids: event.extendedProps.branch_ids,
+                  branches: event.extendedProps.branches,
                 },
               }));
 
