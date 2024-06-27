@@ -17,15 +17,12 @@ import DropdownMenuCourses from "../../Components/Dropdowns/DropdownMenuCourses"
 import DropdownMenuGroups from "../../Components/Dropdowns/DropdownMenuGroups";
 import DropdownMenuRooms from "../../Components/Dropdowns/DropdownMenuRooms";
 import DropdownMenuTutors from "../../Components/Dropdowns/DropdownMenuTutors";
-
 import useFaculties from "../../Components/Hooks/useFaculties";
 import usePrograms from "../../Components/Hooks/usePrograms";
 import useBranches from "../../Components/Hooks/useBranches";
-import useTutors from "../../Components/Hooks/useTutors";
-import useRooms from "../../Components/Hooks/useRooms";
 import axios from "axios";
 import SaveButton from "../../Components/SaveButton/SaveButton";
-import { Switch } from "../../Components/ui/switch"; // Import Switch component
+import { Switch } from "../../Components/ui/switch";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -40,6 +37,8 @@ interface TimetableProps {
   isAuthenticated: boolean;
   uid: string | null;
   role: string;
+  facultyId: string | null;
+  name: string | null;
 }
 
 interface Event {
@@ -49,12 +48,19 @@ interface Event {
   end: string;
   extendedProps: {
     date: Dayjs;
-    type: string;
-    groups: string;
-    teacher: string;
-    location: string;
+    executionType: string;
+    executionTypeId: string;
+    groups: { name: string; id: string }[];
+    tutors: { name: string; id: string }[];
+    rooms: { name: string; id: string }[];
+    branches: { name: string; id: string }[];
+    group_ids: number[];
+    tutor_ids: number[];
+    branch_ids: number[];
+    room_ids: number[];
     editable: boolean;
     lecture: boolean;
+    hasRooms: boolean;
   };
 }
 
@@ -64,6 +70,7 @@ interface CustomEvent {
   start: string;
   end: string;
   extendedProps: {
+    tutors?: { name: string; id: string }[];
     notes: string;
     editable: boolean;
     lecture: boolean;
@@ -81,6 +88,8 @@ const Timetable: React.FC<TimetableProps> = ({
   isAuthenticated,
   uid,
   role,
+  facultyId,
+  name
 }) => {
   const navigate = useNavigate(); // Use useNavigate for navigation
   const [isTutorMode, setIsTutorMode] = useState(false); // State to track switch
@@ -176,26 +185,6 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   };
 
-  // // Use custom hooks to fetch tutor, room, and group data
-  // const { tutors } = useTutors(selectedFacultyId);
-  // const { rooms } = useRooms(selectedFacultyId);
-
-  // // Lookup maps for event info
-  // const tutorMap: Record<string, string> = tutors.reduce((acc, tutor) => {
-  //   acc[tutor.tutorId] = `${tutor.firstName} ${tutor.lastName}`;
-  //   return acc;
-  // }, {} as Record<string, string>);
-
-  // const roomMap: Record<string, string> = rooms.reduce((acc, room) => {
-  //   acc[room.id] = room.roomName;
-  //   return acc;
-  // }, {} as Record<string, string>);
-
-  // const groupMap: Record<string, string> = allGroups.reduce((acc, group) => {
-  //   acc[group.id] = group.name;
-  //   return acc;
-  // }, {} as Record<string, string>);
-
   const fetchData = async () => {
     try {
       const username = process.env.REACT_APP_USERNAME;
@@ -238,24 +227,19 @@ const Timetable: React.FC<TimetableProps> = ({
             extendedProps: {
               courseId: lecture.courseId,
               duration: lecture.duration,
-              type: lecture.executionType,
-              executionType: lecture.executionTypeId,
-              groups: lecture.groups.map((group: any) => group.name).join(", "),
-              teacher: lecture.tutors
-                .map((tutor: any) => tutor.name)
-                .join(", "),
-              location: lecture.rooms.map((room: any) => room.name).join(", "),
+              executionType: lecture.executionType,
+              executionTypeId: lecture.executionTypeId,
               editable: false,
               lecture: true,
               hasRooms: lecture.hasRooms,
-              group_ids: [lecture.group_ids],
-              room_ids: [lecture.room_ids],
-              tutor_ids: [lecture.tutor_ids],
-              groups_arr: [lecture.groups],
-              rooms_arr: [lecture.rooms],
-              tutors_arr: [lecture.tutors],
-              branchIds: [lecture.branch_ids],
-              branches: [lecture.branches],
+              group_ids: lecture.group_ids,
+              room_ids: lecture.room_ids,
+              tutor_ids: lecture.tutor_ids,
+              groups: lecture.groups,
+              rooms: lecture.rooms,
+              tutors: lecture.tutors,
+              branch_ids: lecture.branch_ids,
+              branches: lecture.branches,
             },
           };
         }
@@ -292,7 +276,7 @@ const Timetable: React.FC<TimetableProps> = ({
     if (selectedGroupNames.length > 0) {
       filtered = filtered.filter((event) =>
         selectedGroupNames.some((name) =>
-          event.extendedProps.groups.includes(name)
+          event.extendedProps.groups.some((group) => group.name === name)
         )
       );
     }
@@ -300,7 +284,7 @@ const Timetable: React.FC<TimetableProps> = ({
     if (selectedTutors.length > 0) {
       filtered = filtered.filter((event) =>
         selectedTutors.some((tutor) =>
-          event.extendedProps.teacher.includes(tutor.name)
+          event.extendedProps.tutors.some((eventTutor) => eventTutor.name === tutor.name)
         )
       );
     }
@@ -308,7 +292,7 @@ const Timetable: React.FC<TimetableProps> = ({
     if (selectedRoomNames.length > 0) {
       filtered = filtered.filter((event) =>
         selectedRoomNames.some((name) =>
-          event.extendedProps.location.includes(name)
+          event.extendedProps.rooms.some((room) => room.name === name)
         )
       );
     }
@@ -367,6 +351,10 @@ const Timetable: React.FC<TimetableProps> = ({
     localStorage.removeItem("selectedTutors");
   }, []);
 
+  const isTutorInArray = (tutorName: any, tutorsArray: any): boolean => {
+    return tutorsArray.some((tutor: { name: string; }) => tutor.name.toLowerCase().includes(tutorName.toLowerCase()));
+  };
+
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event =
       events.find((event: Event) => event.id === clickInfo.event.id) ||
@@ -374,12 +362,14 @@ const Timetable: React.FC<TimetableProps> = ({
         (event: CustomEvent) => event.id === clickInfo.event.id
       );
 
+    console.log(event);
+
     if (event && event.extendedProps.lecture) {
-      if (role === "Student" || !role) {
+      if (role === "Student" || !role || (role === 'Tutor' && !isTutorInArray(name, event.extendedProps.tutors)) || (role === 'Referat' && facultyId !== selectedFacultyId)) {
         setSelectedEvent(event);
         setMode("view");
         setOpen(true);
-      } else {
+      } else if (role === 'Referat' && facultyId === selectedFacultyId || role === 'Tutor' && isTutorInArray(name, event.extendedProps.tutors)) {
         setSelectedEvent(event);
         setMode("edit");
         setOpen(true);
@@ -403,12 +393,7 @@ const Timetable: React.FC<TimetableProps> = ({
     if (isAuthenticated && role !== "Referat") {
       setMode("add");
       setOpen(true);
-    } else if (
-      isAuthenticated &&
-      role === "Referat" &&
-      selectedBranch &&
-      selectedFacultyId
-    ) {
+    } else if (isAuthenticated && role === "Referat" && selectedBranch && selectedFacultyId) {
       setMode("add");
       setOpen(true);
     }
@@ -800,6 +785,9 @@ const Timetable: React.FC<TimetableProps> = ({
         onDelete={handleDeleteEvent}
         event={selectedEvent}
         role={role}
+        selectedFacultyId={selectedFacultyId}
+        branchId={selectedBranch}
+        programId={programId}
       />
     </div>
   );

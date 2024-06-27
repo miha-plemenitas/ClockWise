@@ -53,7 +53,7 @@ interface CustomEvent {
   };
 }
 
-const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,  role,}) => {
+const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, role, }) => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
@@ -63,9 +63,8 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,
   const calendarRef = useRef<FullCalendar>(null);
   const [isTutorMode, setIsTutorMode] = useState(true); // State to track switch
 
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
-    localStorage.getItem("selectedFacultyId")
-  );
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>(
+    localStorage.getItem("selectedFacultyId") || '');
   const [selectedTutors, setSelectedTutors] = useState<
     { id: string; name: string }[]
   >(JSON.parse(localStorage.getItem("selectedTutors") || "[]"));
@@ -348,7 +347,7 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,
     }
   };
 
- const handleUpdateLecture = (eventInfo: any) => {};
+  const handleUpdateLecture = (eventInfo: any) => { };
 
   const renderEventContent = (eventInfo: EventContentArg) => {
     return (
@@ -462,6 +461,9 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({  isAuthenticated,  uid,
         onDelete={handleDeleteEvent}
         event={selectedEvent}
         role={role}
+        selectedFacultyId=""
+        branchId=""
+        programId=""
       />
     </div>
   );
