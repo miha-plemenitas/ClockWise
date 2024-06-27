@@ -44,61 +44,64 @@ function assert(condition, message) {
 
 
 async function getHeatMap(facultyId, collectionName, type) {
+  // Validate collectionName and type
   assert(
-    collectionName === 'original_lectures' || collectionName === 'lectures' || collectionName === 'generated_lectures',
+    ['original_lectures', 'lectures', 'generated_lectures'].includes(collectionName),
     'collection name not found, must be lectures, original_lectures or generated_lectures'
   );
 
   assert(
-    type === 'both' || type === 'frequency' || type === 'count',
-    'type name not found, must be both, frequency or count'
+    ['frequency', 'count'].includes(type),
+    'type name not found, must be frequency or count'
   );
 
   let lectures = await getAllFacultyCollectionItems(facultyId, collectionName);
 
-  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  const hoursOfDay = Array.from({ length: 24 }, (_, i) => i);
 
-  const heatmap = {};
+  // Pre-generate heatmap structure
+  const heatmap = daysOfWeek.reduce((acc, day) => {
+    acc[day] = Array.from({ length: 24 }, () => 0);
+    return acc;
+  }, {});
+
   let totalCounter = 0;
 
   lectures.forEach(lecture => {
-    const { start, end } = convertToDates(lecture);
-    const dayOfWeek = daysOfWeek[start.getUTCDay()];
-    const hour = start.getUTCHours();
+    const { start } = convertToDates(lecture);
+    const dayOfWeek = daysOfWeek[start.getUTCDay() - 1];
+    const startHour = start.getUTCHours();
+    const endHour = Math.min(startHour + Math.floor(lecture.duration), 24);
 
-    for (let index = hour; index < (lecture.duration + hour); index++) {
-      if (!heatmap[dayOfWeek]) {
-        heatmap[dayOfWeek] = {};
-      }
-
-      if (!heatmap[dayOfWeek][hour]) {
-        heatmap[dayOfWeek][hour] = 1;
-      } else {
+    if (dayOfWeek) {
+      for (let hour = startHour; hour < endHour; hour++) {
         heatmap[dayOfWeek][hour]++;
+        totalCounter++;
       }
-      totalCounter++;
     }
   });
 
-  if (type === "count"){
-    return heatmap
-  }
+  const z = daysOfWeek.map(day => heatmap[day]);
 
-  for (const day in heatmap) {
-    for (const hour in heatmap[day]) {
-      const count = heatmap[day][hour];
-      const frequency = count / totalCounter;
+  if (type === 'frequency') {
+    for (let dayIndex = 0; dayIndex < z.length; dayIndex++) {
+      for (let hourIndex = 0; hourIndex < z[dayIndex].length; hourIndex++) {
+        const count = z[dayIndex][hourIndex];
+        const frequency = count / totalCounter;
 
-      if (type === "both") {
-        heatmap[day][hour] = [count, frequency];
-      } else{
-        heatmap[day][hour] = frequency;
+        z[dayIndex][hourIndex] = frequency;
       }
     }
   }
 
-  return heatmap;
+  return {
+    z: z,
+    x: hoursOfDay,
+    y: daysOfWeek
+  };
 }
+
 
 
 module.exports = {
