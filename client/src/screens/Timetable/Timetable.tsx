@@ -95,6 +95,7 @@ const Timetable: React.FC<TimetableProps> = ({
   const [isTutorMode, setIsTutorMode] = useState(false); // State to track switch
 
   // events on timetable
+  const calendarRef = useRef<FullCalendar>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
@@ -108,7 +109,7 @@ const Timetable: React.FC<TimetableProps> = ({
   const [selectedRoomNames, setSelectedRoomNames] = useState<string[]>([]);
   const [selectedCourseNames, setSelectedCourseNames] = useState<string[]>([]);
   const [allCourseNames, setAllCourseNames] = useState<string[]>([]);
-  const calendarRef = useRef<FullCalendar>(null);
+
 
   // Handle redirect when switch is toggled
   useEffect(() => {
@@ -770,11 +771,14 @@ const Timetable: React.FC<TimetableProps> = ({
         >
           Clear Filters
         </button>
-        <SaveButton
+        {(role === "Student" || role === "Tutor") && (
+          <SaveButton
           isAuthenticated={isAuthenticated}
           uid={uid}
           events={filteredEvents}
         />
+        )}
+        
       </div>
       <CustomModal
         isOpen={open}

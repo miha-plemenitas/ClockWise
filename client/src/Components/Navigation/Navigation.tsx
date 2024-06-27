@@ -109,7 +109,7 @@ const Navigation: React.FC<NavigationProps> = ({
         ) : (
           <NavigationMenuItem>
             <NavigationMenuLink href="/signin">
-              <NavigationMenuTrigger className="text-green-600">
+              <NavigationMenuTrigger className="text-orange-600">
                 Sign In
               </NavigationMenuTrigger>
             </NavigationMenuLink>

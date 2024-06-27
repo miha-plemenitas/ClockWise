@@ -120,6 +120,7 @@ const App = () => {
                   isAuthenticated={isAuthenticated}
                   uid={uid}
                   role={role}
+                  name={name}
                 />
               }
             />{" "}

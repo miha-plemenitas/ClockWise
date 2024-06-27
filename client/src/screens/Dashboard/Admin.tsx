@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { DataGrid, GridToolbar, GridColDef } from '@mui/x-data-grid';
 import { Select, MenuItem } from '@mui/material';
 import { Button } from "../../Components/ui/button";
-import "./Admin.css"
 import axios from 'axios';
 import { Buffer } from "buffer";
 import useFaculties from '../../Components/Hooks/useFaculties';
@@ -60,10 +59,10 @@ const Admin: React.FC = () => {
                 <Select
                     value={params.value}
                     onChange={(event) => handleRoleChange(event, params)}
+                    className="no-border-date-picker"
                     sx={{
-                        width: '100%',
-                        '& .MuiSelect-select': {
-                            outline: 'none',
+                        "& .MuiOutlinedInput-notchedOutline": {
+                            border: "none !important",
                         },
                     }}
 
@@ -77,18 +76,19 @@ const Admin: React.FC = () => {
         {
             field: 'facultyId',
             headerName: 'Faculty',
-            width: 200,
+            width: 500,
             renderCell: (params) => (
                 <Select
                     value={params.value}
                     onChange={(event) => handleFacultyChange(event, params)}
                     displayEmpty
+                    className="no-border-date-picker"
                     sx={{
-                        width: '100%',
-                        '& .MuiSelect-select': {
-                            outline: 'none',
+                        "& .MuiOutlinedInput-notchedOutline": {
+                            border: "none !important",
                         },
                     }}
+    
                 >
                     <MenuItem value="">Select faculty</MenuItem>
                     {!facultiesLoading &&
@@ -183,8 +183,8 @@ const Admin: React.FC = () => {
 
     return (
         <div>
-            <div className="flex flex-col 2xl:flex-row gap-4">
-                <div className="2xl:w-1/2">
+            <div className="flex flex-col md:flex-row gap-4 w-full h-full">
+                <div className="w-full h-full">
                     <DataGrid rows={users} columns={columns} slots={{ toolbar: GridToolbar }} />
                 </div>
             </div>

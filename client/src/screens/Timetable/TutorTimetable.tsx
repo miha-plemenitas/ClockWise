@@ -23,6 +23,7 @@ interface TutorTimetableProps {
   isAuthenticated: boolean;
   uid: string | null;
   role: string;
+  name: string | null;
 }
 
 interface Event {
@@ -32,12 +33,19 @@ interface Event {
   end: string;
   extendedProps: {
     date: Dayjs;
-    type: string;
-    groups: string;
-    teacher: string;
-    location: string;
+    executionType: string;
+    executionTypeId: string;
+    groups: { name: string; id: string }[];
+    tutors: { name: string; id: string }[];
+    rooms: { name: string; id: string }[];
+    branches: { name: string; id: string }[];
+    group_ids: number[];
+    tutor_ids: number[];
+    branch_ids: number[];
+    room_ids: number[];
     editable: boolean;
     lecture: boolean;
+    hasRooms: boolean;
   };
 }
 
@@ -47,13 +55,14 @@ interface CustomEvent {
   start: string;
   end: string;
   extendedProps: {
+    tutors?: { name: string; id: string }[];
     notes: string;
     editable: boolean;
     lecture: boolean;
   };
 }
 
-const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, role, }) => {
+const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, role, name }) => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
@@ -136,22 +145,19 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
             extendedProps: {
               courseId: lecture.courseId,
               duration: lecture.duration,
-              type: lecture.executionType,
-              executionType: lecture.executionTypeId,
-              groups: lecture.groups.map((group: any) => group.name).join(", "),
-              teacher: lecture.tutors.map((tutor: any) => tutor.name).join(", "),
-              location: lecture.rooms.map((room: any) => room.name).join(", "),
+              executionType: lecture.executionType,
+              executionTypeId: lecture.executionTypeId,
               editable: false,
               lecture: true,
               hasRooms: lecture.hasRooms,
-              group_ids: [lecture.group_ids],
-              room_ids: [lecture.room_ids],
-              tutor_ids: [lecture.tutor_ids],
-              groups_arr: [lecture.groups],
-              rooms_arr: [lecture.rooms],
-              tutors_arr: [lecture.tutors],
-              branchIds: [lecture.branch_ids],
-              branches: [lecture.branches]
+              group_ids: lecture.group_ids,
+              room_ids: lecture.room_ids,
+              tutor_ids: lecture.tutor_ids,
+              groups: lecture.groups,
+              rooms: lecture.rooms,
+              tutors: lecture.tutors,
+              branch_ids: lecture.branch_ids,
+              branches: lecture.branches,
             },
           };
         }
@@ -174,6 +180,11 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
     }
   }, [selectedFacultyId, selectedTutors, fetchData]);
 
+
+  const isTutorInArray = (tutorName: any, tutorsArray: any): boolean => {
+    return tutorsArray.some((tutor: { name: string; }) => tutor.name.toLowerCase().includes(tutorName.toLowerCase()));
+  };
+
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event =
       events.find((event: Event) => event.id === clickInfo.event.id) ||
@@ -181,16 +192,12 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
         (event: CustomEvent) => event.id === clickInfo.event.id
       );
 
+    console.log(event);
+
     if (event && event.extendedProps.lecture) {
-      if (role === 'Student' || !role) {
-        setSelectedEvent(event);
-        setMode("view");
-        setOpen(true);
-      } else {
-        setSelectedEvent(event);
-        setMode("edit");
-        setOpen(true);
-      }
+      setSelectedEvent(event);
+      setMode("view");
+      setOpen(true);
     } else if (event && !event.extendedProps.lecture) {
       setSelectedEvent(event);
       setMode("edit");
