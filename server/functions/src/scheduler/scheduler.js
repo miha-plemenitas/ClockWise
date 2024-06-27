@@ -9,6 +9,7 @@ const { resetCollectionAndFetchSchedule, expandLectureData } = require("./prepar
 const { updateLectureDates, saveGeneratedSchedule } = require("./converter");
 const fs = require('fs');
 const path = require('path');
+const { schedule } = require('firebase-functions/v1/pubsub');
 
 
 //Da nea brezzveze fetcham podatkov cel čas, če obstaja json file vzamem iz jsona, drugače fetch
@@ -30,24 +31,24 @@ async function getLecturesAndRooms(facultyId){
     fs.writeFileSync(roomsPath, JSON.stringify(rooms, null, 2));
   }
 
-  splitAndSortRooms(rooms);
-
-  return original_lectures;
+  return { original_lectures, rooms};
 }
 
 
 
 async function generateSchedule(facultyId) {
-  const original_lectures = await getLecturesAndRooms(facultyId);
+  const { rooms, original_lectures } = await resetCollectionAndFetchSchedule(facultyId); // IF production
 
-  await generateTimeSlots(original_lectures); //array timeSlotov, vsak ma day:"2024-06-14", pa array hours (od 7-21 oz srede 10-21)
+  //const { rooms, original_lectures } = await getLecturesAndRooms(facultyId); //IF working local
+
+  splitAndSortRooms(rooms);
+
+
+  await generateTimeSlots(facultyId, original_lectures); //array timeSlotov, vsak ma day:"2024-06-14", pa array hours (od 7-21 oz srede 10-21)
   expandLectureData(original_lectures); //groupira lecturje glede na course, groups, tutors... s tem delam pol nextId
 
   console.log(original_lectures.length);
   console.log(original_lectures[0]);
-
-  //const selectedLectures = original_lectures.filter(lecture => lecture.course === "MODELIRANJE IN VODENJE ELEKTROMEHANSKIH SISTEMOV"); //samo za testiranje
-  //console.log(selectedLectures.length);
 
   const schedule = initializeSchedule(original_lectures);
   schedule.sort((a, b) => a.id - b.id);
@@ -59,24 +60,6 @@ async function generateSchedule(facultyId) {
       index--;
     }
   }
-
-  let something = await saveGeneratedSchedule(facultyId, schedule);
-
-  return something;
-}
-
-
-async function generateSchedule2(facultyId, iterations) {
-  const { original_lectures, rooms } = await resetCollectionAndFetchTwoWeekSchedule(facultyId);
-
-  const timeSlots = generateTimeSlots();
-
-  let schedule = initializeSchedule(original_lectures, timeSlots, rooms);
-  let score = evaluateSchedule(schedule);
-
-  console.log(score);
-
-  schedule = updateLectureDates(schedule);
 
   let something = await saveGeneratedSchedule(facultyId, schedule);
 
