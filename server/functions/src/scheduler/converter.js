@@ -3,6 +3,7 @@ const { processScheduleData } = require("../utils/dataProcessors");
 const { processItemsInBatch } = require('../utils/batchOperations');
 const { db } = require('../utils/firebaseAdmin');
 const { getAllFacultyCollectionItems } = require("../service/facultyCollections");
+const { deleteAllDocumentsInCollection } = require("../utils/firebaseHelpers");
 
 
 function generateFullSchedule(lectures, dateFrom) {
@@ -72,8 +73,11 @@ function getNextWeekdayDates() {
 
 async function saveGeneratedSchedule(facultyId, lectures) {
   const facultyRef = db.collection("faculties").doc(facultyId);
+  const genLecturesRef = facultyRef.collection("generated_lectures");
 
-  await processItemsInBatch(facultyRef.collection("generated_lectures"), lectures, processScheduleData);
+  await deleteAllDocumentsInCollection(genLecturesRef);
+
+  await processItemsInBatch(genLecturesRef, lectures, processScheduleData);
 }
 
 

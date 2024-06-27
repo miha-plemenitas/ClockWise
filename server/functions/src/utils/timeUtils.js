@@ -3,14 +3,22 @@ const { getAllFacultyCollectionItems } = require("../service/facultyCollections"
 
 
 function setFirestoreTimestampsAndDuration(lecture) {
-  const startTimeDateObj = new Date(lecture.start_time);
-  const endTimeDateObj = new Date(lecture.end_time);
+  const startDateTimeString = `${lecture.day}T${String(lecture.start).padStart(2, '0')}:00:00.000Z`;
+    const endDateTimeString = `${lecture.day}T${String(lecture.end).padStart(2, '0')}:00:00.000Z`;
+  
+    const startDateTime = new Date(startDateTimeString);
+    const endDateTime = new Date(endDateTimeString);
 
-  const startTime = lecture.start_time ? Timestamp.fromDate(startTimeDateObj) : null;
-  const endTime = lecture.end_time ? Timestamp.fromDate(endTimeDateObj) : null;
-  const duration = (endTimeDateObj - startTimeDateObj) / (1000 * 60 * 60);
-
-  return { startTime, endTime, duration };
+    if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+      console.log(lecture);
+      throw new Error('Invalid date format.');
+    }
+  
+  
+    const startTime = Timestamp.fromDate(startDateTime);
+    const endTime = Timestamp.fromDate(endDateTime);
+  
+    return { startTime, endTime };
 }
 
 

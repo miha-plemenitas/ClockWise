@@ -176,17 +176,22 @@ function processRoomData(room) {
  * @returns {Object} The processed lecture data.
  */
 function processScheduleData(lecture) {
+  //TODO
   const { startTime, endTime } = setFirestoreTimestampsAndDuration(lecture);
 
   let completeLecture = {
-    id: `S${lecture.courseId} ${lecture.executionTypeId} ${lecture.start_time}`,
     startTime: startTime,
     endTime: endTime,
     ...lecture
   };
 
-  delete completeLecture.start_time;
-  delete completeLecture.end_time;
+  delete completeLecture.week;
+  delete completeLecture.schedulable;
+  delete completeLecture.prevId;
+  delete completeLecture.nextId;
+  delete completeLecture.day;
+  delete completeLecture.start;
+  delete completeLecture.end;
 
   return completeLecture;
 }
