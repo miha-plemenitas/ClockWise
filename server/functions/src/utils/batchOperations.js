@@ -26,6 +26,10 @@ async function processItemsInBatch(
     const data = processData(item);
     if (!data) continue;
 
+    if (typeof data.id == 'number') {
+      data.id = String(data.id);
+    }
+
     const docRef = collectionRef.doc(data.id);
     batch.set(docRef, data);
     batchCounter++;

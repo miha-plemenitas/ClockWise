@@ -52,7 +52,17 @@ async function generateSchedule(facultyId) {
   const schedule = initializeSchedule(original_lectures);
   schedule.sort((a, b) => a.id - b.id);
 
-  return schedule;
+  let index = -1;
+  for(const lecture of schedule){
+    if(!lecture.id){
+      lecture.id = index;
+      index--;
+    }
+  }
+
+  let something = await saveGeneratedSchedule(facultyId, schedule);
+
+  return something;
 }
 
 
@@ -68,9 +78,9 @@ async function generateSchedule2(facultyId, iterations) {
 
   schedule = updateLectureDates(schedule);
 
-  await saveGeneratedSchedule(facultyId, schedule);
+  let something = await saveGeneratedSchedule(facultyId, schedule);
 
-  return schedule;
+  return something;
 }
 
 

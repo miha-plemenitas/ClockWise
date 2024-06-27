@@ -1,5 +1,4 @@
 const { db } = require('../utils/firebaseAdmin');
-const { deleteAllDocumentsInCollection } = require("../utils/firebaseHelpers");
 const { getAllFacultyCollectionItems } = require("../service/facultyCollections");
 
 
@@ -30,6 +29,8 @@ function prepareLecture(data, rooms) {
     console.log(data);
   }
 
+  data.duration = Math.floor(data.duration);
+
   const roomSizes = rooms
     .filter(room => data.room_ids.includes(room.roomId))
     .map(room => room.size);
@@ -58,11 +59,8 @@ function prepareLecture(data, rooms) {
   delete data.id;
 
   const nonSchedulableExecutionTypeIds = ["102", "116", "110", "93"];
-  if (data.course == "PRAKTIČNO USPOSABLJANJE in DIPLOMSKO DELO"){
-    console.log("1")
-  }
 
-  if (nonSchedulableExecutionTypeIds.includes(data.executionTypeId) || data.size != null) {
+  if (nonSchedulableExecutionTypeIds.includes(data.executionTypeId) || data.size != null || data.course == "") {
     data.schedulable = -1;
   } else {
     delete data.endTime;
@@ -76,12 +74,8 @@ function prepareLecture(data, rooms) {
 
 
 //Deletam ze zgenerirano kolekcijo, pridobim sobe in celoten urnik
-//TODO - lahko dodam nov boolean ki samo deleta vse v kolekciji
 async function resetCollectionAndFetchSchedule(facultyId) {
   const facultyRef = db.collection("faculties").doc(facultyId);
-  const generatedLecturesRef = facultyRef.collection("generated_lectures");
-
-  await deleteAllDocumentsInCollection(generatedLecturesRef);
 
   const rooms = await getAvailableRooms(facultyId); //iz sob sam vmes se deletam ms teams pa default sobo za diplomo n shit
   const original_lectures = await fetchWholeSchedule(facultyRef, rooms); //vsi lecturji razen tipa 99

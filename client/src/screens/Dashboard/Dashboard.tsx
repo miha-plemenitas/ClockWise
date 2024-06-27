@@ -9,6 +9,8 @@ import { Buffer } from "buffer";
 import axios from "axios";
 import Admin from "./Admin";
 import Referat from "./Referat";
+import { Card } from "../../Components/ui/card"; // Import Shadcn Card component
+import { Button } from "../../Components/ui/button"; // Import Shadcn Button component
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -45,7 +47,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   isAuthenticated,
   uid,
   role,
-  facultyId
+  facultyId,
 }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -108,64 +110,67 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-modra text-3xl font-bold">Dashboard</h1>
       </div>
-      {isAuthenticated && role !== "Referat" && role !== 'Admin' && (
-        <div>
-          <div className="mt-4 w-full bg-white rounded-lg p-4">
-            <FullCalendar
-              height={"auto"}
-              slotMinTime={"7:00"}
-              slotMaxTime={"21:00"}
-              plugins={[timeGridPlugin, interactionPlugin]}
-              initialView="timeGridWeek"
-              weekends={false}
-              eventContent={renderEventContent}
-              eventSources={[{ events: events, color: "#4890CB" }]}
-              headerToolbar={{
-                left: "title",
-                center: "",
-                right: "prev,next today",
-              }}
-              titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
-              dayHeaderClassNames="font-bold text-lg"
-              dayHeaderFormat={{
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-              }}
-              selectable={true}
-              selectMirror={true}
-              unselectAuto={true}
-              eventClick={handleEventClick}
-            />
-          </div>
-          <CustomModal
-            isOpen={open}
-            toggle={handleCloseModal}
-            mode={mode}
-            event={selectedEvent}
-            role={role}
-            selectedFacultyId=""
-            branchId=""
-            programId=""
+      {isAuthenticated && role !== "Referat" && role !== "Admin" && (
+        <Card className="mt-4 w-full bg-white rounded-lg p-4">
+          <FullCalendar
+            height={"auto"}
+            slotMinTime={"7:00"}
+            slotMaxTime={"21:00"}
+            plugins={[timeGridPlugin, interactionPlugin]}
+            initialView="timeGridWeek"
+            weekends={false}
+            eventContent={renderEventContent}
+            eventSources={[{ events: events, color: "#4890CB" }]}
+            headerToolbar={{
+              left: "title",
+              center: "",
+              right: "prev,next today",
+            }}
+            titleFormat={{ year: "numeric", month: "short", day: "numeric" }}
+            dayHeaderClassNames="font-bold text-lg"
+            dayHeaderFormat={{
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            }}
+            selectable={true}
+            selectMirror={true}
+            unselectAuto={true}
+            eventClick={handleEventClick}
           />
-        </div>
+        </Card>
       )}
       {isAuthenticated && role === "Referat" && (
-        <Referat facultyId={facultyId} />
+        <Card className="bg-modra w-full p-4">
+          <Referat facultyId={facultyId} />
+        </Card>
       )}
       {!isAuthenticated && (
         <div className="flex flex-col items-center pt-40">
           <p className="text-xl text-center font-bold mb-2">
-            <h2 className="text-modra text-3xl font-bold">Your Timetable Awaits!</h2>
+            <h2 className="text-modra text-3xl font-bold">
+              Your Timetable Awaits!
+            </h2>
           </p>
           <p className="text-center text-gray-700 mb-4">
-            <a href="/signin" className="text-oranzna hover:text-modra">Sign in</a> to access your saved timetable and more.
+            <a href="/signin" className="text-oranzna hover:text-modra">
+              Sign in
+            </a>{" "}
+            to access your saved timetable and more.
           </p>
         </div>
       )}
-      {isAuthenticated && role === 'Admin' && (
-        <Admin />
-      )}
+      {isAuthenticated && role === "Admin" && <Admin />}
+      <CustomModal
+        isOpen={open}
+        toggle={handleCloseModal}
+        mode={mode}
+        event={selectedEvent}
+        role={role}
+        selectedFacultyId=""
+        branchId=""
+        programId=""
+      />
     </div>
   );
 };

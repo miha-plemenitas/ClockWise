@@ -60,8 +60,8 @@ function getDatesInRange(startDate, endDate, freeDays) {
                 21
             ]
         }, ...
- * 
- */
+ * TODO get daysOff
+ */ 
 async function generateTimeSlots(lectures) {
   const dates = lectures.map(lecture => getDateFromTimestamp(lecture.startTime._seconds));
 
@@ -192,15 +192,14 @@ function scheduleNextLecture(previousLecture, lectures, failSafe) {
   //console.log(`Got to the next id, with element ${lecture.id} and previous id ${previousLecture.id}`);
 
   if (checkTimeSlot(nextWeek)) { //Timeslot je v timeSlots pa nextWeek ni vecji od konca
-    scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, nextWeek, previousLecture.start); //TODO: novo funkcijo scheduleLectureWithPreferedSlot
+    scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, nextWeek, previousLecture.start);
   } else if (!nextWeek) { //next week je vecji od konca, in grem od zacetka
     scheduleLecture(lecture, lectures, failSafe + 1);
   } else {
     const availableSlots = checkTimeSlotForWeek(nextWeek); //pridobis vse slote v tem tednu
 
     for (const availableSlot of availableSlots) {
-      if (scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, availableSlot, previousLecture.start)) { //isto nova funkcija kot zgoraj
-        scheduled = true;
+      if (scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, availableSlot, previousLecture.start)) {
         break;
       }
     }

@@ -25,6 +25,7 @@ import SaveButton from "../../Components/SaveButton/SaveButton";
 import { Switch } from "../../Components/ui/switch";
 import AvaibleTimeSlotsModal from "../../Components/Modal/AvailableTimeSlotsModal";
 import TimeSlots from "./TimeSlots";
+import { Card } from "../../Components/ui/card"; // Import Card component
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -91,7 +92,7 @@ const Timetable: React.FC<TimetableProps> = ({
   uid,
   role,
   facultyId,
-  name
+  name,
 }) => {
   const navigate = useNavigate(); // Use useNavigate for navigation
   const [isTutorMode, setIsTutorMode] = useState(false); // State to track switch
@@ -291,7 +292,9 @@ const Timetable: React.FC<TimetableProps> = ({
     if (selectedTutors.length > 0) {
       filtered = filtered.filter((event) =>
         selectedTutors.some((tutor) =>
-          event.extendedProps.tutors.some((eventTutor) => eventTutor.name === tutor.name)
+          event.extendedProps.tutors.some(
+            (eventTutor) => eventTutor.name === tutor.name
+          )
         )
       );
     }
@@ -361,7 +364,9 @@ const Timetable: React.FC<TimetableProps> = ({
   }, []);
 
   const isTutorInArray = (tutorName: any, tutorsArray: any): boolean => {
-    return tutorsArray.some((tutor: { name: string; }) => tutor.name.toLowerCase().includes(tutorName.toLowerCase()));
+    return tutorsArray.some((tutor: { name: string }) =>
+      tutor.name.toLowerCase().includes(tutorName.toLowerCase())
+    );
   };
 
   const handleEventClick = (clickInfo: EventClickArg) => {
@@ -374,11 +379,20 @@ const Timetable: React.FC<TimetableProps> = ({
     console.log(event);
 
     if (event && event.extendedProps.lecture) {
-      if (role === "Student" || !role || (role === 'Tutor' && !isTutorInArray(name, event.extendedProps.tutors)) || (role === 'Referat' && facultyId !== selectedFacultyId)) {
+      if (
+        role === "Student" ||
+        !role ||
+        (role === "Tutor" &&
+          !isTutorInArray(name, event.extendedProps.tutors)) ||
+        (role === "Referat" && facultyId !== selectedFacultyId)
+      ) {
         setSelectedEvent(event);
         setMode("view");
         setOpen(true);
-      } else if (role === 'Referat' && facultyId === selectedFacultyId || role === 'Tutor' && isTutorInArray(name, event.extendedProps.tutors)) {
+      } else if (
+        (role === "Referat" && facultyId === selectedFacultyId) ||
+        (role === "Tutor" && isTutorInArray(name, event.extendedProps.tutors))
+      ) {
         setSelectedEvent(event);
         setMode("edit");
         setOpen(true);
@@ -402,7 +416,12 @@ const Timetable: React.FC<TimetableProps> = ({
     if (isAuthenticated && role !== "Referat") {
       setMode("add");
       setOpen(true);
-    } else if (isAuthenticated && role === "Referat" && selectedBranch && selectedFacultyId) {
+    } else if (
+      isAuthenticated &&
+      role === "Referat" &&
+      selectedBranch &&
+      selectedFacultyId
+    ) {
       setMode("add");
       setOpen(true);
     }
@@ -791,7 +810,9 @@ const Timetable: React.FC<TimetableProps> = ({
           />
         </div>
       )}
-      <div className="mt-4 w-full bg-white rounded-lg p-4">
+      <Card className="mt-4 w-full bg-white rounded-lg p-4">
+        {" "}
+        {/* Wrap timetable in Card */}
         <FullCalendar
           ref={calendarRef}
           height={"auto"}
@@ -823,8 +844,8 @@ const Timetable: React.FC<TimetableProps> = ({
           eventClick={handleEventClick}
           select={handleDateSelect}
         />
-      </div>
-      <div className="flex space-x-2">
+      </Card>
+      <div className="flex space-x-2 mt-4">
         <button
           onClick={clearFilters}
           className="bg-oranzna text-white hover:bg-oranzna-700 rounded-lg px-4 py-2 flex items-center justify-center"

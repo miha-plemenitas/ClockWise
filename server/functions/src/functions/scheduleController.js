@@ -78,7 +78,7 @@ exports.heatMap = functions
       validateRequestParams({ facultyId, collection });
 
       if(!type){
-        type = "both";
+        type = "count";
       }
 
       const result = await getHeatMap(facultyId, collection, type);
