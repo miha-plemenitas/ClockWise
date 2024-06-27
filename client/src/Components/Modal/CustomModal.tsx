@@ -557,13 +557,21 @@ export default function CustomModal({
                 onChange={(e) => setType(e.target.value)}
               />
               <FormControl fullWidth margin="normal">
-                <InputLabel id="room-select-label">Location</InputLabel>
+                <InputLabel id="room-select-label">Rooms</InputLabel>
                 <Select
                   labelId="room-select-label"
                   id="room-select"
-                  defaultValue={event.extendedProps.rooms.map((room: any) => room.id).join(", ")}
-                  label="Location"
-                  onChange={(e) => handleRoomChange(e.target.value)}
+                  multiple // Allow multiple selections
+                  value={room.map(room => room.id.toString())} // Array of selected IDs
+                  label="Rooms"
+                  onChange={handleRoomChange}
+                  renderValue={(selected) => (
+                    <div>
+                      {selected.map((value) => (
+                        <Chip key={value} label={room.find(room => room.id.toString() === value)?.name} />
+                      ))}
+                    </div>
+                  )}
                 >
                   {rooms.map((room) => (
                     <MenuItem key={room.id} value={room.id}>

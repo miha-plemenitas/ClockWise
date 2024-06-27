@@ -134,44 +134,9 @@ const Customize: React.FC<CustomizeProps> = ({
           </div>
           <div className="border-t border-gray-200"></div>
           <div className="space-y-2">
-            <h3 className="text-md font-semibold">Select a role</h3>
-            <Select value={selectValue} onValueChange={setSelectValue}>
-              <SelectTrigger className="w-full mt-1 text-sm">
-                {selectValue}
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Student">Student</SelectItem>
-                <SelectItem value="Tutor">Tutor</SelectItem>
-                <SelectItem value="Referat">Referat</SelectItem>
-              </SelectContent>
-            </Select>
-            {selectValue === "Tutor" && role !== "Tutor" && (
-              <div>
-                <p className="text-sm text-orange-500">
-                  Tutor role requires verification with an official @um.si email
-                  address.
-                </p>
-                <Input
-                  type="email"
-                  placeholder="Enter your @um.si email"
-                  className="mt-2"
-                  ref={emailInputRef}
-                />
-                <Button
-                  onClick={handleSendVerificationEmail}
-                  className="mt-2 bg-modra text-white hover:bg-modra-700 items-center space-x-2"
-                >
-                  <span>Save</span>
-                </Button>
-                {verificationStatus === "pending" && <p>Verifying...</p>}
-                {verificationStatus === "success" && (
-                  <p>Verification successful!</p>
-                )}
-                {verificationStatus === "error" && (
-                  <p>Verification failed. Check your email.</p>
-                )}
-              </div>
-            )}
+            <h3 className="text-md font-semibold">Assigned Role</h3>
+            <p className="mt-1 text-sm text-gray-500">{role}</p>
+    
           </div>
           <div className="border-t border-gray-200"></div>
           <div>

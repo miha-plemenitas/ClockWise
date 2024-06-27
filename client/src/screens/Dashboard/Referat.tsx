@@ -46,20 +46,20 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
     fetchDays();
   }, []);
 
-  const columnsDaysOff: GridColDef[] = [
-    { field: "startDate", headerName: "Start date", width: 250 },
-    { field: "endDate", headerName: "End date", width: 250 },
-    {
-      field: "akcija",
-      headerName: "",
-      width: 100,
-      renderCell: (params) => (
-        <Button onClick={() => handleRemoveDayOff(params.row.id)}>
-          Remove
-        </Button>
-      ),
-    },
-  ];
+    const columnsDaysOff: GridColDef[] = [
+        { field: 'startDate', headerName: 'Start date', width: 250 },
+        { field: 'endDate', headerName: 'End date', width: 250 },
+        {
+            field: 'akcija',
+            headerName: '',
+            width: 100,
+            renderCell: (params) => (
+                <Button onClick={() => handleRemoveDayOff(params.row.id)} >
+                    Remove
+                </Button>
+            ),
+        },
+    ];
 
   const handleAddDayOff = async () => {
     try {
@@ -209,34 +209,32 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
     return { x, y, z };
   };
 
-  return (
-    <div>
-      <div className="flex flex-col 2xl:flex-row gap-6">
-        <div className="2xl:w-1/2 p-6 bg-white rounded-lg shadow-md">
-          <div className="flex flex-col gap-6">
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <div className="flex gap-4 items-center">
-                <DatePicker
-                  label="Start date"
-                  value={startDate}
-                  onChange={(newValue) => setStartDate(newValue)}
-                  slotProps={{ textField: { variant: "outlined" } }}
-                />
-                <DatePicker
-                  label="End date (optional)"
-                  value={endDate}
-                  onChange={(newValue) => setEndDate(newValue)}
-                  slotProps={{ textField: { variant: "outlined" } }}
-                />
-                <Button
-                  className="bg-oranzna text-white hover:bg-oranzna-700"
-                  onClick={handleAddDayOff}
-                >
-                  Add
-                </Button>
-              </div>
-            </LocalizationProvider>
-          </div>
+    return (
+        <div>
+            <div className="flex flex-col 2xl:flex-row gap-4">
+
+                <div className="2xl:w-1/2">
+                    <div className="flex flex-col gap-4">
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <div className="flex gap-2 items-center">
+                                <DatePicker
+                                    label="Start date"
+                                    value={startDate}
+                                    onChange={(newValue) => setStartDate(newValue)}
+
+                                />
+                                <DatePicker
+                                    label="End date (optional)"
+                                    value={endDate}
+                                    onChange={(newValue) => setEndDate(newValue)}
+
+                                />
+                                <Button className="bg-blue-500 text-white hover:bg-blue-700" onClick={handleAddDayOff}>
+                                    Add
+                                </Button>
+                            </div>
+                        </LocalizationProvider>
+                    </div>
 
           <div style={{ height: 400, width: "100%" }} className="mt-4">
             <DataGrid

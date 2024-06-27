@@ -1,5 +1,20 @@
-const { database } = require("firebase-functions/v1/firestore");
+const { schedule } = require("firebase-functions/v1/pubsub");
 const { getWeekNumber } = require("./preparer");
+
+let globalTimeSlots;
+let globalLArooms;
+let globalRUrooms;
+let globalOtherRooms;
+const globalSchedule = [];
+
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
 
 function getDateFromTimestamp(timestamp) {
   const date = new Date(timestamp * 1000);
@@ -45,8 +60,8 @@ function getDatesInRange(startDate, endDate, freeDays) {
                 21
             ]
         }, ...
- * 
- */
+ * TODO get daysOff
+ */ 
 async function generateTimeSlots(lectures) {
   const dates = lectures.map(lecture => getDateFromTimestamp(lecture.startTime._seconds));
 
@@ -77,31 +92,9 @@ async function generateTimeSlots(lectures) {
     };
   });
 
+  globalTimeSlots = result;
+
   return result;
-}
-
-
-//grupira po tutors, course, execution type.... dobesedno samo za nextId
-function groupLectures(lectures) {
-  const dataType = new Map();
-
-  for (const lecture of lectures) {
-    let data = `C${lecture.courseId} E${lecture.executionTypeId} S${lecture.size} T${lecture.tutor_ids.join(",")} G${lecture.group_ids.join(",")}`;
-
-    let lectureInfo = dataType.get(data);
-    if (!lectureInfo) {
-      lectureInfo = [];
-      dataType.set(data, lectureInfo);
-    }
-
-    const lastLecture = lectureInfo[lectureInfo.length - 1];
-    const duration = lastLecture ? lastLecture.duration + lecture.duration : lecture.duration;
-
-    lectureInfo.push({ id: lecture.id, weekNo: lecture.week, duration: duration });
-  }
-
-  const json = Object.fromEntries(dataType);
-  return json;
 }
 
 
@@ -124,6 +117,10 @@ function splitAndSortRooms(rooms) {
   LArooms.sort((a, b) => a.size - b.size);
   RUrooms.sort((a, b) => a.size - b.size);
   otherRooms.sort((a, b) => a.size - b.size);
+
+  globalLArooms = LArooms;
+  globalRUrooms = RUrooms;
+  globalOtherRooms = otherRooms;
 
   return {
     LArooms,
@@ -149,8 +146,11 @@ function getNextWeekDate(dateString) {
 
 
 // Ce je date sploh not (ce ni prost dan)
-function checkTimeSlot(date, timeSlots) {
-  for (const timeSlot of timeSlots) {
+function checkTimeSlot(date) {
+  if (!date)
+    return false;
+
+  for (const timeSlot of globalTimeSlots) {
     if (timeSlot.date === date) {
       return true;
     }
@@ -160,7 +160,7 @@ function checkTimeSlot(date, timeSlots) {
 
 
 //ce date ni not, cekiram ce je cel tedn fry al ne
-function checkTimeSlotForWeek(date, timeSlots) {
+function checkTimeSlotForWeek(date) {
   const inputDate = new Date(date);
   const startOfWeek = new Date(inputDate);
   startOfWeek.setDate(inputDate.getDate() - inputDate.getDay() + 1); //Monday
@@ -174,69 +174,78 @@ function checkTimeSlotForWeek(date, timeSlots) {
   }
 
   const presentDays = weekdaysInWeek.filter(day =>
-    timeSlots.some(timeSlot => timeSlot.date === day)
+    globalTimeSlots.some(timeSlot => timeSlot.date === day)
   );
 
   return presentDays.length === 0 ? [] : presentDays;
 }
 
 
-//TODO - nastavi fail save če ne najde ce gre od zacetka
-function scheduleNextLecture(previousLecture, timeSlots, LArooms, RUrooms, otherRooms, schedule, lectures, day, failSafe) {
-  if (!previousLecture.nextId == "-1") {
-    const lecture = lectures.find(element => element.id == previousLecture.nextId);
-    const nextWeek = getNextWeekDate(day); //if next week vecji kot 
-    let scheduled = false;
+function scheduleNextLecture(previousLecture, lectures, failSafe) {
+  if (previousLecture.nextId == -1) {
+    return;
+  }
 
-    if (checkTimeSlot(date, timeSlots) && nextWeek) { //Timeslot je v timeSlots pa nextWeek ni vecji od konca
-      scheduleLecture(lecture, timeSlots, LArooms, RUrooms, otherRooms, schedule, lectures, lecture, nextWeek); //TODO: novo funkcijo scheduleLectureWithPreferedSlot
-    } else if (!nextWeek) { //next week je vecji od konca, in grem od zacetka
-      scheduleLecture(lecture, timeSlots, LArooms, RUrooms, otherRooms, schedule, lectures, failSafe + 1);
-    } else {
-      const availableSlots = checkTimeSlotForWeek(nextWeek, timeSlots); //pridobis vse slote v tem tednu
+  const lecture = lectures.find(element => element.id == previousLecture.nextId); //Dobiš nextId
+  const nextWeek = getNextWeekDate(previousLecture.day); //datum za +1 teden, ce je preko, returne false
 
-      for (const availableSlot of availableSlots) {
-        if (scheduleLecture(lecture, timeSlots, LArooms, RUrooms, otherRooms, schedule, lecture, availableSlot)) { //isto nova funkcija kot zgoraj
-          scheduled = true;
-          break;
-        }
+  //console.log(`Got to the next id, with element ${lecture.id} and previous id ${previousLecture.id}`);
+
+  if (checkTimeSlot(nextWeek)) { //Timeslot je v timeSlots pa nextWeek ni vecji od konca
+    scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, nextWeek, previousLecture.start);
+  } else if (!nextWeek) { //next week je vecji od konca, in grem od zacetka
+    scheduleLecture(lecture, lectures, failSafe + 1);
+  } else {
+    const availableSlots = checkTimeSlotForWeek(nextWeek); //pridobis vse slote v tem tednu
+
+    for (const availableSlot of availableSlots) {
+      if (scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, availableSlot, previousLecture.start)) {
+        break;
       }
+    }
 
-      if (!scheduled) {//dobis naslendji tedn
-        scheduleNextLecture(previousLecture, timeSlots, LArooms, RUrooms, otherRooms, schedule, lectures, nextWeek)
-      }
+    if (lecture.schedulable == 0) {
+      const copyPreviousLecture = previousLecture;
+      copyPreviousLecture.day = nextWeek;
+      scheduleNextLecture(copyPreviousLecture, lectures, failSafe);
     }
   }
 }
 
 
-function scheduleLecture(lecture, timeSlots, LArooms, RUrooms, otherRooms, schedule, lectures, failSafe) {
-  if (failSafe > 0){
+function scheduleLecture(lecture, lectures, failSafe) {
+  if (failSafe > 1) {
     console.error(`Triggered failSafe, could not schedule lecture: ${lecture.course}`); // failSafe za nextId
     return false;
   }
 
-  let validTerm;
-  if (lecture.schedulable == -1) {  //Diplome n shit
-    validTerm = setUnschedulables(lecture, timeSlots); //pustim isti cas izvajanja
-  } else if (lecture.schedulable == 0) { // ce je ze (z nextId)
+  if (lecture.schedulable == 0) { // ce je ze (z nextId)
     return;
-  } else {
-    const LAtypes = ["10", "22"];
-    const RUtypes = ["35", "22"];
+  }
 
-    if (LAtypes.includes(lecture.executionTypeId)) {    // samo razlika je namen lecturjev (racunlaniske, predavanja...)
-      validTerm = findValidTerm(lecture, timeSlots, LArooms, schedule); // Pomembna funkcija
-    } else if (RUtypes.includes(lecture.executionTypeId)) {
-      validTerm = findValidTerm(lecture, timeSlots, RUrooms, schedule);
-    } else {
-      validTerm = findValidTerm(lecture, timeSlots, otherRooms, schedule);
+  if (lecture.prevId != -1) {
+    const previousLecture = lectures.find(element => element.id == lecture.prevId);
+    if (previousLecture.schedulable != 0){
+      scheduleLecture(previousLecture, lectures, failSafe);
     }
   }
 
+  let validTerm;
+  const LAtypes = ["10"];
+  const RUtypes = ["35", "22"];
+
+  if (LAtypes.includes(lecture.executionTypeId)) {    // samo razlika je namen lecturjev (racunlaniske, predavanja...)
+    validTerm = findValidTerm(lecture, globalLArooms); // Pomembna funkcija
+  } else if (RUtypes.includes(lecture.executionTypeId)) {
+    validTerm = findValidTerm(lecture, globalRUrooms);
+  } else {
+    validTerm = findValidTerm(lecture, globalOtherRooms);
+  }
+
   if (validTerm) {
-    schedule.push(validTerm);
-    scheduleNextLecture(lecture, timeSlots, LArooms, RUrooms, otherRooms, schedule, lectures, validTerm.day, failSafe); // Za nextId, pomembna funkcija
+    globalSchedule.push(validTerm);
+    lecture.schedulable = 0;
+    scheduleNextLecture(validTerm, lectures, failSafe); // Za nextId, pomembna funkcija
 
     return true;
   } else {
@@ -247,29 +256,45 @@ function scheduleLecture(lecture, timeSlots, LArooms, RUrooms, otherRooms, sched
 
 
 // najprej zrihta te diplome, prakse, magistre, in jim da isti čas kot je v originalnem
-function initializeSchedule(lectures, timeSlots, rooms) {
-  lectures.sort((a, b) => a.schedulable - b.schedulable);
+function initializeSchedule(lectures) {
+  console.log(`LA: ${globalLArooms.length}, RU ${globalRUrooms.length}, other ${globalOtherRooms.length}`)
 
-  const { LArooms, RUrooms, otherRooms } = splitAndSortRooms(rooms); //sortira sobe glede na namen
+  const unschedulables = lectures.filter(lecture => lecture.schedulable === -1);
 
-  const schedule = [];
+  let filteredAndSortedLectures = lectures.filter(lecture => lecture.schedulable !== -1); //filtrira le tiste ki jim nastavim nov case
+  shuffleArray(filteredAndSortedLectures);  // jih randomizira, nato pa se sortira, da so tisti z prevId nazacetku. 
+  filteredAndSortedLectures = filteredAndSortedLectures.sort((a, b) => {
+    if (a.prevId !== -1 && b.prevId === -1) {
+      return -1;
+    }
+    if (a.prevId === -1 && b.prevId !== -1) {
+      return 1;
+    }
+    return 0;
+  });
 
-  for (const lecture of lectures) {
-    scheduleLecture(lecture, timeSlots, LArooms, RUrooms, otherRooms, schedule, lectures, 0); //HELL, lp
+  for (const unschedulable of unschedulables) { //najprej zrihtam diplome/prakse....
+    let validTerm = setUnschedulables(unschedulable);
+    globalSchedule.push(validTerm);
   }
 
-  return schedule;
+  for (const lecture of filteredAndSortedLectures) {
+    scheduleLecture(lecture, filteredAndSortedLectures, 0); //HELL, lp
+  }
+
+  console.log(globalSchedule.length);
+  return globalSchedule;
 }
 
 
-function setUnschedulables(lecture, timeSlots) {
+function setUnschedulables(lecture) {
   const start = new Date(lecture.startTime._seconds * 1000);
   const splitDate = start.toISOString().split('T');
   const date = splitDate[0];
   const hour = start.getHours();
   const end = hour + lecture.duration;
 
-  for (const timeSlot of timeSlots) {
+  for (const timeSlot of globalTimeSlots) {
     if (timeSlot.date === date) {
       return {
         ...lecture,
@@ -285,25 +310,18 @@ function setUnschedulables(lecture, timeSlots) {
 
 
 // isce term, ki nima konfliktov, za vsako sobo/timeslot/uro
-function findValidTerm(lecture, timeSlots, rooms, schedule) {
+function findValidTerm(lecture, rooms) {
   for (const room of rooms) {
     if (lecture.size > room.size) continue;
 
-    for (const timeSlot of timeSlots) {
+    for (const timeSlot of globalTimeSlots) {
       for (const hour of timeSlot.hours) {
         const timeSlotEnd = hour + lecture.duration;
 
         if (timeSlotEnd > 21) continue;
 
-        if (!hasConflicts(lecture, room, timeSlot, hour, timeSlotEnd, schedule)) {
-          return {
-            ...lecture,
-            rooms: [room],
-            room_ids: [room.id],
-            day: timeSlot.date,
-            start: hour,
-            end: timeSlotEnd,
-          };
+        if (!hasConflicts(lecture, room, timeSlot, hour, timeSlotEnd)) {
+          return createLectureObject(lecture, room, timeSlot, hour, timeSlotEnd);
         }
       }
     }
@@ -311,6 +329,79 @@ function findValidTerm(lecture, timeSlots, rooms, schedule) {
 
   return null;
 }
+
+
+function scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, day, start) {
+  let validTerm;
+
+  const LAtypes = ["10"];
+  const RUtypes = ["35", "22"];
+
+  if (LAtypes.includes(lecture.executionTypeId)) {    // samo razlika je namen lecturjev (racunlaniske, predavanja...)
+    validTerm = findValidTermWithPrefrence(lecture, globalLArooms, day, start); // Pomembna funkcija
+  } else if (RUtypes.includes(lecture.executionTypeId)) {
+    validTerm = findValidTermWithPrefrence(lecture, globalRUrooms, day, start);
+  } else {
+    validTerm = findValidTermWithPrefrence(lecture, globalOtherRooms, day, start);
+  }
+
+  if (validTerm) {
+    globalSchedule.push(validTerm);
+    lecture.schedulable = 0;
+    scheduleNextLecture(validTerm, lectures, failSafe); // Za nextId, pomembna funkcija
+
+    return true;
+  } else {
+    console.error(`Could not schedule lecture: ${lecture.course}`);
+    return false;
+  }
+}
+
+
+function findValidTermWithPrefrence(lecture, rooms, day, start) {
+  for (const room of rooms) {
+    if (lecture.size > room.size) continue;
+
+    let startIterating = false;
+    for (const timeSlot of globalTimeSlots) {
+      if (timeSlot.date === day) {
+        startIterating = true;
+        for (const hour of timeSlot.hours) {
+          if (!startIterating || hour < start) continue;
+
+          const timeSlotEnd = hour + lecture.duration;
+          if (timeSlotEnd > 21) continue;
+
+          if (!hasConflicts(lecture, room, timeSlot, hour, timeSlotEnd)) {
+            return createLectureObject(lecture, room, timeSlot, hour, timeSlotEnd);
+          }
+        }
+      } else if (startIterating) {
+        for (const hour of timeSlot.hours) {
+          const timeSlotEnd = hour + lecture.duration;
+          if (timeSlotEnd > 21) continue;
+
+          if (!hasConflicts(lecture, room, timeSlot, hour, timeSlotEnd)) {
+            return createLectureObject(lecture, room, timeSlot, hour, timeSlotEnd);
+          }
+        }
+      }
+    }
+  }
+}
+
+
+function createLectureObject(lecture, room, timeSlot, hour, timeSlotEnd) {
+  return {
+    ...lecture,
+    rooms: [room],
+    room_ids: [room.id],
+    day: timeSlot.date,
+    start: hour,
+    end: timeSlotEnd,
+  };
+}
+
 
 /**
  * Checks if a given lecture conflicts with the existing schedule based on room, tutor, or group.
@@ -361,10 +452,10 @@ function findValidTerm(lecture, timeSlots, rooms, schedule) {
  *
  * const conflict = hasConflicts(lecture, room, timesl
  * */
-function hasConflicts(lecture, room, timeslot, lectureStart, lectureEnd, schedule) {
+function hasConflicts(lecture, room, timeslot, lectureStart, lectureEnd) {
   // 2nd layer of hell, tu sam cekira ce ima conflikte, glej example pa chatGPT-ja, lp.
   return (
-    schedule.some(
+    globalSchedule.some(
       (scheduledLecture) =>
         scheduledLecture.room_ids[0] === room.roomId &&
         scheduledLecture.day === timeslot.date &&
@@ -374,7 +465,7 @@ function hasConflicts(lecture, room, timeslot, lectureStart, lectureEnd, schedul
           (lectureStart >= scheduledLecture.start && lectureEnd <= scheduledLecture.end)
         )
     ) ||
-    schedule.some(
+    globalSchedule.some(
       (scheduledLecture) =>
         scheduledLecture.tutor_ids.some(tutorId => lecture.tutor_ids.includes(tutorId)) &&
         scheduledLecture.day === timeslot.date &&
@@ -384,7 +475,7 @@ function hasConflicts(lecture, room, timeslot, lectureStart, lectureEnd, schedul
           (lectureStart >= scheduledLecture.start && lectureEnd <= scheduledLecture.end)
         )
     ) ||
-    schedule.some(
+    globalSchedule.some(
       (scheduledLecture) =>
         scheduledLecture.group_ids.some(groupId => lecture.group_ids.includes(groupId)) &&
         scheduledLecture.day === timeslot.date &&
@@ -401,5 +492,6 @@ function hasConflicts(lecture, room, timeslot, lectureStart, lectureEnd, schedul
 module.exports = {
   generateTimeSlots,
   initializeSchedule,
-  groupLectures
+  globalTimeSlots,
+  splitAndSortRooms
 }
