@@ -1,48 +1,60 @@
 import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
 
 interface TimeSlotsProps {
-    data: any;
-    names: any
+  data: any;
+  names: any;
 }
 
 const TimeSlots = ({ data, names }: TimeSlotsProps) => {
+  const columns: GridColDef[] = [
+    { field: "date", headerName: "Date", width: 120 },
+    { field: "startTime", headerName: "Start Time", width: 150 },
+    { field: "endTime", headerName: "End Time", width: 150 },
+    { field: "duration", headerName: "Duration", width: 100 },
+  ];
 
-    const columns: GridColDef[] = [
-        { field: "date", headerName: "Date", width: 120 },
-        { field: "startTime", headerName: "Start Time", width: 150 },
-        { field: "endTime", headerName: "End Time", width: 150 },
-        { field: "duration", headerName: "Duration", width: 100 }, // Added duration column
-    ];
+  const transformedData = Object.keys(data).flatMap((date) =>
+    data[date].map(
+      (slot: { start: any; end: any; duration: any }, index: any) => ({
+        id: `${date}-${slot.start}-${index}`,
+        date,
+        startTime: slot.start,
+        endTime: slot.end,
+        duration: slot.duration,
+      })
+    )
+  );
 
-    const transformedData = Object.keys(data).flatMap(date =>
-        data[date].map((slot: { start: any; end: any; duration: any; }, index: any) => ({
-            id: `${date}-${slot.start}-${index}`,
-            date,
-            startTime: slot.start,
-            endTime: slot.end,
-            duration: slot.duration, // Include duration
-        }))
-    );
-
-    return (
-        <div className="flex flex-col h-full mt-6"> {/* Changed from flex-row to flex-col */}
-            <div className="mb-2"> {/* Added a small margin for spacing */}
-                <h2>Available Time Slots for:</h2>
-                <p>
-                    <strong>Group:</strong> {names.group}, {' '}
-                    <strong>Tutor:</strong> {names.tutor}, {' '}
-                    <strong>Room:</strong> {names.room}
-                </p>
-            </div>
-
-            <div className="w-full md:w-1/3">
-                <DataGrid
-                    rows={transformedData}
-                    columns={columns}
-                />
-            </div>
-        </div>
-    );
-}
+  return (
+    <div className="flex flex-col h-full mt-6 bg-white rounded-lg shadow p-4">
+      <div className="mb-4">
+        <h2 className="text-modra text-2xl font-bold mb-2">
+          Available Time Slots for:
+        </h2>
+        <p className="text-gray-700">
+          <span className="font-bold bg-gray-100 px-2 py-1 rounded">
+            Group:
+          </span>{" "}
+          {names.group},{" "}
+          <span className="font-bold bg-gray-100 px-2 py-1 rounded">
+            Tutor:
+          </span>{" "}
+          {names.tutor},{" "}
+          <span className="font-bold bg-gray-100 px-2 py-1 rounded">Room:</span>{" "}
+          {names.room}
+        </p>
+      </div>
+      <div className="w-full">
+        <DataGrid
+          rows={transformedData}
+          columns={columns}
+          autoHeight
+          className="rounded-lg border border-gray-200"
+          checkboxSelection={false}
+        />
+      </div>
+    </div>
+  );
+};
 
 export default TimeSlots;
