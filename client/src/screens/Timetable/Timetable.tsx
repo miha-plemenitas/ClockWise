@@ -788,6 +788,7 @@ const Timetable: React.FC<TimetableProps> = ({
         selectedFacultyId={selectedFacultyId}
         branchId={selectedBranch}
         programId={programId}
+        allGroups={allGroups}
       />
     </div>
   );

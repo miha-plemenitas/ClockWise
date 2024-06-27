@@ -23,6 +23,7 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { StringifyOptions } from "querystring";
 import useGroups from "../Hooks/useGroups";
 import useTutors from "../Hooks/useTutors";
+import { Chip } from "@mui/material";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -77,10 +78,18 @@ interface CustomModalProps {
   selectedFacultyId: string;
   branchId: string | null;
   programId: string | null;
+  allGroups?: Group[];
 }
 
 interface Room {
   id: string;
+  name: string;
+}
+
+interface Group {
+  id: string;
+  branchId: number;
+  programId: number;
   name: string;
 }
 
@@ -96,7 +105,8 @@ export default function CustomModal({
   role,
   selectedFacultyId,
   branchId,
-  programId
+  programId,
+  allGroups
 }: CustomModalProps) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState<Dayjs | null>(null);
@@ -108,38 +118,66 @@ export default function CustomModal({
   const [tutor, setTutor] = useState<{ name: string; id: string }[]>([]);
   const [group, setGroup] = useState<{ name: string; id: string }[]>([]);
   const [repeatCount, setRepeatCount] = useState(0);
+  const [groups, setGroups] = useState<Group[]>([]); // all groups
+
+  useEffect(() => {
+    if (event && event.extendedProps && event.extendedProps.tutors) {
+      const initialTutors = event.extendedProps.tutors.map(tutor => ({
+        id: tutor.id,
+        name: tutor.name
+      }));
+      setTutor(initialTutors);
+    }
+
+    if (event && event.extendedProps && event.extendedProps.groups) {
+      const initialGroups = event.extendedProps.groups.map(group => ({
+        id: group.id,
+        name: group.name
+      }));
+      setGroup(initialGroups);
+    }
+
+    if (event && event.extendedProps && event.extendedProps.rooms) {
+      const initialRooms = event.extendedProps.rooms.map(room => ({
+        id: room.id,
+        name: room.name
+      }));
+      setRoom(initialRooms);
+    }
+
+    if (allGroups) {
+      setGroups(allGroups);
+    }
+  }, [event]);
 
   const { rooms } = useRooms(selectedFacultyId);
-  const { groups } = useGroups(branchId, programId);
   const { tutors } = useTutors(selectedFacultyId);
 
-  const handleRoomChange = (eventId: any) => {
-    const selectedRoom = rooms.find((room) => room.id === eventId);
-    if (selectedRoom) {
-      setRoom([{ id: selectedRoom.id, name: selectedRoom.roomName }])
-    } else {
-      console.error('Room not found.');
-    }
+  const handleRoomChange = (event: any) => {
+    const selectedValues = event.target.value;
+    const newSelectedRoom = rooms
+      .filter(room => selectedValues.includes(room.id.toString()))
+      .map(room => ({ id: room.id, name: room.roomName }));
+
+    setRoom(newSelectedRoom);
   };
 
-  const handleGroupChange = (eventId: any) => {
-    const selectedGroup = groups.find((group) => group.id === eventId);
-    if (selectedGroup) {
-      setGroup([{ id: selectedGroup.id, name: selectedGroup.name }])
-      console.log("Group changed", selectedGroup);
-    } else {
-      console.error('Group not found.');
-    }
+  const handleGroupChange = (event: any) => {
+    const selectedValues = event.target.value;
+    const newSelectedGroups = groups
+      .filter(group => selectedValues.includes(group.id.toString()))
+      .map(group => ({ id: group.id, name: group.name }));
+
+    setGroup(newSelectedGroups);
   };
 
-  const handleTutorChange = (eventId: any) => {
-    const selectedTutor = tutors.find((tutor) => tutor.id === eventId);
-    if (selectedTutor) {
-      setTutor([{ id: selectedTutor.id, name: selectedTutor.name }])
-      console.log("Tutor changed", selectedTutor);
-    } else {
-      console.error('Tutor not found.');
-    }
+  const handleTutorChange = (event: any) => {
+    const selectedValues = event.target.value;
+    const newSelectedTutors = tutors
+      .filter(tutor => selectedValues.includes(tutor.id.toString()))
+      .map(tutor => ({ id: tutor.id, name: tutor.name }));
+
+    setTutor(newSelectedTutors);
   };
 
   const formatDate = (dateString: string) => format(new Date(dateString), "EEEE, d. M. yyyy", { locale: sl });
@@ -176,9 +214,7 @@ export default function CustomModal({
 
         eventDetailsList.push({
           course: title || "",
-          startTime: eventStart
-            ? eventStart.format("YYYY-MM-DDTHH:mm:ss")
-            : null,
+          startTime: eventStart ? eventStart.format("YYYY-MM-DDTHH:mm:ss") : null,
           endTime: eventEnd ? eventEnd.format("YYYY-MM-DDTHH:mm:ss") : null,
           executionType: type || "",
           executionTypeId: "",
@@ -187,12 +223,12 @@ export default function CustomModal({
           hasRooms: true,
           branch_ids: [], // doloci v timetable
           branches: [],
-          tutors: [{ name: tutor, id: "" }],
-          tutor_ids: [],
-          rooms: [{ name: room, id: "" }],
-          room_ids: [],
-          groups: [{ name: group, id: "" }],
-          group_ids: [],
+          tutors: tutor,
+          tutor_ids: tutor.map((tutor: { id: any; }) => tutor.id),
+          rooms: room,
+          room_ids: room.map((room: { id: any; }) => room.id),
+          groups: group,
+          group_ids: group.map((group: { id: any; }) => group.id),
           lecture: true,
         });
       }
@@ -200,6 +236,7 @@ export default function CustomModal({
       if (onSave) {
         eventDetailsList.forEach((eventDetails) => onSave(eventDetails));
       }
+
     } else {
       eventDetails = {
         startTime: updatedStartTime
@@ -294,10 +331,11 @@ export default function CustomModal({
       };
     }
 
-    console.log(eventDetails);
+    
     if (onUpdate) {
       onUpdate(eventDetails);
     }
+    
     setTitle("");
     setDate(null);
     setStartTime(null);
@@ -323,7 +361,7 @@ export default function CustomModal({
       aria-describedby="custom-modal-description"
     >
       <Box sx={style}>
-        {mode === "view" && event && ( 
+        {mode === "view" && event && (
           <>
             <Typography id="custom-modal-title" variant="h4" component="h2">
               {event.title}
@@ -425,7 +463,7 @@ export default function CustomModal({
           </>
         )}
 
-        {mode === "edit" && event.extendedProps.lecture && role === "Tutor" && event && (  
+        {mode === "edit" && event.extendedProps.lecture && role === "Tutor" && event && (
           <>
             <Typography id="custom-modal-title" variant="h4" component="h2">
               Edit Lecture
@@ -538,7 +576,7 @@ export default function CustomModal({
           </>
         )}
 
-        {mode === "edit" && event.extendedProps.lecture && role === "Referat" && event && (  // TUTORS AND GROUPS
+        {mode === "edit" && event.extendedProps.lecture && role === "Referat" && event && (
           <>
             <Typography id="custom-modal-title" variant="h4" component="h2">
               Edit Lecture
@@ -590,9 +628,17 @@ export default function CustomModal({
               <Select
                 labelId="tutor-select-label"
                 id="tutor-select"
-                defaultValue={event.extendedProps.tutors.map((tutor: any) => tutor.id).join(", ")}
+                multiple // Allow multiple selections
+                value={tutor.map(tutor => tutor.id.toString())} // Array of selected IDs
                 label="Tutors"
-                onChange={(e) => handleTutorChange(e.target.value)}
+                onChange={handleTutorChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={tutors.find(tutor => tutor.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
               >
                 {tutors.map((tutor) => (
                   <MenuItem key={tutor.id} value={tutor.id}>
@@ -606,9 +652,17 @@ export default function CustomModal({
               <Select
                 labelId="group-select-label"
                 id="group-select"
-                defaultValue={event.extendedProps.groups.map((group: any) => group.id).join(", ")}
+                multiple
+                value={group.map(group => group.id.toString())}
                 label="Groups"
-                onChange={(e) => handleGroupChange(e.target.value)}
+                onChange={handleGroupChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={groups.find(group => group.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
               >
                 {groups.map((group) => (
                   <MenuItem key={group.id} value={group.id}>
@@ -626,13 +680,21 @@ export default function CustomModal({
                 onChange={(e) => setType(e.target.value)}
               />
               <FormControl fullWidth margin="normal">
-                <InputLabel id="room-select-label">Location</InputLabel>
+                <InputLabel id="room-select-label">Rooms</InputLabel>
                 <Select
                   labelId="room-select-label"
                   id="room-select"
-                  defaultValue={event.extendedProps.rooms.map((room: any) => room.id).join(", ")}
-                  label="Location"
-                  onChange={(e) => handleRoomChange(e.target.value)}
+                  multiple // Allow multiple selections
+                  value={room.map(room => room.id.toString())} // Array of selected IDs
+                  label="Rooms"
+                  onChange={handleRoomChange}
+                  renderValue={(selected) => (
+                    <div>
+                      {selected.map((value) => (
+                        <Chip key={value} label={room.find(room => room.id.toString() === value)?.name} />
+                      ))}
+                    </div>
+                  )}
                 >
                   {rooms.map((room) => (
                     <MenuItem key={room.id} value={room.id}>
@@ -704,7 +766,7 @@ export default function CustomModal({
           </>
         )}
 
-        {mode === "add" && role !== "Referat" && ( 
+        {mode === "add" && role !== "Referat" && (
           <>
             <Typography id="custom-modal-title" variant="h4" component="h2">
               Add New Event
@@ -818,9 +880,17 @@ export default function CustomModal({
               <Select
                 labelId="tutor-select-label"
                 id="tutor-select"
-                value={tutor}
+                multiple
+                value={tutor.map(tutor => tutor.id.toString())}
                 label="Tutors"
-                onChange={(e) => handleTutorChange(e.target.value)}
+                onChange={handleTutorChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={tutors.find(tutor => tutor.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
               >
                 {tutors.map((tutor) => (
                   <MenuItem key={tutor.id} value={tutor.id}>
@@ -834,9 +904,17 @@ export default function CustomModal({
               <Select
                 labelId="group-select-label"
                 id="group-select"
-                value={group}
+                multiple
+                value={group.map(group => group.id.toString())}
                 label="Groups"
-                onChange={(e) => handleGroupChange(e.target.value)}
+                onChange={handleGroupChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={groups.find(group => group.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
               >
                 {groups.map((group) => (
                   <MenuItem key={group.id} value={group.id}>
@@ -854,21 +932,29 @@ export default function CustomModal({
                 onChange={(e) => setType(e.target.value)}
               />
               <FormControl fullWidth margin="normal">
-                <InputLabel id="room-select-label">Location</InputLabel>
-                <Select
-                  labelId="room-select-label"
-                  id="room-select"
-                  value={room}
-                  label="Location"
-                  onChange={(e) => handleRoomChange(e.target.value)}
-                >
-                  {rooms.map((room) => (
-                    <MenuItem key={room.id} value={room.id}>
-                      {room.roomName}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <InputLabel id="room-select-label">Rooms</InputLabel>
+              <Select
+                labelId="room-select-label"
+                id="room-select"
+                multiple
+                value={room.map(room => room.id.toString())}
+                label="Rooms"
+                onChange={handleTutorChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={rooms.find(room => room.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
+              >
+                {rooms.map((room) => (
+                  <MenuItem key={room.id} value={room.id}>
+                    {room.roomName} 
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
               <TextField
                 fullWidth
                 margin="normal"
