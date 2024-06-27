@@ -23,6 +23,8 @@ import useBranches from "../../Components/Hooks/useBranches";
 import axios from "axios";
 import SaveButton from "../../Components/SaveButton/SaveButton";
 import { Switch } from "../../Components/ui/switch";
+import AvaibleTimeSlotsModal from "../../Components/Modal/AvailableTimeSlotsModal";
+import TimeSlots from "./TimeSlots";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -101,6 +103,7 @@ const Timetable: React.FC<TimetableProps> = ({
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = useState(false);
+  const [openFind, setOpenFind] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
   const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([]);
   const [selectedTutors, setSelectedTutors] = useState<
@@ -109,6 +112,9 @@ const Timetable: React.FC<TimetableProps> = ({
   const [selectedRoomNames, setSelectedRoomNames] = useState<string[]>([]);
   const [selectedCourseNames, setSelectedCourseNames] = useState<string[]>([]);
   const [allCourseNames, setAllCourseNames] = useState<string[]>([]);
+
+  const [availableSlots, setAvailableSlots] = useState<any>('');
+  const [names, setNames] = useState<any>('');
 
 
   // Handle redirect when switch is toggled
@@ -350,6 +356,8 @@ const Timetable: React.FC<TimetableProps> = ({
     localStorage.removeItem("selectedGroupNames");
     localStorage.removeItem("selectedRoomNames");
     localStorage.removeItem("selectedTutors");
+
+    setAvailableSlots('');
   }, []);
 
   const isTutorInArray = (tutorName: any, tutorsArray: any): boolean => {
@@ -621,6 +629,58 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   };
 
+  const handleOpenFindModal = () => {
+    setOpenFind(true);
+  }
+
+  const handleCloseFindModal = () => {
+    setOpenFind(false);
+  };
+
+  const handleFindAvailableTimeSlots = async (data: any) => {
+
+    try {
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = await axios.get(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/lecture-findAvailableByIds",
+        {
+          params: {
+            facultyId: data.facultyId,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            groupId: data.groupId,
+            tutorId: data.tutorId,
+            roomsId: data.roomId
+          },
+          headers: headers,
+        }
+      );
+
+      setNames({
+        faculty: data.faculty,
+        group: data.group,
+        room: data.room,
+        tutor: data.tutor
+      })
+
+      console.log(response.data.result);
+      setAvailableSlots(response.data.result);
+      setOpenFind(false);
+    } catch (error) {
+      console.error("Error finding available time slots:", error);
+    }
+
+  }
+
   return (
     <div className="w-full p-5">
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
@@ -771,15 +831,30 @@ const Timetable: React.FC<TimetableProps> = ({
         >
           Clear Filters
         </button>
+        <button
+          onClick={handleOpenFindModal}
+          className="bg-modra text-white hover:bg-modra-700 rounded-lg px-4 py-2 flex items-center justify-center"
+        >
+          Find Available Time Slots
+        </button>
         {(role === "Student" || role === "Tutor") && (
           <SaveButton
-          isAuthenticated={isAuthenticated}
-          uid={uid}
-          events={filteredEvents}
-        />
+            isAuthenticated={isAuthenticated}
+            uid={uid}
+            events={filteredEvents}
+          />
         )}
-        
+
       </div>
+      <div>
+        {availableSlots && (<TimeSlots data={availableSlots} names={names}/>)}
+
+      </div>
+      <AvaibleTimeSlotsModal
+        isOpen={openFind}
+        toggle={handleCloseFindModal}
+        onFind={handleFindAvailableTimeSlots}
+      />
       <CustomModal
         isOpen={open}
         toggle={handleCloseModal}
