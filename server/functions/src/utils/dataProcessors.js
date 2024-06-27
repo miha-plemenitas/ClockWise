@@ -176,7 +176,6 @@ function processRoomData(room) {
  * @returns {Object} The processed lecture data.
  */
 function processScheduleData(lecture) {
-  //TODO
   const { startTime, endTime } = setFirestoreTimestampsAndDuration(lecture);
 
   let completeLecture = {

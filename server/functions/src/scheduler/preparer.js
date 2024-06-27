@@ -74,7 +74,6 @@ function prepareLecture(data, rooms) {
 
 
 //Deletam ze zgenerirano kolekcijo, pridobim sobe in celoten urnik
-//TODO - lahko dodam nov boolean ki samo deleta vse v kolekciji
 async function resetCollectionAndFetchSchedule(facultyId) {
   const facultyRef = db.collection("faculties").doc(facultyId);
 
