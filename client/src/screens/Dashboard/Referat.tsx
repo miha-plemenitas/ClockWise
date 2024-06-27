@@ -37,9 +37,11 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     null
   );
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string>("");
 
   const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
   const [heatmapData, setHeatmapData] = useState<any>(null);
+  const [heatmapType, setHeatmapType] = useState<string>("");
   const [loadingHeatmap, setLoadingHeatmap] = useState(false);
 
   useEffect(() => {
@@ -189,6 +191,11 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
       );
 
       setHeatmapData(response.data.result);
+      setHeatmapType(selectedType);
+      const selectedFacultyObj = faculties.find(
+        (faculty) => faculty.facultyId === selectedFaculty
+      );
+      setSelectedFacultyName(selectedFacultyObj?.name || "");
       setHeatmapModalOpen(false);
       console.log("Heatmap data:", response.data.result);
     } catch (error) {
@@ -199,13 +206,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
   };
 
   const prepareHeatmapData = (heatmapData: any) => {
-    const days = Object.keys(heatmapData);
-    const hours = Object.keys(heatmapData[days[0]]);
-
-    const x = hours;
-    const y = days;
-    const z = y.map((day) => x.map((hour) => heatmapData[day][hour]));
-
+    const { x, y, z } = heatmapData;
     return { x, y, z };
   };
 
@@ -214,8 +215,6 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
       <div className="flex flex-col 2xl:flex-row gap-4">
         <div className="2xl:w-1/2">
           <Card className="p-4">
-            {" "}
-            {/* Added Card component here */}
             <div className="flex flex-col gap-4">
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <div className="flex gap-2 items-center">
@@ -261,8 +260,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
           </Button>
           {loadingHeatmap ? (
             <div className="flex justify-center items-center mt-4">
-              <CircularProgress sx={{ color: "grey.500" }} />{" "}
-              {/* Display loading spinner with grey color */}
+              <CircularProgress sx={{ color: "grey.500" }} />
             </div>
           ) : (
             heatmapData && (
@@ -274,14 +272,49 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
                       x: prepareHeatmapData(heatmapData).x,
                       y: prepareHeatmapData(heatmapData).y,
                       type: "heatmap",
-                      colorscale: "Viridis",
+                      colorscale: [
+                        [0, "rgb(0, 0, 139)"],
+                        [1, "rgb(255, 140, 0)"],
+                      ],
+                      colorbar: {
+                        title: heatmapType === "count" ? "Count" : "Frequency",
+                        titleside: "right",
+                      },
                     },
                   ]}
                   layout={{
-                    title: "Lecture Heatmap",
-                    xaxis: { title: "Hour" },
-                    yaxis: { title: "Day" },
+                    title: `Lecture Heatmap for: ${selectedFacultyName}`,
+                    xaxis: {
+                      title: "Hour",
+                      tickmode: "linear",
+                      dtick: 1,
+                      tick0: 0,
+                      showgrid: true,
+                      zeroline: false,
+                    },
+                    yaxis: {
+                      title: "Day",
+                      tickvals: [
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                      ],
+                      ticktext: [
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                      ],
+                      showgrid: true,
+                      zeroline: false,
+                      tickmode: "array",
+                    },
+                    margin: { t: 40, b: 40, l: 50, r: 0 },
                   }}
+                  config={{ responsive: true }}
                   style={{ width: "100%", height: "100%" }}
                 />
               </Card>
