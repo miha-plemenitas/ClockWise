@@ -1,5 +1,8 @@
 # API Documentation
-//TODO opiši login itd itd
+
+All API endpoints require basic authentication with username and password. All are hosted in the region "europe-west3" and all have a timeout of 9 minutes. The endpoints that are more load intensive also have their RAM capacity increased to 2GB.
+
+The scheduling algorithm has its own docs in ./functions/src/scheduler.
 
 ## Faculty
 
@@ -1894,6 +1897,151 @@ Unauthorized
 **Error (404)**
 ```
 Faculty with this ID was not found
+```
+**Error (405)**
+```
+Method {Request method} not allowed
+```
+
+# Schedule
+### generate
+
+`POST /schedule-generate`
+
+Generates a new schedule. Gets all of the existing lectures and tries to rearange them to better optimize it.
+
+#### Request
+```
+curl \
+-X POST 'https://<your-region>-<your-project-id>.cloudfunctions.net/schedule-generate?facultyId=13 \
+-u 'username:password'
+```
+
+| Parameter | Type   | Description           | Required |
+| --------- | ------ | --------------------- | -------- |
+| facultyId | String | The ID of the faculty | Yes      |
+
+#### Response
+**Success (200)**
+```
+{
+    "result": [
+		{
+            "rooms": [ ],
+            "executionTypeId": "2",
+            "room_ids": [],
+            "tutors": [],
+            "executionType": "PR",
+            "groups": [],
+            "branches": [],
+            "duration": 3,
+            "tutor_ids": [],
+            "size": 86,
+            "hasRooms": true,
+            "branch_ids": [],
+            "group_ids": [],
+            "course": "DIFERENCIALNE ENAČBE",
+            "startTime": {
+                "_seconds": 1709200800,
+                "_nanoseconds": 0
+            },
+            "endTime": {
+                "_seconds": 1709211600,
+                "_nanoseconds": 0
+            },
+            "id": "4247",
+            "courseId": "354"
+		}
+	], ...
+}
+```
+**Error (400)**
+```
+No facultyId sent
+```
+**Error (401)**
+```
+Unauthorized
+```
+**Error (405)**
+```
+Method {Request method} not allowed
+```
+
+### heatmap
+
+`POST /schedule-heatmap`
+
+Generates a new schedule. Gets all of the existing lectures and tries to rearange them to better optimize it.
+
+#### Request
+```
+curl \
+-X POST 'https://<your-region>-<your-project-id>.cloudfunctions.net/schedule-heatmap?facultyId=13 \
+-u 'username:password'
+```
+
+| Parameter  | Type   | Description                                                                    | Required |
+| ---------- | ------ | ------------------------------------------------------------------------------ | -------- |
+| facultyId  | String | The ID of the faculty                                                          | Yes      |
+| collection | String | Collection name, either lectures, generated_lectures or original_lectures      | yes      |
+| type       | String | Can be count or frequency, if it is not privided it will be defaulted to count | no       |
+
+#### Response
+**Success (200)**
+```
+{
+    "result": 
+        "z": [
+            [],
+            [],
+            [],
+            [],
+            []
+        ],
+        "x": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+        ],
+        "y": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday"
+        ]
+    
+}
+```
+**Error (400)**
+```
+No facultyId sent
+```
+**Error (401)**
+```
+Unauthorized
 ```
 **Error (405)**
 ```
