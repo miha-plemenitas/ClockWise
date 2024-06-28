@@ -2,23 +2,51 @@ const { Timestamp } = require('firebase-admin/firestore');
 const { getAllFacultyCollectionItems } = require("../service/facultyCollections");
 
 
+/**
+ * Converts lecture day and time information into Firestore Timestamps.
+ *
+ * This function takes an object representing a lecture, constructs start and end Date objects
+ * from the provided day and start/end times, and converts these into Firestore Timestamps.
+ *
+ * @param {Object} lecture - The lecture object.
+ * @param {string} lecture.day - The day of the lecture in 'YYYY-MM-DD' format.
+ * @param {number} lecture.start - The starting hour of the lecture (0-23).
+ * @param {number} lecture.end - The ending hour of the lecture (0-23).
+ *
+ * @returns {Object} An object containing the Firestore Timestamps.
+ * @returns {Timestamp} return.startTime - The Firestore Timestamp representing the start time of the lecture.
+ * @returns {Timestamp} return.endTime - The Firestore Timestamp representing the end time of the lecture.
+ *
+ * @throws {Error} Throws an error if the date format is invalid.
+ */
 function setFirestoreTimestampsAndDuration(lecture) {
-  const startDateTimeString = `${lecture.day}T${String(lecture.start).padStart(2, '0')}:00:00.000Z`;
-    const endDateTimeString = `${lecture.day}T${String(lecture.end).padStart(2, '0')}:00:00.000Z`;
-  
-    const startDateTime = new Date(startDateTimeString);
-    const endDateTime = new Date(endDateTimeString);
+  let startDateTimeString;
+  let endDateTimeString;
 
-    if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-      console.log(lecture);
-      throw new Error('Invalid date format.');
-    }
-  
-  
-    const startTime = Timestamp.fromDate(startDateTime);
-    const endTime = Timestamp.fromDate(endDateTime);
-  
-    return { startTime, endTime };
+  if (lecture.day && lecture.start && lecture.end){
+    startDateTimeString = `${lecture.day}T${String(lecture.start).padStart(2, '0')}:00:00.000Z`;
+    endDateTimeString = `${lecture.day}T${String(lecture.end).padStart(2, '0')}:00:00.000Z`;
+  } else {
+    startDateTimeString = lecture.startTime;
+    endDateTimeString = lecture.endTime;
+  }
+
+
+  const startDateTime = new Date(startDateTimeString);
+  const endDateTime = new Date(endDateTimeString);
+
+  if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+    throw new Error('Invalid date format.');
+  }
+
+  const durationInMilliseconds = endDateTime - startDateTime;
+  const duration = Math.floor(durationInMilliseconds / (1000 * 60 * 60));
+
+
+  const startTime = Timestamp.fromDate(startDateTime);
+  const endTime = Timestamp.fromDate(endDateTime);
+
+  return { startTime, endTime, duration };
 }
 
 
@@ -36,6 +64,18 @@ function convertToDates(event) {
 }
 
 
+/**
+ * Asserts that a condition is true, and throws an error with a specified message if it is not.
+ *
+ * This function is used for validating conditions during runtime. If the provided condition
+ * evaluates to false, an error is thrown with the given message. If no message is provided,
+ * a default message "Assertion failed" is used.
+ *
+ * @param {boolean} condition - The condition to be checked.
+ * @param {string} [message] - The message to be used in the error if the condition is false.
+ *
+ * @throws {Error} Throws an error with the provided message if the condition is false.
+ */
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message || "Assertion failed");
@@ -43,8 +83,25 @@ function assert(condition, message) {
 }
 
 
+/**
+ * Generates heatmap data for Plotly heatmap visualization based on faculty lecture schedules.
+ *
+ * This function retrieves lecture data from a specified collection, calculates the lecture 
+ * distribution across the days of the week and hours of the day, and formats the data for use 
+ * in a Plotly heatmap.
+ *
+ * @param {string} facultyId - The ID of the faculty.
+ * @param {string} collectionName - The name of the collection to fetch lectures from. Must be one of 'original_lectures', 'lectures', or 'generated_lectures'.
+ * @param {string} type - The type of data to be returned. Must be either 'frequency' or 'count'.
+ * 
+ * @returns {Promise<Object>} A promise that resolves to an object containing the heatmap data.
+ * @returns {Array<number>} return.x - An array of hours of the day (0-23).
+ * @returns {Array<string>} return.y - An array of days of the week.
+ * @returns {Array<Array<number>>} return.z - A 2D array representing the heatmap values, either frequencies or counts of lectures.
+ * 
+ * @throws {Error} Throws an error if the collection name or type is invalid.
+ */
 async function getHeatMap(facultyId, collectionName, type) {
-  // Validate collectionName and type
   assert(
     ['original_lectures', 'lectures', 'generated_lectures'].includes(collectionName),
     'collection name not found, must be lectures, original_lectures or generated_lectures'
@@ -60,7 +117,6 @@ async function getHeatMap(facultyId, collectionName, type) {
   const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
   const hoursOfDay = Array.from({ length: 24 }, (_, i) => i);
 
-  // Pre-generate heatmap structure
   const heatmap = daysOfWeek.reduce((acc, day) => {
     acc[day] = Array.from({ length: 24 }, () => 0);
     return acc;

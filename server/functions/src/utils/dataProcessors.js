@@ -179,8 +179,8 @@ function processScheduleData(lecture) {
   const { startTime, endTime } = setFirestoreTimestampsAndDuration(lecture);
 
   let completeLecture = {
-    startTime: startTime,
-    endTime: endTime,
+    startTime: serializeTimestamp(startTime),
+    endTime: serializeTimestamp(endTime),
     ...lecture
   };
 
@@ -193,6 +193,26 @@ function processScheduleData(lecture) {
   delete completeLecture.end;
 
   return completeLecture;
+}
+
+
+/**
+ * Serializes a Firestore Timestamp object into a plain object.
+ *
+ * This function converts a Firestore Timestamp object into an object
+ * containing `_seconds` and `_nanoseconds` properties, which can be
+ * easily stored or transmitted as JSON.
+ *
+ * @param {Timestamp} timestamp - The Firestore Timestamp object to serialize.
+ * @returns {Object} An object containing `_seconds` and `_nanoseconds` properties.
+ * @returns {number} return._seconds - The seconds part of the timestamp.
+ * @returns {number} return._nanoseconds - The nanoseconds part of the timestamp.
+ */
+function serializeTimestamp(timestamp) {
+  return {
+    _seconds: timestamp.seconds,
+    _nanoseconds: timestamp.nanoseconds,
+  };
 }
 
 

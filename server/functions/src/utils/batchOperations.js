@@ -30,6 +30,20 @@ async function processItemsInBatch(
       data.id = String(data.id);
     }
 
+    if (data.startTime && !(data.startTime instanceof Timestamp)) {
+      data.startTime = new Timestamp(data.startTime._seconds, data.startTime._nanoseconds);
+    }
+    if (data.endTime && !(data.endTime instanceof Timestamp)) {
+      data.endTime = new Timestamp(data.endTime._seconds, data.endTime._nanoseconds);
+    }
+
+    if (data.startTime && data.endTime) {
+      if (!(data.startTime instanceof Timestamp) || !(data.endTime instanceof Timestamp)) {
+        console.log(data.startTime);
+        throw new Error("Not correct instance 4");
+      }
+    }
+
     const docRef = collectionRef.doc(data.id);
     batch.set(docRef, data);
     batchCounter++;
@@ -107,7 +121,7 @@ function convertDatesToTimestamps(data) {
     return data;
   } catch (error) {
     throw new Error("Dates are not correctly formated, please use ISO 8601");
-  } 
+  }
 }
 
 function isValidEmail(email) {

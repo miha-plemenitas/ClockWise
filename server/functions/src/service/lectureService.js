@@ -114,6 +114,8 @@ async function getLecturesByFilterAndOptionallyDate(
   const snapshot = await filteredQuery.get();
   const lectures = snapshot.docs.map(doc => doc.data());
 
+  console.log(lectures.length)
+
   return lectures;
 }
 
@@ -263,7 +265,22 @@ async function filterLectures(
   return events;
 }
 
-
+/**
+ * Retrieves lectures from a Firestore collection where a specified array field contains any of the provided values.
+ *
+ * This function queries a Firestore collection for documents where the specified field contains any of the values
+ * in the provided array. Optionally, it can also filter the results based on a start and end time.
+ *
+ * @param {string} facultyId - The ID of the faculty to which the collection belongs.
+ * @param {string} filterFieldName - The name of the field to filter by using the "array-contains-any" clause.
+ * @param {Array} filterValue - The array of values to check within the specified field.
+ * @param {Timestamp} startTime - The start time to filter the lectures (optional).
+ * @param {Timestamp} endTime - The end time to filter the lectures (optional).
+ * @param {string} collectionName - The name of the collection to query within the faculty document.
+ *
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of lecture documents.
+ * @throws {Error} Throws an error if the faculty document does not exist.
+ */
 async function getLecturesByArrayContainsAny(
   facultyId,
   filterFieldName,
@@ -290,6 +307,18 @@ async function getLecturesByArrayContainsAny(
 }
 
 
+/**
+ * Retrieves rooms from a Firestore collection that have a size greater than or equal to the specified size.
+ *
+ * This function queries a Firestore collection for documents representing rooms where the size field is greater than
+ * or equal to the specified room size.
+ *
+ * @param {string} facultyId - The ID of the faculty to which the rooms collection belongs.
+ * @param {number} roomSize - The minimum size of the rooms to be retrieved.
+ *
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of room documents.
+ * @throws {Error} Throws an error if the faculty document does not exist.
+ */
 async function getRoomsBiggerThan(
   facultyId,
   roomSize
@@ -311,6 +340,21 @@ async function getRoomsBiggerThan(
 }
 
 
+/**
+ * Retrieves lectures for an array of items from a Firestore collection with optional date filters.
+ *
+ * This function queries a Firestore collection for lectures corresponding to each item in the provided array.
+ * Optionally, it can filter the results based on a start and end time. Group events are also included in the results.
+ *
+ * @param {Array<Object>} arrayOfItems - An array of items to find lectures for.
+ * @param {string} facultyId - The ID of the faculty to which the collection belongs.
+ * @param {string} collectionName - The name of the collection to query within the faculty document.
+ * @param {Timestamp} startTime - The start time to filter the lectures (optional).
+ * @param {Timestamp} endTime - The end time to filter the lectures (optional).
+ * @param {Array<Object>} groupEvents - An array of group events to include in the results.
+ *
+ * @returns {Promise<Object>} A promise that resolves to an object mapping item IDs to their corresponding lectures.
+ */
 async function findLectureForArrayOfItems(
   arrayOfItems,
   facultyId,
@@ -335,6 +379,18 @@ async function findLectureForArrayOfItems(
 }
 
 
+/**
+ * Finds and formats free slots for each item in the provided object within a specified time range.
+ *
+ * This function processes each item in the given object to find and format free slots based on the provided
+ * start and end times. The results are returned as a new object with the same keys as the input object.
+ *
+ * @param {Object} object - The input object containing items to find and format free slots for.
+ * @param {Timestamp} startTime - The start time for finding free slots.
+ * @param {Timestamp} endTime - The end time for finding free slots.
+ *
+ * @returns {Promise<Object>} A promise that resolves to an object mapping the original keys to their corresponding formatted free slots.
+ */
 async function findAndFormatFreeSlotsForObjects(object, startTime, endTime) {
   const data = {}
   Object.keys(object).forEach(function(key) {
@@ -346,6 +402,18 @@ async function findAndFormatFreeSlotsForObjects(object, startTime, endTime) {
 }
 
 
+/**
+ * Saves a lecture to the Firestore database for a specified faculty.
+ *
+ * This function saves a lecture document to the Firestore "lectures" collection within the specified faculty document.
+ * It filters and processes the lecture data, then adds it to the collection, and updates the document with its generated ID.
+ *
+ * @param {string} facultyId - The ID of the faculty to which the lecture belongs.
+ * @param {Object} lecture - The lecture data to be saved.
+ *
+ * @returns {Promise<Object>} A promise that resolves to the saved lecture document with its full data, including the generated ID.
+ * @throws {Error} Throws an error if the faculty document does not exist.
+ */
 async function saveLecture(facultyId, lecture){
   const facultyRef = db.collection("faculties").doc(facultyId);
   const facultyDoc = await facultyRef.get();
@@ -376,6 +444,18 @@ async function saveLecture(facultyId, lecture){
 }
 
 
+/**
+ * Updates a lecture in the Firestore database for a specified faculty.
+ *
+ * This function updates a lecture document in the Firestore "lectures" collection within the specified faculty document.
+ * It processes and prepares the lecture data, sets Firestore timestamps and duration, and updates the document.
+ *
+ * @param {string} facultyId - The ID of the faculty to which the lecture belongs.
+ * @param {Object} lecture - The lecture data to be updated. Must include an `id` field.
+ *
+ * @returns {Promise<Object>} A promise that resolves to the updated lecture document data.
+ * @throws {Error} Throws an error if the faculty document or the lecture document does not exist, or if no lecture ID is provided.
+ */
 async function updateLecture(facultyId, lecture){
   const facultyRef = db.collection("faculties").doc(facultyId);
   const facultyDoc = await facultyRef.get();
@@ -406,6 +486,17 @@ async function updateLecture(facultyId, lecture){
 }
 
 
+/**
+ * Prepares the lecture data for processing.
+ *
+ * This function modifies the lecture object to standardize the field names and optionally
+ * includes additional fields based on the provided condition.
+ *
+ * @param {Object} lecture - The lecture object to be processed.
+ * @param {boolean} [allCondition=false] - A flag indicating whether additional fields should be included.
+ *
+ * @returns {Object} The modified lecture object with standardized field names and optional additional fields.
+ */
 function preprareLectureForProccessing(lecture, allCondition = false){
   lecture.start_time = lecture.startTime;
   lecture.end_time = lecture.endTime;
@@ -417,6 +508,19 @@ function preprareLectureForProccessing(lecture, allCondition = false){
 }
 
 
+/**
+ * Configures the time-related keys of a lecture object.
+ *
+ * This function sets the `startTime`, `endTime`, and `duration` fields of the lecture object.
+ * It also removes the `start_time` and `end_time` fields from the lecture object.
+ *
+ * @param {Object} lecture - The lecture object to be configured.
+ * @param {Timestamp} startTime - The Firestore Timestamp representing the start time of the lecture.
+ * @param {Timestamp} endTime - The Firestore Timestamp representing the end time of the lecture.
+ * @param {number} duration - The duration of the lecture in hours, rounded down to the nearest whole number.
+ *
+ * @returns {Object} The modified lecture object with updated time-related keys.
+ */
 function configureTimeKeysLecture(lecture, startTime, endTime, duration){
   lecture.startTime = startTime;
   lecture.endTime = endTime;

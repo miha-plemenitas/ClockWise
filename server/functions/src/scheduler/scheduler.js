@@ -9,10 +9,17 @@ const { resetCollectionAndFetchSchedule, expandLectureData } = require("./prepar
 const { updateLectureDates, saveGeneratedSchedule } = require("./converter");
 const fs = require('fs');
 const path = require('path');
-const { schedule } = require('firebase-functions/v1/pubsub');
 
 
-//Da nea brezzveze fetcham podatkov cel čas, če obstaja json file vzamem iz jsona, drugače fetch
+/**
+ * Retrieves lectures and rooms data for a faculty.
+ *
+ * This function checks if the data exists in local JSON files. If the files exist, it reads the data from them.
+ * Otherwise, it fetches the data, saves it to the JSON files, and then returns the data.
+ *
+ * @param {string} facultyId - The ID of the faculty.
+ * @returns {Promise<Object>} A promise that resolves to an object containing `original_lectures` and `rooms`.
+ */
 async function getLecturesAndRooms(facultyId){ 
   const lecturesPath = path.resolve(__dirname, '../data/lectures.json');
   const roomsPath = path.resolve(__dirname, '../data/rooms.json');
@@ -23,7 +30,7 @@ async function getLecturesAndRooms(facultyId){
     original_lectures = JSON.parse(fs.readFileSync(lecturesPath, 'utf8'));
     rooms = JSON.parse(fs.readFileSync(roomsPath, 'utf8'));
   } else {
-    const schedule = await resetCollectionAndFetchSchedule(facultyId);  //TO GLEJ drugo ni pomembno
+    const schedule = await resetCollectionAndFetchSchedule(facultyId);
     original_lectures = schedule.original_lectures;
     rooms = schedule.rooms;
 
@@ -35,20 +42,25 @@ async function getLecturesAndRooms(facultyId){
 }
 
 
-
+/**
+ * Generates a schedule for a faculty based on lectures and rooms data.
+ *
+ * This function retrieves lectures and rooms data for the specified faculty, splits and sorts the rooms,
+ * generates time slots, expands lecture data, initializes the schedule, assigns IDs to unscheduled lectures,
+ * saves the generated schedule, and returns the result.
+ *
+ * @param {string} facultyId - The ID of the faculty.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of scheduled lectures.
+ */
 async function generateSchedule(facultyId) {
-  const { rooms, original_lectures } = await resetCollectionAndFetchSchedule(facultyId); // IF production
+  //const { rooms, original_lectures } = await resetCollectionAndFetchSchedule(facultyId); // IF production
 
-  //const { rooms, original_lectures } = await getLecturesAndRooms(facultyId); //IF working local
+  const { rooms, original_lectures } = await getLecturesAndRooms(facultyId); //IF working local
 
   splitAndSortRooms(rooms);
 
-
-  await generateTimeSlots(facultyId, original_lectures); //array timeSlotov, vsak ma day:"2024-06-14", pa array hours (od 7-21 oz srede 10-21)
-  expandLectureData(original_lectures); //groupira lecturje glede na course, groups, tutors... s tem delam pol nextId
-
-  console.log(original_lectures.length);
-  console.log(original_lectures[0]);
+  await generateTimeSlots(facultyId, original_lectures);
+  expandLectureData(original_lectures);
 
   const schedule = initializeSchedule(original_lectures);
   schedule.sort((a, b) => a.id - b.id);
@@ -61,9 +73,11 @@ async function generateSchedule(facultyId) {
     }
   }
 
-  let something = await saveGeneratedSchedule(facultyId, schedule);
+  const result = schedule;
+  await saveGeneratedSchedule(facultyId, schedule);
 
-  return something;
+
+  return result;
 }
 
 

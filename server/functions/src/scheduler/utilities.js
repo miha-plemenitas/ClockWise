@@ -9,6 +9,13 @@ let globalOtherRooms;
 const globalSchedule = [];
 
 
+/**
+ * Shuffles an array in place using the Fisher-Yates algorithm.
+ *
+ * This function randomizes the order of the elements in the provided array.
+ *
+ * @param {Array} array - The array to be shuffled.
+ */
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -17,12 +24,32 @@ function shuffleArray(array) {
 }
 
 
+/**
+ * Converts a Unix timestamp to a Date object representing the date (year, month, and day) only.
+ *
+ * This function takes a Unix timestamp (in seconds) and converts it to a Date object. The time
+ * portion of the Date object is set to midnight (00:00:00) of the corresponding date.
+ *
+ * @param {number} timestamp - The Unix timestamp in seconds.
+ * @returns {Date} A Date object representing the year, month, and day of the provided timestamp.
+ */
 function getDateFromTimestamp(timestamp) {
   const date = new Date(timestamp * 1000);
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 };
 
 
+/**
+ * Generates an array of dates within a specified range, excluding weekends and specified free days.
+ *
+ * This function creates an array of Date objects representing all the dates between the startDate and endDate,
+ * excluding weekends (Saturdays and Sundays) and any dates specified in the freeDays array.
+ *
+ * @param {Date} startDate - The start date of the range.
+ * @param {Date} endDate - The end date of the range.
+ * @param {Array<string>} freeDays - An array of strings representing dates (in 'YYYY-MM-DD' format) to be excluded.
+ * @returns {Array<Date>} An array of Date objects representing the valid dates within the specified range.
+ */
 function getDatesInRange(startDate, endDate, freeDays) {
   const dateArray = [];
   let currentDate = new Date(startDate);
@@ -37,31 +64,15 @@ function getDatesInRange(startDate, endDate, freeDays) {
 }
 
 /**
- * 
- * Na koncu generira nekaj takega: 
- *         {
-            "date": "2024-06-13",
-            "week": 24,
-            "hasLecture": true,
-            "hours": [
-                7,
-                8,
-                9,
-                10,
-                11,
-                12,
-                13,
-                14,
-                15,
-                16,
-                17,
-                18,
-                19,
-                20,
-                21
-            ]
-        }, ...<
- * TODO get daysOff
+ * Generates time slots for a faculty based on lecture dates and days off.
+ *
+ * This function generates an array of time slots for each valid date within the range of lecture dates.
+ * It excludes weekends, includes special handling for specific weekdays, and filters out days off.
+ *
+ * @param {string} facultyId - The ID of the faculty.
+ * @param {Array<Object>} lectures - An array of lecture objects, each containing a `startTime` property with a Firestore timestamp.
+ *
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of time slot objects.
  */
 async function generateTimeSlots(facultyId, lectures) {
   const daysOff = await getAllFacultyCollectionItems(facultyId, "daysOff");
@@ -115,6 +126,16 @@ async function generateTimeSlots(facultyId, lectures) {
 }
 
 
+/**
+ * Splits rooms into categories and sorts them by size.
+ *
+ * This function splits a list of rooms into three categories: LA rooms, RU rooms, and other rooms.
+ * It then sorts each category by room size in ascending order.
+ *
+ * @param {Array<Object>} rooms - The array of room objects to be split and sorted. Each room object must have a `roomName` and `size` property.
+ *
+ * @returns {Object} An object containing three arrays: `LArooms`, `RUrooms`, and `otherRooms`, each sorted by room size.
+ */
 function splitAndSortRooms(rooms) {
   const LArooms = rooms.filter(room =>
     room.roomName.includes('(') && room.roomName.includes(')') && room.roomName.includes('LA')
@@ -147,7 +168,16 @@ function splitAndSortRooms(rooms) {
 }
 
 
-//gleda za nasljedni tedn (za nextId), ce je po koncanem semetru vrne null, pa se pol od zacetka isce termin
+/**
+ * Gets the date string for the same day of the next week.
+ *
+ * This function takes a date string, calculates the date for the same day of the next week,
+ * and returns it in 'YYYY-MM-DD' format. If the resulting date exceeds a cutoff date, it returns undefined.
+ *
+ * @param {string} dateString - The input date string in 'YYYY-MM-DD' format.
+ * @returns {string|undefined} The date string for the same day of the next week in 'YYYY-MM-DD' format,
+ *                             or undefined if the resulting date exceeds the cutoff date.
+ */
 function getNextWeekDate(dateString) {
   const date = new Date(dateString);
   date.setDate(date.getDate() + 7);
@@ -162,7 +192,15 @@ function getNextWeekDate(dateString) {
 }
 
 
-// Ce je date sploh not (ce ni prost dan)
+/**
+ * Checks if a given date exists in the global time slots.
+ *
+ * This function checks if the provided date exists in the `globalTimeSlots` array,
+ * indicating that the date is not a free day.
+ *
+ * @param {string} date - The date string in 'YYYY-MM-DD' format to check.
+ * @returns {boolean} `true` if the date exists in the `globalTimeSlots` array, otherwise `false`.
+ */
 function checkTimeSlot(date) {
   if (!date)
     return false;
@@ -176,7 +214,17 @@ function checkTimeSlot(date) {
 }
 
 
-//ce date ni not, cekiram ce je cel tedn fry al ne
+/**
+ * Checks if any dates in the week containing the given date exist in the global time slots.
+ *
+ * This function checks if the provided date or any weekday in the same week (Monday to Friday)
+ * exists in the `globalTimeSlots` array. If no dates are found, it returns an empty array.
+ * Otherwise, it returns an array of present dates within the week.
+ *
+ * @param {string} date - The date string in 'YYYY-MM-DD' format to check.
+ * @returns {Array<string>} An array of date strings in 'YYYY-MM-DD' format that are present in the `globalTimeSlots` array.
+ *                          If no dates are found, it returns an empty array.
+ */
 function checkTimeSlotForWeek(date) {
   const inputDate = new Date(date);
   const startOfWeek = new Date(inputDate);
@@ -198,22 +246,32 @@ function checkTimeSlotForWeek(date) {
 }
 
 
+/**
+ * Schedules the next lecture based on the previous lecture's nextId.
+ *
+ * This function attempts to schedule the next lecture in the series. It first checks if the previous lecture's nextId is valid.
+ * If valid, it finds the next lecture, calculates the date for the same day of the next week, and checks if this date is available in the time slots.
+ * Depending on the availability, it either schedules the lecture directly, tries other available slots within the same week,
+ * or starts scheduling from the beginning if the next week is beyond the cutoff date.
+ *
+ * @param {Object} previousLecture - The previous lecture object.
+ * @param {Array<Object>} lectures - An array of lecture objects.
+ * @param {number} failSafe - A counter to prevent infinite loops in scheduling.
+ */
 function scheduleNextLecture(previousLecture, lectures, failSafe) {
   if (previousLecture.nextId == -1) {
     return;
   }
 
-  const lecture = lectures.find(element => element.id == previousLecture.nextId); //Dobiš nextId
-  const nextWeek = getNextWeekDate(previousLecture.day); //datum za +1 teden, ce je preko, returne false
+  const lecture = lectures.find(element => element.id == previousLecture.nextId);
+  const nextWeek = getNextWeekDate(previousLecture.day);
 
-  //console.log(`Got to the next id, with element ${lecture.id} and previous id ${previousLecture.id}`);
-
-  if (checkTimeSlot(nextWeek)) { //Timeslot je v timeSlots pa nextWeek ni vecji od konca
+  if (checkTimeSlot(nextWeek)) {
     scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, nextWeek, previousLecture.start);
-  } else if (!nextWeek) { //next week je vecji od konca, in grem od zacetka
+  } else if (!nextWeek) {
     scheduleLecture(lecture, lectures, failSafe + 1);
   } else {
-    const availableSlots = checkTimeSlotForWeek(nextWeek); //pridobis vse slote v tem tednu
+    const availableSlots = checkTimeSlotForWeek(nextWeek);
 
     for (const availableSlot of availableSlots) {
       if (scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, availableSlot, previousLecture.start)) {
@@ -230,6 +288,19 @@ function scheduleNextLecture(previousLecture, lectures, failSafe) {
 }
 
 
+/**
+ * Schedules a lecture by finding a valid term and updating the global schedule.
+ *
+ * This function attempts to schedule a lecture by finding a valid term based on the lecture type and room availability.
+ * It handles prerequisites by recursively scheduling previous lectures if necessary.
+ * If a valid term is found, the lecture is marked as scheduled and the next lecture in the sequence is scheduled.
+ * A failSafe mechanism prevents infinite loops in scheduling.
+ *
+ * @param {Object} lecture - The lecture object to be scheduled.
+ * @param {Array<Object>} lectures - An array of lecture objects.
+ * @param {number} failSafe - A counter to prevent infinite loops in scheduling.
+ * @returns {boolean} Returns true if the lecture was successfully scheduled, otherwise false.
+ */
 function scheduleLecture(lecture, lectures, failSafe) {
   if (failSafe > 1) {
     console.error(`Triggered failSafe, could not schedule lecture: ${lecture.course}`); // failSafe za nextId
@@ -272,14 +343,22 @@ function scheduleLecture(lecture, lectures, failSafe) {
 }
 
 
-// najprej zrihta te diplome, prakse, magistre, in jim da isti čas kot je v originalnem
+/**
+ * Initializes the schedule by arranging lectures, giving priority to unschedulable lectures.
+ *
+ * This function processes lectures by first handling unschedulable lectures, assigning them their original times,
+ * and then shuffling and sorting the remaining lectures before attempting to schedule them.
+ *
+ * @param {Array<Object>} lectures - An array of lecture objects to be scheduled. Each lecture should have properties such as `schedulable`, `prevId`, etc.
+ * @returns {Array<Object>} The array of scheduled lectures.
+ */
 function initializeSchedule(lectures) {
   console.log(`LA: ${globalLArooms.length}, RU ${globalRUrooms.length}, other ${globalOtherRooms.length}`)
 
   const unschedulables = lectures.filter(lecture => lecture.schedulable === -1);
 
-  let filteredAndSortedLectures = lectures.filter(lecture => lecture.schedulable !== -1); //filtrira le tiste ki jim nastavim nov case
-  shuffleArray(filteredAndSortedLectures);  // jih randomizira, nato pa se sortira, da so tisti z prevId nazacetku. 
+  let filteredAndSortedLectures = lectures.filter(lecture => lecture.schedulable !== -1);
+  shuffleArray(filteredAndSortedLectures);
   filteredAndSortedLectures = filteredAndSortedLectures.sort((a, b) => {
     if (a.prevId !== -1 && b.prevId === -1) {
       return -1;
@@ -290,21 +369,33 @@ function initializeSchedule(lectures) {
     return 0;
   });
 
-  for (const unschedulable of unschedulables) { //najprej zrihtam diplome/prakse....
+  for (const unschedulable of unschedulables) {
     setUnschedulables(unschedulable);
   }
 
   console.log("Done with unshedulables");
 
   for (const lecture of filteredAndSortedLectures) {
-    scheduleLecture(lecture, filteredAndSortedLectures, 0); //HELL, lp
+    scheduleLecture(lecture, filteredAndSortedLectures, 0);
   }
 
-  console.log(globalSchedule.length);
+  console.log(`Done with scheduling, number of scheduled lectures: ${globalSchedule.length}`);
   return globalSchedule;
 }
 
 
+/**
+ * Sets unschedulable lectures by assigning them their original time slots.
+ *
+ * This function assigns the original time slots to unschedulable lectures and adds them to the global schedule.
+ * It checks the global time slots to find the corresponding date and time for the lecture.
+ *
+ * @param {Object} lecture - The lecture object to be set as unschedulable.
+ * @param {Object} lecture.startTime - The Firestore timestamp representing the start time of the lecture.
+ * @param {number} lecture.duration - The duration of the lecture in hours.
+ * @param {Array} lecture.rooms - The rooms assigned to the lecture.
+ * @param {Array} lecture.room_ids - The IDs of the rooms assigned to the lecture.
+ */
 function setUnschedulables(lecture) {
   const start = new Date(lecture.startTime._seconds * 1000);
   const splitDate = start.toISOString().split('T');
@@ -333,7 +424,16 @@ function setUnschedulables(lecture) {
 }
 
 
-// isce term, ki nima konfliktov, za vsako sobo/timeslot/uro
+/**
+ * Finds a valid term for a lecture that does not have any conflicts.
+ *
+ * This function iterates over rooms and time slots to find a valid term (room and time slot) for the lecture
+ * that does not have any conflicts. It ensures the room size is adequate, and the lecture duration fits within the time slot.
+ *
+ * @param {Object} lecture - The lecture object to be scheduled.
+ * @param {Array<Object>} rooms - An array of room objects to consider for scheduling the lecture.
+ * @returns {Object|null} A lecture object with the assigned room and time slot if a valid term is found, otherwise `null`.
+ */
 function findValidTerm(lecture, rooms) {
   for (const room of rooms) {
     if (lecture.size > room.size) continue;
@@ -355,6 +455,20 @@ function findValidTerm(lecture, rooms) {
 }
 
 
+/**
+ * Schedules a lecture in a preferred time slot if possible.
+ *
+ * This function attempts to schedule a lecture in a preferred time slot. It prioritizes different room types
+ * based on the lecture's execution type. If a valid term is found, it schedules the lecture, marks it as schedulable,
+ * and proceeds to schedule the next lecture. If no valid term is found, it logs an error.
+ *
+ * @param {Object} lecture - The lecture object to be scheduled.
+ * @param {Array<Object>} lectures - An array of all lecture objects.
+ * @param {number} failSafe - A counter to prevent infinite loops in scheduling.
+ * @param {string} day - The preferred day for scheduling the lecture.
+ * @param {number} start - The preferred start time for scheduling the lecture.
+ * @returns {boolean} `true` if the lecture was successfully scheduled, otherwise `false`.
+ */
 function scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, day, start) {
   let validTerm;
 
@@ -382,6 +496,18 @@ function scheduleLectureWithPreferedSlot(lecture, lectures, failSafe, day, start
 }
 
 
+/**
+ * Finds a valid term for a lecture with a preferred start time and day.
+ *
+ * This function attempts to find a valid term for the lecture within the provided rooms, prioritizing
+ * the specified day and start time. It ensures the room size is adequate and the lecture duration fits within the time slot.
+ *
+ * @param {Object} lecture - The lecture object to be scheduled.
+ * @param {Array<Object>} rooms - An array of room objects to consider for scheduling the lecture.
+ * @param {string} day - The preferred day for scheduling the lecture.
+ * @param {number} start - The preferred start time for scheduling the lecture.
+ * @returns {Object|null} A lecture object with the assigned room and time slot if a valid term is found, otherwise `null`.
+ */
 function findValidTermWithPrefrence(lecture, rooms, day, start) {
   for (const room of rooms) {
     if (lecture.size > room.size) continue;
@@ -415,6 +541,19 @@ function findValidTermWithPrefrence(lecture, rooms, day, start) {
 }
 
 
+/**
+ * Creates a new lecture object with the specified room, time slot, and duration.
+ *
+ * This function creates and returns a new lecture object by combining the provided lecture data
+ * with the specified room, time slot, start time, and end time.
+ *
+ * @param {Object} lecture - The original lecture object.
+ * @param {Object} room - The room object to assign to the lecture.
+ * @param {Object} timeSlot - The time slot object containing the date and available hours.
+ * @param {number} hour - The start time for the lecture.
+ * @param {number} timeSlotEnd - The end time for the lecture.
+ * @returns {Object} A new lecture object with the specified room, time slot, start time, and end time.
+ */
 function createLectureObject(lecture, room, timeSlot, hour, timeSlotEnd) {
   return {
     ...lecture,
