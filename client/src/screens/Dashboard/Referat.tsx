@@ -214,6 +214,9 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
     <div>
       <div className="flex flex-col 2xl:flex-row gap-4">
         <div className="2xl:w-1/2">
+          <div className="bg-modra text-white py-2 px-4 rounded mb-4 text-center text-lg font-semibold">
+            Determining non-working days
+          </div>
           <Card className="p-4">
             <div className="flex flex-col gap-4">
               <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -288,9 +291,10 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
                       title: "Hour",
                       tickmode: "linear",
                       dtick: 1,
-                      tick0: 0,
+                      tick0: 7,
                       showgrid: true,
                       zeroline: false,
+                      range: [7, 21],
                     },
                     yaxis: {
                       title: "Day",
@@ -312,7 +316,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
                       zeroline: false,
                       tickmode: "array",
                     },
-                    margin: { t: 40, b: 40, l: 50, r: 0 },
+                    margin: { t: 40, b: 40, l: 100, r: 60 },
                   }}
                   config={{ responsive: true }}
                   style={{ width: "100%", height: "100%" }}
