@@ -71,6 +71,16 @@ function getNextWeekdayDates() {
 
 
 
+/**
+ * Saves the generated schedule of lectures for a specified faculty.
+ *
+ * This function deletes all documents in the "generated_lectures" collection for the specified faculty,
+ * processes the lecture items in batches, and saves them to the collection.
+ *
+ * @param {string} facultyId - The ID of the faculty.
+ * @param {Array<Object>} lectures - An array of lecture objects to be saved.
+ * @returns {Promise<void>} A promise that resolves when the schedule has been saved.
+ */
 async function saveGeneratedSchedule(facultyId, lectures) {
   const facultyRef = db.collection("faculties").doc(facultyId);
   const genLecturesRef = facultyRef.collection("generated_lectures");

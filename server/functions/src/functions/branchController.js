@@ -9,7 +9,7 @@ const { handleErrors, validateRequestParams, checkAuthenticationandMethodForRequ
 /**
  * Google Cloud Function to retrieve a specific branch by ID from within a specified faculty's "branches" collection.
  * This function is an HTTP-triggered endpoint that requires both the faculty ID and the branch ID to be provided
- * in the query parameters. It handles CORS, checks if the JWT token is valid,, and addresses potential errors related
+ * in the query parameters. It handles CORS, checks if the JWT token is valid, and addresses potential errors related
  * to missing parameters, unauthorized access, or issues during data retrieval.
  *
  * Query Parameters:

@@ -134,6 +134,7 @@ async function verifyUser(uid, email) {
 }
 
 
+//Not in use
 async function notifyUsers(context, change) {
   const lectureId = context.params.lectureId;
   const lectureData = change.after.exists ? change.after.data() : null;

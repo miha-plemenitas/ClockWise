@@ -20,8 +20,17 @@ const { getAllFacultyCollectionItems } = require("../service/facultyCollections"
  * @throws {Error} Throws an error if the date format is invalid.
  */
 function setFirestoreTimestampsAndDuration(lecture) {
-  const startDateTimeString = `${lecture.day}T${String(lecture.start).padStart(2, '0')}:00:00.000Z`;
-  const endDateTimeString = `${lecture.day}T${String(lecture.end).padStart(2, '0')}:00:00.000Z`;
+  let startDateTimeString;
+  let endDateTimeString;
+
+  if (lecture.day && lecture.start && lecture.end){
+    startDateTimeString = `${lecture.day}T${String(lecture.start).padStart(2, '0')}:00:00.000Z`;
+    endDateTimeString = `${lecture.day}T${String(lecture.end).padStart(2, '0')}:00:00.000Z`;
+  } else {
+    startDateTimeString = lecture.startTime;
+    endDateTimeString = lecture.endTime;
+  }
+
 
   const startDateTime = new Date(startDateTimeString);
   const endDateTime = new Date(endDateTimeString);
@@ -30,15 +39,14 @@ function setFirestoreTimestampsAndDuration(lecture) {
     throw new Error('Invalid date format.');
   }
 
+  const durationInMilliseconds = endDateTime - startDateTime;
+  const duration = Math.floor(durationInMilliseconds / (1000 * 60 * 60));
+
 
   const startTime = Timestamp.fromDate(startDateTime);
   const endTime = Timestamp.fromDate(endDateTime);
 
-  if (!(startTime instanceof Timestamp) || !(endTime instanceof Timestamp)) {
-    throw new Error("Not correct instance 2");
-  }
-
-  return { startTime, endTime };
+  return { startTime, endTime, duration };
 }
 
 
