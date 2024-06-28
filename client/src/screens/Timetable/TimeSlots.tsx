@@ -13,17 +13,20 @@ const TimeSlots = ({ data, names }: TimeSlotsProps) => {
     { field: "duration", headerName: "Duration", width: 100 },
   ];
 
-  const transformedData = Object.keys(data).flatMap((date) =>
-    data[date].map(
+  const transformedData = Object.keys(data).flatMap((date) => {
+    // Format the date string (e.g., "2024-06-02")
+    const formattedDate = date.split("-").reverse().join(". "); // Split, reverse, and join with dots
+  
+    return data[date].map(
       (slot: { start: any; end: any; duration: any }, index: any) => ({
-        id: `${date}-${slot.start}-${index}`,
-        date,
+        id: `${formattedDate}-${slot.start}-${index}`,
+        date: formattedDate,  // Use the formatted date
         startTime: slot.start,
         endTime: slot.end,
         duration: slot.duration,
       })
-    )
-  );
+    );
+  });
 
   return (
     <div className="flex flex-col h-full mt-6 bg-white rounded-lg shadow p-4">

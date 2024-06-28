@@ -72,11 +72,8 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
   const calendarRef = useRef<FullCalendar>(null);
   const [isTutorMode, setIsTutorMode] = useState(true); // State to track switch
 
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string>(
-    localStorage.getItem("selectedFacultyId") || '');
-  const [selectedTutors, setSelectedTutors] = useState<
-    { id: string; name: string }[]
-  >(JSON.parse(localStorage.getItem("selectedTutors") || "[]"));
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>(localStorage.getItem("selectedFacultyId") || '');
+  const [selectedTutors, setSelectedTutors] = useState<{ id: string; name: string }[]>(JSON.parse(localStorage.getItem("selectedTutors") || "[]"));
 
   const { faculties } = useFaculties();
   const { tutors } = useTutors(selectedFacultyId || "");
@@ -272,89 +269,93 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
     }
   }, [uid]);
 
-  const handleAddEvent = async (eventInfo: any) => {
-    try {
-      const username = process.env.REACT_APP_USERNAME;
-      const password = process.env.REACT_APP_PASSWORD;
+  useEffect(() => {
+    localStorage.removeItem("selectedFacultyId");
+    localStorage.removeItem("selectedTutors");
+  }, []);
 
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
-      const headers = {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/json",
-      };
+  // const handleAddEvent = async (eventInfo: any) => {
+  //   try {
+  //     const username = process.env.REACT_APP_USERNAME;
+  //     const password = process.env.REACT_APP_PASSWORD;
 
-      const response = await axios.post(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
-        { uid, ...eventInfo },
-        { headers: headers }
-      );
-      if (response.status === 201) {
-        setOpen(false);
-        fetchCustomEvents();
-      }
-    } catch (error: any) {
-      console.error("Error adding event:", error);
-    }
-  };
+  //     const bufferedCredentials = Buffer.from(`${username}:${password}`);
+  //     const credentials = bufferedCredentials.toString("base64");
+  //     const headers = {
+  //       Authorization: `Basic ${credentials}`,
+  //       "Content-Type": "application/json",
+  //     };
 
-  const handleUpdateEvent = async (eventInfo: any) => {
-    try {
-      const username = process.env.REACT_APP_USERNAME;
-      const password = process.env.REACT_APP_PASSWORD;
+  //     const response = await axios.post(
+  //       "https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
+  //       { uid, ...eventInfo },
+  //       { headers: headers }
+  //     );
+  //     if (response.status === 201) {
+  //       setOpen(false);
+  //       fetchCustomEvents();
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Error adding event:", error);
+  //   }
+  // };
 
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
-      const headers = {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/json",
-      };
+  // const handleUpdateEvent = async (eventInfo: any) => {
+  //   try {
+  //     const username = process.env.REACT_APP_USERNAME;
+  //     const password = process.env.REACT_APP_PASSWORD;
 
-      const response = await axios.put(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
-        { uid, eventId: eventInfo.id, ...eventInfo },
-        {
-          headers: headers,
-        }
-      );
-      if (response.status === 200) {
-        setOpen(false);
-        fetchCustomEvents();
-      }
-    } catch (error: any) {
-      console.error("Error updating event:", error);
-    }
-  };
+  //     const bufferedCredentials = Buffer.from(`${username}:${password}`);
+  //     const credentials = bufferedCredentials.toString("base64");
+  //     const headers = {
+  //       Authorization: `Basic ${credentials}`,
+  //       "Content-Type": "application/json",
+  //     };
 
-  const handleDeleteEvent = async (eventId: any) => {
-    try {
-      const username = process.env.REACT_APP_USERNAME;
-      const password = process.env.REACT_APP_PASSWORD;
+  //     const response = await axios.put(
+  //       "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
+  //       { uid, eventId: eventInfo.id, ...eventInfo },
+  //       {
+  //         headers: headers,
+  //       }
+  //     );
+  //     if (response.status === 200) {
+  //       setOpen(false);
+  //       fetchCustomEvents();
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Error updating event:", error);
+  //   }
+  // };
 
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
-      const headers = {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/json",
-      };
+  // const handleDeleteEvent = async (eventId: any) => {
+  //   try {
+  //     const username = process.env.REACT_APP_USERNAME;
+  //     const password = process.env.REACT_APP_PASSWORD;
 
-      const response = await axios.delete(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
-        {
-          data: { uid, eventId },
-          headers: headers,
-        }
-      );
-      if (response.status === 200) {
-        setOpen(false);
-        fetchCustomEvents();
-      }
-    } catch (error: any) {
-      console.error("Error deleting event:", error);
-    }
-  };
+  //     const bufferedCredentials = Buffer.from(`${username}:${password}`);
+  //     const credentials = bufferedCredentials.toString("base64");
+  //     const headers = {
+  //       Authorization: `Basic ${credentials}`,
+  //       "Content-Type": "application/json",
+  //     };
 
-  const handleUpdateLecture = (eventInfo: any) => { };
+  //     const response = await axios.delete(
+  //       "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
+  //       {
+  //         data: { uid, eventId },
+  //         headers: headers,
+  //       }
+  //     );
+  //     if (response.status === 200) {
+  //       setOpen(false);
+  //       fetchCustomEvents();
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Error deleting event:", error);
+  //   }
+  // };
+
 
   const renderEventContent = (eventInfo: EventContentArg) => {
     return (
@@ -462,10 +463,10 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
         isOpen={open}
         toggle={handleCloseModal}
         mode={mode}
-        onSave={handleAddEvent}
-        onUpdate={handleUpdateEvent}
-        onUpdateLecture={handleUpdateLecture}
-        onDelete={handleDeleteEvent}
+        // onSave={handleAddEvent}
+        // onUpdate={handleUpdateEvent}
+        // onUpdateLecture={handleUpdateLecture}
+        // onDelete={handleDeleteEvent}
         event={selectedEvent}
         role={role}
         selectedFacultyId=""

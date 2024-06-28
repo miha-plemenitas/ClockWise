@@ -11,6 +11,7 @@ import Referat from "./Referat";
 import { Card } from "../../Components/ui/card"; // Import Shadcn Card component
 import { Button } from "../../Components/ui/button"; // Import Shadcn Button component
 import GenerateModal from "../../Components/Modal/GenerateModal"; // Import GenerateModal
+import CircularProgress from "@mui/material/CircularProgress";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -55,6 +56,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
+  const [openGenerate, setOpenGenerate] = useState<boolean>(false);
 
   const fetchTimetable = async () => {
     try {
@@ -106,6 +108,61 @@ const Dashboard: React.FC<DashboardProps> = ({
     setOpen(false);
   };
 
+  const handleOpenGenerateModal = () => {
+    setOpenGenerate(true);
+  }
+
+  const handleCloseGenerateModal = () => {
+    setOpenGenerate(false);
+  }
+
+  const handleGenerateTimetable = async () => {
+    if (!facultyId) {
+      console.error("No faculty ID found");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
+
+      const credentials = window.btoa(`${username}:${password}`);
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
+
+      const response = await axios.post(
+        `https://europe-west3-pameten-urnik.cloudfunctions.net/schedule-generate?facultyId=${facultyId}`,
+        {},
+        { headers }
+      );
+
+      console.log("API response:", response.data);
+
+      if (
+        response.data &&
+        response.data.result &&
+        Array.isArray(response.data.result)
+      ) {
+        setGeneratedEvents(response.data.result);
+      } else {
+        console.error("Unexpected API response structure", response.data);
+        setGeneratedEvents([]);
+      }
+    } catch (error) {
+      console.error("Error generating schedule:", error);
+      setGeneratedEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const [loading, setLoading] = useState(false);
+  const [generatedEvents, setGeneratedEvents] = useState<any[]>([]);
+
   return (
     <div className="dashboard-container p-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-6">
@@ -146,7 +203,17 @@ const Dashboard: React.FC<DashboardProps> = ({
           <Card className="bg-modra w-full p-4">
             <Referat facultyId={facultyId} isVerified={isVerified} />
           </Card>
-          <GenerateModal uid={uid!} />
+          <Button onClick={handleGenerateTimetable}>
+            Generate Timetable
+          </Button>
+          {loading && <CircularProgress />}
+          {!loading && generatedEvents.length > 0 && (
+            <pre>{JSON.stringify(generatedEvents, null, 2)}</pre>
+          )}
+          {!loading && generatedEvents.length === 0 && (
+            <p>No events generated. Please try again.</p>
+          )}
+          <GenerateModal uid={uid!} isOpen={openGenerate} toggle={handleCloseGenerateModal} facultyId={facultyId} />
         </div>
       )}
       {!isAuthenticated && (

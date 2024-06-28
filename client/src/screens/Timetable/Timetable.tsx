@@ -331,7 +331,6 @@ const Timetable: React.FC<TimetableProps> = ({
   };
 
   useEffect(() => {
-    setFilteredEvents([]);
     setSelectedFacultyId("");
     setSelectedFacultyName(null);
     setProgramId(null);
@@ -341,20 +340,12 @@ const Timetable: React.FC<TimetableProps> = ({
     setSelectedYearName(null);
     setSelectedBranch(null);
     setSelectedBranchName(null);
-    setSelectedCourseNames([]);
-    setSelectedGroupNames([]);
-    setSelectedRoomNames([]);
-    setSelectedTutors([]);
-
     localStorage.removeItem("selectedFacultyId");
     localStorage.removeItem("selectedProgramId");
     localStorage.removeItem("selectedYearId");
     localStorage.removeItem("selectedBranchId");
-    localStorage.removeItem("selectedCourseNames");
-    localStorage.removeItem("selectedGroupNames");
-    localStorage.removeItem("selectedRoomNames");
-    localStorage.removeItem("selectedTutors");
 
+    clearFilters();
     setAvailableSlots('');
   }, []);
 
@@ -406,12 +397,7 @@ const Timetable: React.FC<TimetableProps> = ({
     if (isAuthenticated && role !== "Referat") {
       setMode("add");
       setOpen(true);
-    } else if (
-      isAuthenticated &&
-      role === "Referat" &&
-      selectedBranch &&
-      selectedFacultyId
-    ) {
+    } else if (isAuthenticated && role === "Referat" && selectedBranch && selectedFacultyId && isVerified) {
       setMode("add");
       setOpen(true);
     }

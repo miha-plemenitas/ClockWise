@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DataGrid, GridToolbar, GridColDef } from '@mui/x-data-grid';
 import { Select, MenuItem } from '@mui/material';
 import { Button } from "../../Components/ui/button";
@@ -181,10 +181,25 @@ const Admin: React.FC = () => {
         }
     };
 
+    const dataGridRef = useRef<HTMLDivElement | null>(null); 
+
+    useEffect(() => {
+        const adjustGridHeight = () => {
+          if (dataGridRef.current) {
+            const hasRows = users.length > 0;
+            const newHeight = hasRows ? 'auto' : '350px'; 
+            dataGridRef.current.style.height = newHeight;
+          }
+        };
+
+        adjustGridHeight(); 
+      }, [users]); 
+    
+
     return (
         <div>
             <div className="flex flex-col md:flex-row gap-4 w-full h-full">
-                <div className="w-full h-full">
+                <div ref={dataGridRef} className="w-full h-full">
                     <DataGrid rows={users} columns={columns} slots={{ toolbar: GridToolbar }} />
                 </div>
             </div>

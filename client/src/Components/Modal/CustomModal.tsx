@@ -10,7 +10,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { useEffect, useState } from "react";
+import { Key, useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/sl";
 import utc from "dayjs/plugin/utc";
@@ -114,7 +114,7 @@ export default function CustomModal({
   const [type, setType] = useState("");
   const [room, setRoom] = useState<Room[]>([]);
   const [tutor, setTutor] = useState<{ name: string; id: string }[]>([]);
-  const [group, setGroup] = useState<{ name: string; id: string }[]>([{ name: '', id: '' }]);
+  const [group, setGroup] = useState<{ name: string; id: string }[]>([]);
   const [repeatCount, setRepeatCount] = useState(0);
   const [groups, setGroups] = useState<Group[]>([]); // all groups
 
@@ -546,15 +546,7 @@ export default function CustomModal({
                 },
               }}
             />
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Type"
-                defaultValue={event.extendedProps.executionType}
-                onChange={(e) => setType(e.target.value)}
-              />
-              <FormControl fullWidth margin="normal">
+            <FormControl fullWidth margin="normal">
                 <InputLabel id="room-select-label">Rooms</InputLabel>
                 <Select
                   labelId="room-select-label"
@@ -578,6 +570,15 @@ export default function CustomModal({
                   ))}
                 </Select>
               </FormControl>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Type"
+                defaultValue={event.extendedProps.executionType}
+                onChange={(e) => setType(e.target.value)}
+              />
+              
             </Box>
           </>
         )}
@@ -835,7 +836,7 @@ export default function CustomModal({
           </>
         )}
 
-        {mode === "add" && role === "Referat" && ( // TUTORS AND GROUPS
+        {mode === "add" && role === "Referat" && ( 
           <>
             <Typography id="custom-modal-title" variant="h4" component="h2">
               Add New Lecture
@@ -912,13 +913,13 @@ export default function CustomModal({
                 labelId="group-select-label"
                 id="group-select"
                 multiple
-                value={group.map(group => group.id.toString())}
+                value={group.map(group => group.id.toString())} 
                 label="Groups"
                 onChange={handleGroupChange}
                 renderValue={(selected) => (
                   <div>
-                    {selected.map((value) => (
-                      <Chip key={value} label={groups.find(group => group.id.toString() === value)?.name} />
+                    {selected.map((value: Key | null | undefined) => (
+                      <Chip key={value} label={group.find(room => room.id.toString() === value)?.name} />
                     ))}
                   </div>
                 )}

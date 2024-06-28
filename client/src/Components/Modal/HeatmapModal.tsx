@@ -97,8 +97,8 @@ export default function HeatmapModal({
                                 label="Age"
                                 onChange={(e) => setSelectedCollection(e.target.value)}
                             >
-                                <MenuItem value={'original_lectures'}>Original lectures</MenuItem>
-                                <MenuItem value={'lectures'}>Lectures</MenuItem>
+                                <MenuItem value={'original_lectures'}>Lectures</MenuItem>
+                                {/* <MenuItem value={'lectures'}>Lectures</MenuItem> */}
                                 <MenuItem value={'generated_lectures'}>Generated lectures</MenuItem>
                             </Select>
                         </FormControl>
@@ -113,7 +113,6 @@ export default function HeatmapModal({
                             >
                                 <MenuItem value={'frequency'}>Frequency</MenuItem>
                                 <MenuItem value={'count'}>Count</MenuItem>
-                                <MenuItem value={'both'}>Both</MenuItem>
                             </Select>
                         </FormControl>
                     </div>

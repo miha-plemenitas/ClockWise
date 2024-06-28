@@ -105,7 +105,7 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
           console.error("Error fetching data:", error);
         }
         onSignin();
-        navigate('/dashboard');
+        navigate('/');
       }
     } catch (error) {
       setError("An error occurred with Google sign-in. Please try again.");
@@ -167,7 +167,7 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
                     required
                   />
                 </div>
-                <div className="text-center "><Link to="/forgot" className="text-oranzna hover:underline">Forgot password?</Link></div>
+                {/* <div className="text-center "><Link to="/forgot" className="text-oranzna hover:underline">Forgot password?</Link></div> */}
                 <Button
                   type="submit"
                   className="w-full bg-modra hover:bg-modra-700 text-white font-bold py-2 px-4 rounded-lg"

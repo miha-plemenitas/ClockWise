@@ -57,7 +57,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
       headerName: "",
       width: 100,
       renderCell: (params) => (
-        <Button onClick={() => handleRemoveDayOff(params.row.id)}>
+        <Button className="bg-oranzna text-white hover:bg-oranzna-700" onClick={() => handleRemoveDayOff(params.row.id)}>
           Remove
         </Button>
       ),
@@ -151,7 +151,23 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
           headers: headers,
         }
       );
-      setDaysOff(response.data.result);
+      setDaysOff(
+        response.data.result.map((dayOff: { startDate: any; endDate: any; }) => {
+          const formatDate = (dateString: string | number | Date) => {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0'); // Add leading zero if needed
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Add leading zero if needed
+            const year = date.getFullYear();
+            return `${day}. ${month}. ${year}`;
+          };
+  
+          return {
+            ...dayOff,
+            startDate: formatDate(dayOff.startDate),
+            endDate: formatDate(dayOff.endDate),
+          };
+        })
+      );
     } catch (error) {
       console.error("Error fetching days:", error);
     }
@@ -234,7 +250,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
                     onChange={(newValue) => setEndDate(newValue)}
                   />
                   <Button
-                    className="bg-oranzna text-white hover:bg-oranzna-700"
+                    className="bg-modra text-white hover:bg-modra-700"
                     onClick={handleAddDayOff}
                   >
                     Add
