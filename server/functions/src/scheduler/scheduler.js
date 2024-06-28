@@ -43,12 +43,8 @@ async function generateSchedule(facultyId) {
 
   splitAndSortRooms(rooms);
 
-
   await generateTimeSlots(facultyId, original_lectures); //array timeSlotov, vsak ma day:"2024-06-14", pa array hours (od 7-21 oz srede 10-21)
   expandLectureData(original_lectures); //groupira lecturje glede na course, groups, tutors... s tem delam pol nextId
-
-  console.log(original_lectures.length);
-  console.log(original_lectures[0]);
 
   const schedule = initializeSchedule(original_lectures);
   schedule.sort((a, b) => a.id - b.id);
@@ -61,9 +57,10 @@ async function generateSchedule(facultyId) {
     }
   }
 
-  let something = await saveGeneratedSchedule(facultyId, schedule);
+  const result = schedule;
+  await saveGeneratedSchedule(facultyId, schedule);
 
-  return something;
+  return result;
 }
 
 

@@ -114,6 +114,8 @@ async function getLecturesByFilterAndOptionallyDate(
   const snapshot = await filteredQuery.get();
   const lectures = snapshot.docs.map(doc => doc.data());
 
+  console.log(lectures.length)
+
   return lectures;
 }
 
