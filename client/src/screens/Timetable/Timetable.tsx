@@ -8,7 +8,6 @@ import CustomModal from "../../Components/Modal/CustomModal";
 import { firestore } from "../../Config/firebase";
 import { Dayjs } from "dayjs";
 import { Buffer } from "buffer";
-
 import DropdownMenuFaculties from "../../Components/Dropdowns/DropdownMenuFaculties";
 import DropdownMenuPrograms from "../../Components/Dropdowns/DropdownMenuPrograms";
 import DropdownMenuYear from "../../Components/Dropdowns/DropdownMenuYear";
@@ -98,7 +97,6 @@ const Timetable: React.FC<TimetableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isTutorMode, setIsTutorMode] = useState(false);
-
   const calendarRef = useRef<FullCalendar>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
@@ -108,9 +106,7 @@ const Timetable: React.FC<TimetableProps> = ({
   const [openFind, setOpenFind] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
   const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([]);
-  const [selectedTutors, setSelectedTutors] = useState<
-    { id: string; name: string }[]
-  >([]);
+  const [selectedTutors, setSelectedTutors] = useState<{ id: string; name: string }[]>([]);
   const [selectedRoomNames, setSelectedRoomNames] = useState<string[]>([]);
   const [selectedCourseNames, setSelectedCourseNames] = useState<string[]>([]);
   const [allCourseNames, setAllCourseNames] = useState<string[]>([]);
@@ -164,32 +160,11 @@ const Timetable: React.FC<TimetableProps> = ({
     null
   );
 
-  const [allGroups, setAllGroups] = useState<Group[]>([]);
-
   const { branches } = useBranches(
     selectedFacultyId,
     programId || "",
     selectedYear
   );
-
-  const fetchAllGroups = async () => {
-    try {
-      const querySnapshot = await firestore
-        .collection("faculties")
-        .doc(selectedFacultyId)
-        .collection("groups")
-        .get();
-
-      const filteredGroups: Group[] = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Group[];
-
-      setAllGroups(filteredGroups);
-    } catch (err) {
-      console.error("Error loading groups:", err);
-    }
-  };
 
   const fetchData = async () => {
     try {
@@ -265,9 +240,6 @@ const Timetable: React.FC<TimetableProps> = ({
   };
 
   useEffect(() => {
-    if (selectedFacultyId) {
-      fetchAllGroups();
-    }
     if (selectedFacultyId && selectedBranch) {
       fetchData();
     }
@@ -361,9 +333,6 @@ const Timetable: React.FC<TimetableProps> = ({
       customEvents.find(
         (event: CustomEvent) => event.id === clickInfo.event.id
       );
-
-    console.log(isVerified);
-    console.log(role);
 
     if (event && event.extendedProps.lecture) {
       if (role === "Student" || !role || (role === "Tutor" && !isTutorInArray(name, event.extendedProps.tutors)) || (role === "Referat" && facultyId !== selectedFacultyId)) {
@@ -460,7 +429,6 @@ const Timetable: React.FC<TimetableProps> = ({
     if (eventInfo.lecture && selectedFacultyId && selectedBranch) {
       eventInfo.branch_ids = [parseInt(selectedBranch, 10)];
       eventInfo.branches = [{ id: parseInt(selectedBranch, 10) }];
-      console.log("Event is lecture, adding", eventInfo);
 
       try {
         const username = process.env.REACT_APP_USERNAME;
@@ -519,8 +487,6 @@ const Timetable: React.FC<TimetableProps> = ({
 
   const handleUpdateEvent = async (eventInfo: any) => {
     if (eventInfo.lecture && selectedFacultyId && selectedBranch) {
-      // Event is a lecture
-      console.log("Event is a lecture, updating", eventInfo);
       try {
         const username = process.env.REACT_APP_USERNAME;
         const password = process.env.REACT_APP_PASSWORD;
@@ -542,7 +508,6 @@ const Timetable: React.FC<TimetableProps> = ({
             headers: headers,
           }
         );
-        console.log("Response from lecture-update:", response);
         if (response.status === 200) {
           setOpen(false);
           fetchData();
@@ -551,7 +516,6 @@ const Timetable: React.FC<TimetableProps> = ({
         console.error("Error updating event:", error.response || error.message);
       }
     } else {
-      console.log("Event is custom, updating", eventInfo);
       try {
         const username = process.env.REACT_APP_USERNAME;
         const password = process.env.REACT_APP_PASSWORD;
@@ -570,7 +534,6 @@ const Timetable: React.FC<TimetableProps> = ({
             headers: headers,
           }
         );
-        console.log("Response from event-update:", response);
         if (response.status === 200) {
           setOpen(false);
           fetchCustomEvents();
@@ -654,7 +617,6 @@ const Timetable: React.FC<TimetableProps> = ({
         tutor: data.tutor
       })
 
-      console.log(response.data.result);
       setAvailableSlots(response.data.result);
       setOpenFind(false);
     } catch (error) {
@@ -844,9 +806,6 @@ const Timetable: React.FC<TimetableProps> = ({
         event={selectedEvent}
         role={role}
         selectedFacultyId={selectedFacultyId}
-        branchId={selectedBranch}
-        programId={programId}
-        allGroups={allGroups}
       />
     </div>
   );

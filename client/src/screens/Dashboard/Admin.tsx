@@ -18,7 +18,7 @@ interface User {
 const Admin: React.FC = () => {
     const [users, setUsers] = useState<User[]>([])
     const [userChanges, setUserChanges] = useState<{ [userId: string]: Partial<User> }>({});
-    const { faculties, loading: facultiesLoading, error: facultiesError } = useFaculties();
+    const { faculties, loading: facultiesLoading } = useFaculties();
 
     useEffect(() => {
         fetchUsers();
@@ -145,7 +145,6 @@ const Admin: React.FC = () => {
             )
         );
     };;
-
 
     const handleVerifyClick = async (userId: string) => {
         try {

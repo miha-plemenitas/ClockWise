@@ -60,7 +60,6 @@ const DropdownMenuPrograms: React.FC<DropdownMenuProgramsProps> = ({
         Number(selectedProgram.programDuration)
       );
       localStorage.setItem("selectedProgramId", selectedProgram.id);
-      // Clear subsequent selections
       localStorage.removeItem("selectedYearId");
       localStorage.removeItem("selectedBranchId");
       localStorage.removeItem("selectedCourseId");

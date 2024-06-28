@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Card, CardContent } from "../../Components/ui/card";
 import { Input } from "../../Components/ui/input";
 import { Button } from "../../Components/ui/button";
-import { Link, useNavigate } from 'react-router-dom';
-import { auth, Providers } from '../../Config/firebase';
+import { useNavigate } from 'react-router-dom';
+import { auth } from '../../Config/firebase';
 import axios from "axios";
 import { Buffer } from "buffer";
 
@@ -45,9 +45,6 @@ const Signup: React.FC<SignunProps> = ({ onSignin, toggleForm }) => {
 
 
     const handleSubmit = async (e: React.FormEvent) => {
-
-        
-
         e.preventDefault();
         setAuthenticating(true);
         setError(null);
@@ -117,7 +114,7 @@ const Signup: React.FC<SignunProps> = ({ onSignin, toggleForm }) => {
                         </div>
                     )}
                     <form className="space-y-6">
-                    <div>
+                        <div>
                             <Input
                                 id="name"
                                 type="text"

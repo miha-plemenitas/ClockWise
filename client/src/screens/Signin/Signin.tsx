@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent } from "../../Components/ui/card";
 import { Input } from "../../Components/ui/input";
 import { Button } from "../../Components/ui/button";
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { auth, Providers } from '../../Config/firebase';
 import axios from "axios";
 import { Buffer } from "buffer";
@@ -167,7 +167,6 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
                     required
                   />
                 </div>
-                {/* <div className="text-center "><Link to="/forgot" className="text-oranzna hover:underline">Forgot password?</Link></div> */}
                 <Button
                   type="submit"
                   className="w-full bg-modra hover:bg-modra-700 text-white font-bold py-2 px-4 rounded-lg"

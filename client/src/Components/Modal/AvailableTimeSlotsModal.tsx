@@ -123,37 +123,45 @@ const AvailableTimeSlotsModal = ({
   };
 
   useEffect(() => {
-    fetchAllGroups();
-    fetchAllRooms();
-    fetchAllTutors();
+    const fetchAllData = async () => {
+      if (selectedFaculty) {
+        await Promise.all([
+          fetchAllGroups(),
+          fetchAllRooms(),
+          fetchAllTutors(),
+        ]);
+      }
+    };
+
+    fetchAllData();
   }, [selectedFaculty]);
 
   useEffect(() => {
-    setSelectedFaculty("");
-    setSelectedGroup("");
-    setSelectedRoom("");
-    setSelectedTutor("");
-    setStartTime(null);
-    setEndTime(null);
-  }, []);
+    if (!isOpen) {
+      setSelectedFaculty("");
+      setSelectedGroup("");
+      setSelectedRoom("");
+      setSelectedTutor("");
+      setStartTime(null);
+      setEndTime(null);
+    }
+  }, [isOpen]);
 
   const handleFindTimeSlots = () => {
-    let data = {
-      facultyId: selectedFaculty.toString(),
-      startTime: startTime,
-      endTime: endTime,
+    const data = {
+      facultyId: selectedFaculty,
+      startTime,
+      endTime,
       groupId: selectedGroup,
       tutorId: selectedTutor,
       roomsId: selectedRoom,
-      faculty: faculties.find((f: any) => f.id === selectedFaculty)?.name || "",
-      group: groups.find((g: any) => g.id === selectedGroup)?.name || "",
-      tutor: tutors.find((t: any) => t.id === selectedTutor)?.name || "",
-      room: rooms.find((r: any) => r.id === selectedRoom)?.name || "",
+      faculty: faculties.find((f) => f.id === selectedFaculty)?.name || "",
+      group: groups.find((g: { id: any; }) => g.id === selectedGroup)?.name || "",
+      tutor: tutors.find((t: { id: any; }) => t.id === selectedTutor)?.name || "",
+      room: rooms.find((r: { id: string; }) => r.id === selectedRoom)?.name || "",
     };
 
-    if (data) {
-      onFind(data);
-    }
+    onFind(data); 
   };
 
   return (

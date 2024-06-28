@@ -13,7 +13,6 @@ const useBranches = (
   useEffect(() => {
     const fetchBranches = async () => {
       if (facultyId && programId && selectedYear !== null) {
-        //console.log(`Fetching branches for facultyId: ${facultyId}, programId: ${programId}, selectedYear: ${selectedYear}`);
         setLoading(true);
         setError(null);
 
@@ -22,8 +21,8 @@ const useBranches = (
             .collection("faculties")
             .doc(facultyId)
             .collection("branches")
-            .where("programId", "==", Number(programId)) // Convert programId to number
-            .where("year", "==", Number(selectedYear)); // Ensure year is a number
+            .where("programId", "==", Number(programId))
+            .where("year", "==", Number(selectedYear));
 
           const snapshot = await branchesRef.get();
           if (snapshot.empty) {
@@ -34,7 +33,7 @@ const useBranches = (
             id: doc.id,
             ...doc.data(),
           }));
-          //console.log("Fetched branches:", branchesList);
+
           setBranches(branchesList);
         } catch (err) {
           console.error("Error fetching branches:", err);

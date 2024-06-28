@@ -1,20 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { Sheet, SheetTrigger, SheetContent } from "../../Components/ui/sheet";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "../../Components/ui/avatar";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-} from "../../Components/ui/select";
-import { Button } from "../../Components/ui/button";
-import { Input } from "../../Components/ui/input";
-import axios from "axios";
-import { Buffer } from "buffer";
+import { Avatar, AvatarImage, AvatarFallback, } from "../../Components/ui/avatar";
 
 interface CustomizeProps {
   userName: string;
@@ -22,7 +8,6 @@ interface CustomizeProps {
   userPhotoURL: string;
   handleLogout: () => void;
   getInitials: (name: string, email: string) => string;
-  uid: string | null;
   role: string;
 }
 
@@ -32,87 +17,12 @@ const Customize: React.FC<CustomizeProps> = ({
   userPhotoURL,
   handleLogout,
   getInitials,
-  uid,
   role,
 }) => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [selectValue, setSelectValue] = useState<string>(role);
-  const [verificationStatus, setVerificationStatus] = useState<
-    "pending" | "success" | "error" | ""
-  >("");
-
-  useEffect(() => {
-    if (role) {
-      setSelectValue(role);
-    }
-  }, [role]);
 
   const toggleSheet = () => {
     setIsSheetOpen(!isSheetOpen);
-  };
-
-  const updateRole = async () => {
-    try {
-      const username = process.env.REACT_APP_USERNAME;
-      const password = process.env.REACT_APP_PASSWORD;
-
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
-      const headers = {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/json",
-      };
-
-      const response = await axios.put(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/user-update",
-        { uid: uid, role: selectValue },
-        { headers: headers }
-      );
-    } catch (error: any) {
-      console.error("Error updating role:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (selectValue != role && selectValue == "Student") {
-      updateRole();
-    }
-  }, [selectValue]);
-
-  const emailInputRef = useRef<HTMLInputElement>(null);
-
-  const handleSendVerificationEmail = async () => {
-    const email = emailInputRef.current?.value;
-
-    try {
-      setVerificationStatus("pending");
-
-      const username = process.env.REACT_APP_USERNAME;
-      const password = process.env.REACT_APP_PASSWORD;
-
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
-      const headers = {
-        Authorization: `Basic ${credentials}`,
-        "Content-Type": "application/json",
-      };
-
-      const response = await axios.post(
-        "https://europe-west3-pameten-urnik.cloudfunctions.net/user-verify",
-        { uid: uid, email: email },
-        { headers: headers }
-      );
-
-      if (response.data.success) {
-        updateRole();
-        setVerificationStatus("success");
-      } else {
-        setVerificationStatus("error");
-      }
-    } catch (error: any) {
-      setVerificationStatus("error");
-      console.error("Error fetching data:", error);
-    }
   };
 
   return (
@@ -136,7 +46,7 @@ const Customize: React.FC<CustomizeProps> = ({
           <div className="space-y-2">
             <h3 className="text-md font-semibold">Assigned Role</h3>
             <p className="mt-1 text-sm text-gray-500">{role}</p>
-    
+
           </div>
           <div className="border-t border-gray-200"></div>
           <div>

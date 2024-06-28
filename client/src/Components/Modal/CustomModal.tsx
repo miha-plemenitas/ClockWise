@@ -45,7 +45,6 @@ interface CustomModalProps {
   mode: "view" | "edit" | "add";
   onSave?: (eventInfo: any) => void;
   onUpdate?: (eventInfo: any) => void;
-  onUpdateLecture?: (eventInfo: any) => void;
   onDelete?: (eventInfo: any) => void;
   event: {
     id: string;
@@ -74,8 +73,6 @@ interface CustomModalProps {
   };
   role: string;
   selectedFacultyId: string;
-  branchId: string | null;
-  programId: string | null;
   allGroups?: Group[];
 }
 
@@ -97,13 +94,10 @@ export default function CustomModal({
   mode,
   onSave,
   onUpdate,
-  onUpdateLecture,
   onDelete,
   event,
   role,
   selectedFacultyId,
-  branchId,
-  programId,
   allGroups
 }: CustomModalProps) {
   const [title, setTitle] = useState("");
@@ -116,7 +110,10 @@ export default function CustomModal({
   const [tutor, setTutor] = useState<{ name: string; id: string }[]>([]);
   const [group, setGroup] = useState<{ name: string; id: string }[]>([]);
   const [repeatCount, setRepeatCount] = useState(0);
-  const [groups, setGroups] = useState<Group[]>([]); // all groups
+  const [groups, setGroups] = useState<Group[]>([]);
+
+  const { rooms } = useRooms(selectedFacultyId);
+  const { tutors } = useTutors(selectedFacultyId);
 
   useEffect(() => {
     if (event && event.extendedProps && event.extendedProps.tutors) {
@@ -148,9 +145,7 @@ export default function CustomModal({
     }
   }, [event]);
 
-  const { rooms } = useRooms(selectedFacultyId);
-  const { tutors } = useTutors(selectedFacultyId);
-
+  
   const handleRoomChange = (event: any) => {
     const selectedValues = event.target.value;
     const newSelectedRoom = rooms
@@ -219,7 +214,7 @@ export default function CustomModal({
           duration: "",
           courseId: "",
           hasRooms: true,
-          branch_ids: [], // doloci v timetable
+          branch_ids: [],
           branches: [],
           tutors: tutor,
           tutor_ids: tutor.map((tutor: { id: any; }) => tutor.id),
@@ -551,8 +546,8 @@ export default function CustomModal({
                 <Select
                   labelId="room-select-label"
                   id="room-select"
-                  multiple // Allow multiple selections
-                  value={room.map(room => room.id.toString())} // Array of selected IDs
+                  multiple 
+                  value={room.map(room => room.id.toString())} 
                   label="Rooms"
                   onChange={handleRoomChange}
                   renderValue={(selected) => (
@@ -635,8 +630,8 @@ export default function CustomModal({
               <Select
                 labelId="tutor-select-label"
                 id="tutor-select"
-                multiple // Allow multiple selections
-                value={tutor.map(tutor => tutor.id.toString())} // Array of selected IDs
+                multiple 
+                value={tutor.map(tutor => tutor.id.toString())} 
                 label="Tutors"
                 onChange={handleTutorChange}
                 renderValue={(selected) => (
@@ -683,8 +678,8 @@ export default function CustomModal({
                 <Select
                   labelId="room-select-label"
                   id="room-select"
-                  multiple // Allow multiple selections
-                  value={room.map(room => room.id.toString())} // Array of selected IDs
+                  multiple 
+                  value={room.map(room => room.id.toString())}
                   label="Rooms"
                   onChange={handleRoomChange}
                   renderValue={(selected) => (
@@ -936,8 +931,8 @@ export default function CustomModal({
               <Select
                 labelId="room-select-label"
                 id="room-select"
-                multiple // Allow multiple selections
-                value={room.map(room => room.id.toString())} // Array of selected IDs
+                multiple 
+                value={room.map(room => room.id.toString())}
                 label="Rooms"
                 onChange={handleRoomChange}
                 renderValue={(selected) => (

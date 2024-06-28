@@ -2,7 +2,6 @@ import axios from "axios";
 import { Buffer } from "buffer";
 import { toast } from "src/Components/ui/use-toast";
 import { ToastClose } from "src/Components/ui/toast";
-import { Dayjs } from "dayjs";
 
 interface SaveButtonProps {
   isAuthenticated: boolean;
@@ -67,7 +66,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                   title: "Success",
                   description: "Timetable saved successfully!",
                   className: "bg-modra text-white",
-                  action: <ToastClose className="text-white" />, // Ensure the close button is white
+                  action: <ToastClose className="text-white" />,
                 });
               }
               console.log(response);
@@ -77,7 +76,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                 title: "Error",
                 description: "There was a problem saving the timetable.",
                 className: "bg-modra-700 text-white",
-                action: <ToastClose className="text-white" />, // Ensure the close button is white
+                action: <ToastClose className="text-white" />,
               });
               console.error("Error fetching data:", error);
               confirmToast.dismiss();

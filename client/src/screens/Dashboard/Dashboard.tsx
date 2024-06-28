@@ -8,9 +8,9 @@ import { Dayjs } from "dayjs";
 import axios from "axios";
 import Admin from "./Admin";
 import Referat from "./Referat";
-import { Card } from "../../Components/ui/card"; // Import Shadcn Card component
-import { Button } from "../../Components/ui/button"; // Import Shadcn Button component
-import GenerateModal from "../../Components/Modal/GenerateModal"; // Import GenerateModal
+import { Card } from "../../Components/ui/card"; 
+import { Button } from "../../Components/ui/button"; 
+import GenerateModal from "../../Components/Modal/GenerateModal";
 import CircularProgress from "@mui/material/CircularProgress";
 
 function renderEventContent(eventInfo: EventContentArg) {
@@ -251,8 +251,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         event={selectedEvent}
         role={role}
         selectedFacultyId=""
-        branchId=""
-        programId=""
       />
     </div>
   );

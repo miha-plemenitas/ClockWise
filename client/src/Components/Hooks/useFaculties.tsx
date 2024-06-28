@@ -24,7 +24,7 @@ const useFaculties = () => {
           id: doc.id,
           ...doc.data(),
         })) as Faculty[];
-        //console.log("Fetched faculties:", facultiesData);
+
         setFaculties(facultiesData);
       } catch (error) {
         console.error("Error fetching faculties:", error);

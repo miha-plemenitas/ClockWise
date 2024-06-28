@@ -7,23 +7,22 @@ import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import CustomModal from "../../Components/Modal/CustomModal";
 import { Dayjs } from "dayjs";
 import { Buffer } from "buffer";
-
 import DropdownMenuFaculties from "../../Components/Dropdowns/DropdownMenuFaculties";
 import DropdownMenuTutors from "../../Components/Dropdowns/DropdownMenuTutors";
-
 import useFaculties from "../../Components/Hooks/useFaculties";
 import useTutors from "../../Components/Hooks/useTutors";
 import useRooms from "../../Components/Hooks/useRooms";
 import useGroups from "../../Components/Hooks/useGroups";
 import axios from "axios";
 import SaveButton from "../../Components/SaveButton/SaveButton";
-import { Switch } from "../../Components/ui/switch"; // Import Switch component
+import { Switch } from "../../Components/ui/switch";
 
 interface TutorTimetableProps {
   isAuthenticated: boolean;
   uid: string | null;
   role: string;
   name: string | null;
+  isVerified: boolean | null;
 }
 
 interface Event {
@@ -62,7 +61,7 @@ interface CustomEvent {
   };
 }
 
-const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, role, name }) => {
+const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, role, name, isVerified }) => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
@@ -70,7 +69,7 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"view" | "edit" | "add">("add");
   const calendarRef = useRef<FullCalendar>(null);
-  const [isTutorMode, setIsTutorMode] = useState(true); // State to track switch
+  const [isTutorMode, setIsTutorMode] = useState(true);
 
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>(localStorage.getItem("selectedFacultyId") || '');
   const [selectedTutors, setSelectedTutors] = useState<{ id: string; name: string }[]>(JSON.parse(localStorage.getItem("selectedTutors") || "[]"));
@@ -160,7 +159,6 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
         }
       );
       setEvents((prevEvents) => {
-        // Only update events if they have changed
         if (JSON.stringify(prevEvents) !== JSON.stringify(formattedEvents)) {
           return formattedEvents;
         }
@@ -189,12 +187,20 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
         (event: CustomEvent) => event.id === clickInfo.event.id
       );
 
-    console.log(event);
-
     if (event && event.extendedProps.lecture) {
-      setSelectedEvent(event);
-      setMode("view");
-      setOpen(true);
+      if (role === "Tutor" && !isTutorInArray(name, event.extendedProps.tutors)) {
+        setSelectedEvent(event);
+        setMode("view");
+        setOpen(true);
+      } else if (role === "Tutor" && isTutorInArray(name, event.extendedProps.tutors) && isVerified) {
+        setSelectedEvent(event);
+        setMode("edit");
+        setOpen(true);
+      } else {
+        setSelectedEvent(event);
+        setMode("view");
+        setOpen(true);
+      }
     } else if (event && !event.extendedProps.lecture) {
       setSelectedEvent(event);
       setMode("edit");
@@ -206,7 +212,6 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
   };
 
   const handleCloseModal = () => {
-    //setSelectedEvent(null);
     setOpen(false);
   };
 
@@ -274,87 +279,87 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
     localStorage.removeItem("selectedTutors");
   }, []);
 
-  // const handleAddEvent = async (eventInfo: any) => {
-  //   try {
-  //     const username = process.env.REACT_APP_USERNAME;
-  //     const password = process.env.REACT_APP_PASSWORD;
+  const handleAddEvent = async (eventInfo: any) => {
+    try {
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
 
-  //     const bufferedCredentials = Buffer.from(`${username}:${password}`);
-  //     const credentials = bufferedCredentials.toString("base64");
-  //     const headers = {
-  //       Authorization: `Basic ${credentials}`,
-  //       "Content-Type": "application/json",
-  //     };
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
 
-  //     const response = await axios.post(
-  //       "https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
-  //       { uid, ...eventInfo },
-  //       { headers: headers }
-  //     );
-  //     if (response.status === 201) {
-  //       setOpen(false);
-  //       fetchCustomEvents();
-  //     }
-  //   } catch (error: any) {
-  //     console.error("Error adding event:", error);
-  //   }
-  // };
+      const response = await axios.post(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-add",
+        { uid, ...eventInfo },
+        { headers: headers }
+      );
+      if (response.status === 201) {
+        setOpen(false);
+        fetchCustomEvents();
+      }
+    } catch (error: any) {
+      console.error("Error adding event:", error);
+    }
+  };
 
-  // const handleUpdateEvent = async (eventInfo: any) => {
-  //   try {
-  //     const username = process.env.REACT_APP_USERNAME;
-  //     const password = process.env.REACT_APP_PASSWORD;
+  const handleUpdateEvent = async (eventInfo: any) => {
+    try {
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
 
-  //     const bufferedCredentials = Buffer.from(`${username}:${password}`);
-  //     const credentials = bufferedCredentials.toString("base64");
-  //     const headers = {
-  //       Authorization: `Basic ${credentials}`,
-  //       "Content-Type": "application/json",
-  //     };
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
 
-  //     const response = await axios.put(
-  //       "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
-  //       { uid, eventId: eventInfo.id, ...eventInfo },
-  //       {
-  //         headers: headers,
-  //       }
-  //     );
-  //     if (response.status === 200) {
-  //       setOpen(false);
-  //       fetchCustomEvents();
-  //     }
-  //   } catch (error: any) {
-  //     console.error("Error updating event:", error);
-  //   }
-  // };
+      const response = await axios.put(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-update",
+        { uid, eventId: eventInfo.id, ...eventInfo },
+        {
+          headers: headers,
+        }
+      );
+      if (response.status === 200) {
+        setOpen(false);
+        fetchCustomEvents();
+      }
+    } catch (error: any) {
+      console.error("Error updating event:", error);
+    }
+  };
 
-  // const handleDeleteEvent = async (eventId: any) => {
-  //   try {
-  //     const username = process.env.REACT_APP_USERNAME;
-  //     const password = process.env.REACT_APP_PASSWORD;
+  const handleDeleteEvent = async (eventId: any) => {
+    try {
+      const username = process.env.REACT_APP_USERNAME;
+      const password = process.env.REACT_APP_PASSWORD;
 
-  //     const bufferedCredentials = Buffer.from(`${username}:${password}`);
-  //     const credentials = bufferedCredentials.toString("base64");
-  //     const headers = {
-  //       Authorization: `Basic ${credentials}`,
-  //       "Content-Type": "application/json",
-  //     };
+      const bufferedCredentials = Buffer.from(`${username}:${password}`);
+      const credentials = bufferedCredentials.toString("base64");
+      const headers = {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      };
 
-  //     const response = await axios.delete(
-  //       "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
-  //       {
-  //         data: { uid, eventId },
-  //         headers: headers,
-  //       }
-  //     );
-  //     if (response.status === 200) {
-  //       setOpen(false);
-  //       fetchCustomEvents();
-  //     }
-  //   } catch (error: any) {
-  //     console.error("Error deleting event:", error);
-  //   }
-  // };
+      const response = await axios.delete(
+        "https://europe-west3-pameten-urnik.cloudfunctions.net/event-delete",
+        {
+          data: { uid, eventId },
+          headers: headers,
+        }
+      );
+      if (response.status === 200) {
+        setOpen(false);
+        fetchCustomEvents();
+      }
+    } catch (error: any) {
+      console.error("Error deleting event:", error);
+    }
+  };
 
 
   const renderEventContent = (eventInfo: EventContentArg) => {
@@ -462,16 +467,13 @@ const TutorTimetable: React.FC<TutorTimetableProps> = ({ isAuthenticated, uid, r
       <CustomModal
         isOpen={open}
         toggle={handleCloseModal}
+        onSave={handleAddEvent}
+        onUpdate={handleUpdateEvent}
+        onDelete={handleDeleteEvent}
         mode={mode}
-        // onSave={handleAddEvent}
-        // onUpdate={handleUpdateEvent}
-        // onUpdateLecture={handleUpdateLecture}
-        // onDelete={handleDeleteEvent}
         event={selectedEvent}
         role={role}
         selectedFacultyId=""
-        branchId=""
-        programId=""
       />
     </div>
   );

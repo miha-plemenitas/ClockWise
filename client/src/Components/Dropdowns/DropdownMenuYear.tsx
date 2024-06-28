@@ -56,7 +56,6 @@ const DropdownMenuYear: React.FC<DropdownMenuYearProps> = ({
     setSelectedYearState(value);
     onSelectYear(Number(value));
     localStorage.setItem("selectedYearId", value);
-    // Clear subsequent selections
     localStorage.removeItem("selectedBranchId");
     localStorage.removeItem("selectedCourseId");
     localStorage.removeItem("selectedGroupId");

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { DataGrid, GridToolbar, GridColDef } from "@mui/x-data-grid";
-import { Select, MenuItem } from "@mui/material";
 import { Button } from "../../Components/ui/button";
 import axios from "axios";
 import { Buffer } from "buffer";
@@ -27,17 +26,11 @@ interface ReferatProps {
 }
 
 const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
-  const {
-    faculties,
-    loading: facultiesLoading,
-    error: facultiesError,
-  } = useFaculties();
+  const { faculties } = useFaculties();
   const [daysOff, setDaysOff] = useState<DayOff[]>([]);
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
-    null
-  );
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(null);
   const [selectedFacultyName, setSelectedFacultyName] = useState<string>("");
 
   const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
@@ -67,9 +60,6 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
   const handleAddDayOff = async () => {
     try {
       if (startDate) {
-        const selectedFaculty = faculties.find(
-          (f) => f.id === selectedFacultyId
-        );
         const novProstiDan: DayOff = {
           startDate: startDate,
           facultyId: facultyId,
@@ -155,12 +145,12 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
         response.data.result.map((dayOff: { startDate: any; endDate: any; }) => {
           const formatDate = (dateString: string | number | Date) => {
             const date = new Date(dateString);
-            const day = String(date.getDate()).padStart(2, '0'); // Add leading zero if needed
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // Add leading zero if needed
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
             const year = date.getFullYear();
             return `${day}. ${month}. ${year}`;
           };
-  
+
           return {
             ...dayOff,
             startDate: formatDate(dayOff.startDate),
@@ -182,7 +172,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
   };
 
   const handleGenerateHeatmap = async (generateData: any) => {
-    setLoadingHeatmap(true); // Start loading
+    setLoadingHeatmap(true);
     try {
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
@@ -218,7 +208,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
     } catch (error) {
       console.error("Error generating heatmap:", error);
     } finally {
-      setLoadingHeatmap(false); // Stop loading
+      setLoadingHeatmap(false);
     }
   };
 
@@ -231,119 +221,119 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
     <div>
       {isVerified && (
         <div className="flex flex-col 2xl:flex-row gap-4">
-        <div className="2xl:w-1/2">
-          <div className="bg-modra text-white py-2 px-4 rounded mb-4 text-center text-lg font-semibold">
-            Determining non-working days
-          </div>
-          <Card className="p-4">
-            <div className="flex flex-col gap-4">
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <div className="flex gap-2 items-center">
-                  <DatePicker
-                    label="Start date"
-                    value={startDate}
-                    onChange={(newValue) => setStartDate(newValue)}
-                  />
-                  <DatePicker
-                    label="End date (optional)"
-                    value={endDate}
-                    onChange={(newValue) => setEndDate(newValue)}
-                  />
-                  <Button
-                    className="bg-modra text-white hover:bg-modra-700"
-                    onClick={handleAddDayOff}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </LocalizationProvider>
+          <div className="2xl:w-1/2">
+            <div className="bg-modra text-white py-2 px-4 rounded mb-4 text-center text-lg font-semibold">
+              Determining non-working days
             </div>
-            <div style={{ height: 400, width: "100%" }} className="mt-4">
-              <DataGrid
-                rows={daysOff}
-                columns={columnsDaysOff}
-                slots={{ toolbar: GridToolbar }}
-              />
-            </div>
-          </Card>
-        </div>
-        <div className="2xl:w-1/2 flex flex-col justify-center items-center">
-          <HeatmapModal
-            isOpen={heatmapModalOpen}
-            toggle={handleCloseHeatmapModal}
-            onGenerate={handleGenerateHeatmap}
-          />
-          <Button
-            onClick={handleOpenHeatmapModal}
-            className="bg-oranzna text-white hover:bg-oranzna-700 items-center space-x-2"
-          >
-            <span>Generate heatmap</span>
-          </Button>
-          {loadingHeatmap ? (
-            <div className="flex justify-center items-center mt-4">
-              <CircularProgress sx={{ color: "grey.500" }} />
-            </div>
-          ) : (
-            heatmapData && (
-              <Card className="mt-4 w-full bg-white rounded-lg p-4">
-                <Plot
-                  data={[
-                    {
-                      z: prepareHeatmapData(heatmapData).z,
-                      x: prepareHeatmapData(heatmapData).x,
-                      y: prepareHeatmapData(heatmapData).y,
-                      type: "heatmap",
-                      colorscale: [
-                        [0, "rgb(0, 0, 139)"],
-                        [1, "rgb(255, 140, 0)"],
-                      ],
-                      colorbar: {
-                        title: heatmapType === "count" ? "Count" : "Frequency",
-                        titleside: "right",
-                      },
-                    },
-                  ]}
-                  layout={{
-                    title: `Lecture Heatmap for: ${selectedFacultyName}`,
-                    xaxis: {
-                      title: "Hour",
-                      tickmode: "linear",
-                      dtick: 1,
-                      tick0: 7,
-                      showgrid: true,
-                      zeroline: false,
-                      range: [7, 21],
-                    },
-                    yaxis: {
-                      title: "Day",
-                      tickvals: [
-                        "Monday",
-                        "Tuesday",
-                        "Wednesday",
-                        "Thursday",
-                        "Friday",
-                      ],
-                      ticktext: [
-                        "Monday",
-                        "Tuesday",
-                        "Wednesday",
-                        "Thursday",
-                        "Friday",
-                      ],
-                      showgrid: true,
-                      zeroline: false,
-                      tickmode: "array",
-                    },
-                    margin: { t: 40, b: 40, l: 100, r: 60 },
-                  }}
-                  config={{ responsive: true }}
-                  style={{ width: "100%", height: "100%" }}
+            <Card className="p-4">
+              <div className="flex flex-col gap-4">
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <div className="flex gap-2 items-center">
+                    <DatePicker
+                      label="Start date"
+                      value={startDate}
+                      onChange={(newValue) => setStartDate(newValue)}
+                    />
+                    <DatePicker
+                      label="End date (optional)"
+                      value={endDate}
+                      onChange={(newValue) => setEndDate(newValue)}
+                    />
+                    <Button
+                      className="bg-modra text-white hover:bg-modra-700"
+                      onClick={handleAddDayOff}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </LocalizationProvider>
+              </div>
+              <div style={{ height: 400, width: "100%" }} className="mt-4">
+                <DataGrid
+                  rows={daysOff}
+                  columns={columnsDaysOff}
+                  slots={{ toolbar: GridToolbar }}
                 />
-              </Card>
-            )
-          )}
+              </div>
+            </Card>
+          </div>
+          <div className="2xl:w-1/2 flex flex-col justify-center items-center">
+            <HeatmapModal
+              isOpen={heatmapModalOpen}
+              toggle={handleCloseHeatmapModal}
+              onGenerate={handleGenerateHeatmap}
+            />
+            <Button
+              onClick={handleOpenHeatmapModal}
+              className="bg-oranzna text-white hover:bg-oranzna-700 items-center space-x-2"
+            >
+              <span>Generate heatmap</span>
+            </Button>
+            {loadingHeatmap ? (
+              <div className="flex justify-center items-center mt-4">
+                <CircularProgress sx={{ color: "grey.500" }} />
+              </div>
+            ) : (
+              heatmapData && (
+                <Card className="mt-4 w-full bg-white rounded-lg p-4">
+                  <Plot
+                    data={[
+                      {
+                        z: prepareHeatmapData(heatmapData).z,
+                        x: prepareHeatmapData(heatmapData).x,
+                        y: prepareHeatmapData(heatmapData).y,
+                        type: "heatmap",
+                        colorscale: [
+                          [0, "rgb(0, 0, 139)"],
+                          [1, "rgb(255, 140, 0)"],
+                        ],
+                        colorbar: {
+                          title: heatmapType === "count" ? "Count" : "Frequency",
+                          titleside: "right",
+                        },
+                      },
+                    ]}
+                    layout={{
+                      title: `Lecture Heatmap for: ${selectedFacultyName}`,
+                      xaxis: {
+                        title: "Hour",
+                        tickmode: "linear",
+                        dtick: 1,
+                        tick0: 7,
+                        showgrid: true,
+                        zeroline: false,
+                        range: [7, 21],
+                      },
+                      yaxis: {
+                        title: "Day",
+                        tickvals: [
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                        ],
+                        ticktext: [
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                        ],
+                        showgrid: true,
+                        zeroline: false,
+                        tickmode: "array",
+                      },
+                      margin: { t: 40, b: 40, l: 100, r: 60 },
+                    }}
+                    config={{ responsive: true }}
+                    style={{ width: "100%", height: "100%" }}
+                  />
+                </Card>
+              )
+            )}
+          </div>
         </div>
-      </div>
       )}
     </div>
   );

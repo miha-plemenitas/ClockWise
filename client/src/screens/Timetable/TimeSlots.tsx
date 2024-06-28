@@ -1,4 +1,4 @@
-import { DataGrid, GridColDef, GridToolbar } from "@mui/x-data-grid";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 interface TimeSlotsProps {
   data: any;
@@ -14,13 +14,12 @@ const TimeSlots = ({ data, names }: TimeSlotsProps) => {
   ];
 
   const transformedData = Object.keys(data).flatMap((date) => {
-    // Format the date string (e.g., "2024-06-02")
-    const formattedDate = date.split("-").reverse().join(". "); // Split, reverse, and join with dots
-  
+    const formattedDate = date.split("-").reverse().join(". ");
+
     return data[date].map(
       (slot: { start: any; end: any; duration: any }, index: any) => ({
         id: `${formattedDate}-${slot.start}-${index}`,
-        date: formattedDate,  // Use the formatted date
+        date: formattedDate,
         startTime: slot.start,
         endTime: slot.end,
         duration: slot.duration,

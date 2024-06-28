@@ -35,7 +35,6 @@ export default function HeatmapModal({
     onGenerate
 
 }: HeatmapModalProps) {
-
     const [selectedCollection, setSelectedCollection] = useState('');
     const [selectedFaculty, setSelectedFaculty] = useState('');
     const [selectedType, setSelectedType] = useState('');
@@ -44,7 +43,7 @@ export default function HeatmapModal({
 
     const handleGenerateHeatmap = () => {
         if (selectedFaculty && selectedCollection && selectedType) {
-            const data = {selectedFaculty, selectedCollection, selectedType}
+            const data = { selectedFaculty, selectedCollection, selectedType }
             onGenerate(data)
         }
 
@@ -98,7 +97,6 @@ export default function HeatmapModal({
                                 onChange={(e) => setSelectedCollection(e.target.value)}
                             >
                                 <MenuItem value={'original_lectures'}>Lectures</MenuItem>
-                                {/* <MenuItem value={'lectures'}>Lectures</MenuItem> */}
                                 <MenuItem value={'generated_lectures'}>Generated lectures</MenuItem>
                             </Select>
                         </FormControl>
