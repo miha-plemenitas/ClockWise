@@ -23,9 +23,10 @@ interface DayOff {
 
 interface ReferatProps {
   facultyId: string | null;
+  isVerified: boolean | null;
 }
 
-const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
+const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
   const {
     faculties,
     loading: facultiesLoading,
@@ -37,29 +38,31 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(
     null
   );
+  const [selectedFacultyName, setSelectedFacultyName] = useState<string>("");
 
   const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
   const [heatmapData, setHeatmapData] = useState<any>(null);
+  const [heatmapType, setHeatmapType] = useState<string>("");
   const [loadingHeatmap, setLoadingHeatmap] = useState(false);
 
   useEffect(() => {
     fetchDays();
   }, []);
 
-    const columnsDaysOff: GridColDef[] = [
-        { field: 'startDate', headerName: 'Start date', width: 250 },
-        { field: 'endDate', headerName: 'End date', width: 250 },
-        {
-            field: 'akcija',
-            headerName: '',
-            width: 100,
-            renderCell: (params) => (
-                <Button onClick={() => handleRemoveDayOff(params.row.id)} >
-                    Remove
-                </Button>
-            ),
-        },
-    ];
+  const columnsDaysOff: GridColDef[] = [
+    { field: "startDate", headerName: "Start date", width: 250 },
+    { field: "endDate", headerName: "End date", width: 250 },
+    {
+      field: "akcija",
+      headerName: "",
+      width: 100,
+      renderCell: (params) => (
+        <Button onClick={() => handleRemoveDayOff(params.row.id)}>
+          Remove
+        </Button>
+      ),
+    },
+  ];
 
   const handleAddDayOff = async () => {
     try {
@@ -189,6 +192,11 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
       );
 
       setHeatmapData(response.data.result);
+      setHeatmapType(selectedType);
+      const selectedFacultyObj = faculties.find(
+        (faculty) => faculty.facultyId === selectedFaculty
+      );
+      setSelectedFacultyName(selectedFacultyObj?.name || "");
       setHeatmapModalOpen(false);
       console.log("Heatmap data:", response.data.result);
     } catch (error) {
@@ -199,52 +207,50 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
   };
 
   const prepareHeatmapData = (heatmapData: any) => {
-    const days = Object.keys(heatmapData);
-    const hours = Object.keys(heatmapData[days[0]]);
-
-    const x = hours;
-    const y = days;
-    const z = y.map((day) => x.map((hour) => heatmapData[day][hour]));
-
+    const { x, y, z } = heatmapData;
     return { x, y, z };
   };
 
-    return (
-        <div>
-            <div className="flex flex-col 2xl:flex-row gap-4">
-
-                <div className="2xl:w-1/2">
-                    <div className="flex flex-col gap-4">
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <div className="flex gap-2 items-center">
-                                <DatePicker
-                                    label="Start date"
-                                    value={startDate}
-                                    onChange={(newValue) => setStartDate(newValue)}
-
-                                />
-                                <DatePicker
-                                    label="End date (optional)"
-                                    value={endDate}
-                                    onChange={(newValue) => setEndDate(newValue)}
-
-                                />
-                                <Button className="bg-blue-500 text-white hover:bg-blue-700" onClick={handleAddDayOff}>
-                                    Add
-                                </Button>
-                            </div>
-                        </LocalizationProvider>
-                    </div>
-
-          <div style={{ height: 400, width: "100%" }} className="mt-4">
-            <DataGrid
-              rows={daysOff}
-              columns={columnsDaysOff}
-              slots={{ toolbar: GridToolbar }}
-            />
+  return (
+    <div>
+      {isVerified && (
+        <div className="flex flex-col 2xl:flex-row gap-4">
+        <div className="2xl:w-1/2">
+          <div className="bg-modra text-white py-2 px-4 rounded mb-4 text-center text-lg font-semibold">
+            Determining non-working days
           </div>
+          <Card className="p-4">
+            <div className="flex flex-col gap-4">
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <div className="flex gap-2 items-center">
+                  <DatePicker
+                    label="Start date"
+                    value={startDate}
+                    onChange={(newValue) => setStartDate(newValue)}
+                  />
+                  <DatePicker
+                    label="End date (optional)"
+                    value={endDate}
+                    onChange={(newValue) => setEndDate(newValue)}
+                  />
+                  <Button
+                    className="bg-oranzna text-white hover:bg-oranzna-700"
+                    onClick={handleAddDayOff}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </LocalizationProvider>
+            </div>
+            <div style={{ height: 400, width: "100%" }} className="mt-4">
+              <DataGrid
+                rows={daysOff}
+                columns={columnsDaysOff}
+                slots={{ toolbar: GridToolbar }}
+              />
+            </div>
+          </Card>
         </div>
-
         <div className="2xl:w-1/2 flex flex-col justify-center items-center">
           <HeatmapModal
             isOpen={heatmapModalOpen}
@@ -259,8 +265,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
           </Button>
           {loadingHeatmap ? (
             <div className="flex justify-center items-center mt-4">
-              <CircularProgress sx={{ color: "grey.500" }} />{" "}
-              {/* Display loading spinner with grey color */}
+              <CircularProgress sx={{ color: "grey.500" }} />
             </div>
           ) : (
             heatmapData && (
@@ -272,14 +277,50 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
                       x: prepareHeatmapData(heatmapData).x,
                       y: prepareHeatmapData(heatmapData).y,
                       type: "heatmap",
-                      colorscale: "Viridis",
+                      colorscale: [
+                        [0, "rgb(0, 0, 139)"],
+                        [1, "rgb(255, 140, 0)"],
+                      ],
+                      colorbar: {
+                        title: heatmapType === "count" ? "Count" : "Frequency",
+                        titleside: "right",
+                      },
                     },
                   ]}
                   layout={{
-                    title: "Lecture Heatmap",
-                    xaxis: { title: "Hour" },
-                    yaxis: { title: "Day" },
+                    title: `Lecture Heatmap for: ${selectedFacultyName}`,
+                    xaxis: {
+                      title: "Hour",
+                      tickmode: "linear",
+                      dtick: 1,
+                      tick0: 7,
+                      showgrid: true,
+                      zeroline: false,
+                      range: [7, 21],
+                    },
+                    yaxis: {
+                      title: "Day",
+                      tickvals: [
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                      ],
+                      ticktext: [
+                        "Monday",
+                        "Tuesday",
+                        "Wednesday",
+                        "Thursday",
+                        "Friday",
+                      ],
+                      showgrid: true,
+                      zeroline: false,
+                      tickmode: "array",
+                    },
+                    margin: { t: 40, b: 40, l: 100, r: 60 },
                   }}
+                  config={{ responsive: true }}
                   style={{ width: "100%", height: "100%" }}
                 />
               </Card>
@@ -287,6 +328,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };

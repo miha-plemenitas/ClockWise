@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import { useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -25,7 +25,7 @@ import SaveButton from "../../Components/SaveButton/SaveButton";
 import { Switch } from "../../Components/ui/switch";
 import AvaibleTimeSlotsModal from "../../Components/Modal/AvailableTimeSlotsModal";
 import TimeSlots from "./TimeSlots";
-import { Card } from "../../Components/ui/card"; // Import Card component
+import { Card } from "../../Components/ui/card";
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -42,6 +42,7 @@ interface TimetableProps {
   role: string;
   facultyId: string | null;
   name: string | null;
+  isVerified: boolean | null;
 }
 
 interface Event {
@@ -93,11 +94,11 @@ const Timetable: React.FC<TimetableProps> = ({
   role,
   facultyId,
   name,
+  isVerified
 }) => {
-  const navigate = useNavigate(); // Use useNavigate for navigation
-  const [isTutorMode, setIsTutorMode] = useState(false); // State to track switch
+  const navigate = useNavigate();
+  const [isTutorMode, setIsTutorMode] = useState(false);
 
-  // events on timetable
   const calendarRef = useRef<FullCalendar>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [customEvents, setCustomEvents] = useState<CustomEvent[]>([]);
@@ -117,8 +118,6 @@ const Timetable: React.FC<TimetableProps> = ({
   const [availableSlots, setAvailableSlots] = useState<any>('');
   const [names, setNames] = useState<any>('');
 
-
-  // Handle redirect when switch is toggled
   useEffect(() => {
     const storedMode = localStorage.getItem("isTutorMode");
     if (storedMode) {
@@ -135,7 +134,6 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   }, [isTutorMode, navigate]);
 
-  // dropdowns
   const [selectedFacultyId, setSelectedFacultyId] = useState(
     () => localStorage.getItem("selectedFacultyId") || ""
   );
@@ -219,11 +217,9 @@ const Timetable: React.FC<TimetableProps> = ({
 
       const formattedEvents: Event[] = response.data.result.map(
         (lecture: any) => {
-          // Format start time
           const startTime = new Date(lecture.startTime._seconds * 1000);
           const formattedStart = startTime.toISOString().slice(0, 19);
 
-          // Format end time
           const endTime = new Date(lecture.endTime._seconds * 1000);
           const formattedEnd = endTime.toISOString().slice(0, 19);
 
@@ -277,7 +273,6 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   }, [selectedBranch, selectedFacultyId]);
 
-  // So that the additional filters are stackable
   useEffect(() => {
     let filtered = events;
 
@@ -376,25 +371,21 @@ const Timetable: React.FC<TimetableProps> = ({
         (event: CustomEvent) => event.id === clickInfo.event.id
       );
 
-    console.log(event);
+    console.log(isVerified);
+    console.log(role);
 
     if (event && event.extendedProps.lecture) {
-      if (
-        role === "Student" ||
-        !role ||
-        (role === "Tutor" &&
-          !isTutorInArray(name, event.extendedProps.tutors)) ||
-        (role === "Referat" && facultyId !== selectedFacultyId)
-      ) {
+      if (role === "Student" || !role || (role === "Tutor" && !isTutorInArray(name, event.extendedProps.tutors)) || (role === "Referat" && facultyId !== selectedFacultyId)) {
         setSelectedEvent(event);
         setMode("view");
         setOpen(true);
-      } else if (
-        (role === "Referat" && facultyId === selectedFacultyId) ||
-        (role === "Tutor" && isTutorInArray(name, event.extendedProps.tutors))
-      ) {
+      } else if ((role === "Referat" && facultyId === selectedFacultyId && isVerified) || (role === "Tutor" && isTutorInArray(name, event.extendedProps.tutors) && isVerified)) {
         setSelectedEvent(event);
         setMode("edit");
+        setOpen(true);
+      } else if (!isVerified && role !== 'Student') {
+        setSelectedEvent(event);
+        setMode("view");
         setOpen(true);
       }
     } else if (event && !event.extendedProps.lecture) {
@@ -408,7 +399,6 @@ const Timetable: React.FC<TimetableProps> = ({
   };
 
   const handleCloseModal = () => {
-    //setSelectedEvent(null);
     setOpen(false);
   };
 
@@ -427,7 +417,6 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   };
 
-  // fetching custom events
   const fetchCustomEvents = async () => {
     try {
       const username = process.env.REACT_APP_USERNAME;
@@ -450,11 +439,9 @@ const Timetable: React.FC<TimetableProps> = ({
 
       const formattedEvents: CustomEvent[] = response.data.result.map(
         (eventData: any) => {
-          // Format start time
           const startTime = new Date(eventData.startTime._seconds * 1000);
           const formattedStart = startTime.toISOString().slice(0, 19);
 
-          // Format end time
           const endTime = new Date(eventData.endTime._seconds * 1000);
           const formattedEnd = endTime.toISOString().slice(0, 19);
 
@@ -472,9 +459,6 @@ const Timetable: React.FC<TimetableProps> = ({
         }
       );
       setCustomEvents(formattedEvents);
-
-      // Log the fetched custom events
-      console.log("Fetched custom events:", formattedEvents);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -486,10 +470,8 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   }, [uid]);
 
-  // adding event
   const handleAddEvent = async (eventInfo: any) => {
     if (eventInfo.lecture && selectedFacultyId && selectedBranch) {
-      // event is lecture
       eventInfo.branch_ids = [parseInt(selectedBranch, 10)];
       eventInfo.branches = [{ id: parseInt(selectedBranch, 10) }];
       console.log("Event is lecture, adding", eventInfo);
@@ -549,7 +531,6 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   };
 
-  // updating event
   const handleUpdateEvent = async (eventInfo: any) => {
     if (eventInfo.lecture && selectedFacultyId && selectedBranch) {
       // Event is a lecture
@@ -614,12 +595,9 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   };
 
-  // deleting event
   const handleDeleteEvent = async (eventId: any) => {
     if (events.find((event: Event) => event.id === eventId)) {
-      // event is lecture
     } else {
-      // event is custom event
       try {
         const username = process.env.REACT_APP_USERNAME;
         const password = process.env.REACT_APP_PASSWORD;
@@ -657,7 +635,6 @@ const Timetable: React.FC<TimetableProps> = ({
   };
 
   const handleFindAvailableTimeSlots = async (data: any) => {
-
     try {
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
@@ -697,7 +674,6 @@ const Timetable: React.FC<TimetableProps> = ({
     } catch (error) {
       console.error("Error finding available time slots:", error);
     }
-
   }
 
   return (
@@ -810,13 +786,11 @@ const Timetable: React.FC<TimetableProps> = ({
           />
         </div>
       )}
-      <Card className="mt-4 w-full bg-white rounded-lg p-4">
-        {" "}
-        {/* Wrap timetable in Card */}
+      <Card className="mt-4 w-full bg-white rounded-lg p-4 shadow">
         <FullCalendar
           ref={calendarRef}
           height={"auto"}
-          slotMinTime={"7:00"}
+          slotMinTime={"07:00"}
           slotMaxTime={"21:00"}
           plugins={[timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
@@ -865,11 +839,9 @@ const Timetable: React.FC<TimetableProps> = ({
             events={filteredEvents}
           />
         )}
-
       </div>
       <div>
-        {availableSlots && (<TimeSlots data={availableSlots} names={names}/>)}
-
+        {availableSlots && <TimeSlots data={availableSlots} names={names} />}
       </div>
       <AvaibleTimeSlotsModal
         isOpen={openFind}

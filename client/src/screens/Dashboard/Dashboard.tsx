@@ -5,12 +5,12 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import CustomModal from "../../Components/Modal/CustomModal";
 import { Dayjs } from "dayjs";
-import { Buffer } from "buffer";
 import axios from "axios";
 import Admin from "./Admin";
 import Referat from "./Referat";
 import { Card } from "../../Components/ui/card"; // Import Shadcn Card component
 import { Button } from "../../Components/ui/button"; // Import Shadcn Button component
+import GenerateModal from "../../Components/Modal/GenerateModal"; // Import GenerateModal
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -41,6 +41,7 @@ interface DashboardProps {
   uid: string | null;
   role: string;
   facultyId: string | null;
+  isVerified: boolean | null;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -48,6 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   uid,
   role,
   facultyId,
+  isVerified
 }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -59,8 +61,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
 
-      const bufferedCredentials = Buffer.from(`${username}:${password}`);
-      const credentials = bufferedCredentials.toString("base64");
+      const credentials = window.btoa(`${username}:${password}`);
       const headers = {
         Authorization: `Basic ${credentials}`,
         "Content-Type": "application/json",
@@ -140,10 +141,13 @@ const Dashboard: React.FC<DashboardProps> = ({
           />
         </Card>
       )}
-      {isAuthenticated && role === "Referat" && (
-        <Card className="bg-modra w-full p-4">
-          <Referat facultyId={facultyId} />
-        </Card>
+      {isAuthenticated && role === "Referat" && isVerified && (
+        <div>
+          <Card className="bg-modra w-full p-4">
+            <Referat facultyId={facultyId} isVerified={isVerified} />
+          </Card>
+          <GenerateModal uid={uid!} />
+        </div>
       )}
       {!isAuthenticated && (
         <div className="flex flex-col items-center pt-40">
@@ -157,6 +161,18 @@ const Dashboard: React.FC<DashboardProps> = ({
               Sign in
             </a>{" "}
             to access your saved timetable and more.
+          </p>
+        </div>
+      )}
+      {!isVerified && role === 'Referat' && (
+        <div className="flex flex-col items-center pt-40">
+          <p className="text-xl text-center font-bold mb-2">
+            <h2 className="text-modra text-3xl font-bold">
+              You are not verified yet!
+            </h2>
+          </p>
+          <p className="text-center text-gray-700 mb-4">
+            Wait and try later ...
           </p>
         </div>
       )}

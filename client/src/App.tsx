@@ -19,6 +19,7 @@ const App = () => {
   const [role, setRole] = useState<string>("");
   const [facultyId, setFacultyId] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   const fetchUserRole = async () => {
     try {
@@ -42,6 +43,8 @@ const App = () => {
       setRole(response.data.result.role);
       setFacultyId(response.data.result.facultyId);
       setName(response.data.result.name);
+      setIsVerified(response.data.result.isVerified);
+      console.log(response.data.result.isVerified)
     } catch (error: any) {
       console.error("Error fetching data:", error);
     }
@@ -93,6 +96,7 @@ const App = () => {
                   isAuthenticated={isAuthenticated}
                   uid={uid}
                   role={role}
+                  isVerified={isVerified}
                 />
               }
             />
@@ -105,6 +109,7 @@ const App = () => {
                   role={role}
                   facultyId={facultyId}
                   name={name}
+                  isVerified={isVerified}
                 />
               }
             />
