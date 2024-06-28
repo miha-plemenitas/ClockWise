@@ -179,8 +179,8 @@ function processScheduleData(lecture) {
   const { startTime, endTime } = setFirestoreTimestampsAndDuration(lecture);
 
   let completeLecture = {
-    startTime: startTime,
-    endTime: endTime,
+    startTime: serializeTimestamp(startTime),
+    endTime: serializeTimestamp(endTime),
     ...lecture
   };
 
@@ -193,6 +193,18 @@ function processScheduleData(lecture) {
   delete completeLecture.end;
 
   return completeLecture;
+}
+
+
+function serializeTimestamp(timestamp) {
+  return {
+    _seconds: timestamp.seconds,
+    _nanoseconds: timestamp.nanoseconds,
+  };
+}
+
+function deserializeTimestamp(data) {
+  return new Timestamp(data.seconds, data.nanoseconds);
 }
 
 

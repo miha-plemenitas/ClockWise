@@ -37,9 +37,9 @@ async function getLecturesAndRooms(facultyId){
 
 
 async function generateSchedule(facultyId) {
-  const { rooms, original_lectures } = await resetCollectionAndFetchSchedule(facultyId); // IF production
+  //const { rooms, original_lectures } = await resetCollectionAndFetchSchedule(facultyId); // IF production
 
-  //const { rooms, original_lectures } = await getLecturesAndRooms(facultyId); //IF working local
+  const { rooms, original_lectures } = await getLecturesAndRooms(facultyId); //IF working local
 
   splitAndSortRooms(rooms);
 
@@ -59,6 +59,7 @@ async function generateSchedule(facultyId) {
 
   const result = schedule;
   await saveGeneratedSchedule(facultyId, schedule);
+
 
   return result;
 }

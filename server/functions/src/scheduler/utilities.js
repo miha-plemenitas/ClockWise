@@ -300,7 +300,7 @@ function initializeSchedule(lectures) {
     scheduleLecture(lecture, filteredAndSortedLectures, 0); //HELL, lp
   }
 
-  console.log(globalSchedule.length);
+  console.log(`Done with scheduling, number of scheduled lectures: ${globalSchedule.length}`);
   return globalSchedule;
 }
 
