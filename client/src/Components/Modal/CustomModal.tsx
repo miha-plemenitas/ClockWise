@@ -114,7 +114,7 @@ export default function CustomModal({
   const [type, setType] = useState("");
   const [room, setRoom] = useState<Room[]>([]);
   const [tutor, setTutor] = useState<{ name: string; id: string }[]>([]);
-  const [group, setGroup] = useState<{ name: string; id: string }[]>([]);
+  const [group, setGroup] = useState<{ name: string; id: string }[]>([{ name: '', id: '' }]);
   const [repeatCount, setRepeatCount] = useState(0);
   const [groups, setGroups] = useState<Group[]>([]); // all groups
 
@@ -329,11 +329,11 @@ export default function CustomModal({
       };
     }
 
-    
+
     if (onUpdate) {
       onUpdate(eventDetails);
     }
-    
+
     setTitle("");
     setDate(null);
     setStartTime(null);
@@ -677,15 +677,7 @@ export default function CustomModal({
                 ))}
               </Select>
             </FormControl>
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                fullWidth
-                margin="normal"
-                label="Type"
-                defaultValue={event.extendedProps.executionType}
-                onChange={(e) => setType(e.target.value)}
-              />
-              <FormControl fullWidth margin="normal">
+            <FormControl fullWidth margin="normal">
                 <InputLabel id="room-select-label">Rooms</InputLabel>
                 <Select
                   labelId="room-select-label"
@@ -709,6 +701,15 @@ export default function CustomModal({
                   ))}
                 </Select>
               </FormControl>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Type"
+                defaultValue={event.extendedProps.executionType}
+                onChange={(e) => setType(e.target.value)}
+              />
+              
             </Box>
           </>
         )}
@@ -929,6 +930,30 @@ export default function CustomModal({
                 ))}
               </Select>
             </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="room-select-label">Rooms</InputLabel>
+              <Select
+                labelId="room-select-label"
+                id="room-select"
+                multiple // Allow multiple selections
+                value={room.map(room => room.id.toString())} // Array of selected IDs
+                label="Rooms"
+                onChange={handleRoomChange}
+                renderValue={(selected) => (
+                  <div>
+                    {selected.map((value) => (
+                      <Chip key={value} label={room.find(room => room.id.toString() === value)?.name} />
+                    ))}
+                  </div>
+                )}
+              >
+                {rooms.map((room) => (
+                  <MenuItem key={room.id} value={room.id}>
+                    {room.roomName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <Box sx={{ display: "flex", gap: 2 }}>
               <TextField
                 fullWidth
@@ -937,30 +962,7 @@ export default function CustomModal({
                 value={type}
                 onChange={(e) => setType(e.target.value)}
               />
-              <FormControl fullWidth margin="normal">
-              <InputLabel id="room-select-label">Rooms</InputLabel>
-              <Select
-                labelId="room-select-label"
-                id="room-select"
-                multiple
-                value={room.map(room => room.id.toString())}
-                label="Rooms"
-                onChange={handleTutorChange}
-                renderValue={(selected) => (
-                  <div>
-                    {selected.map((value) => (
-                      <Chip key={value} label={rooms.find(room => room.id.toString() === value)?.name} />
-                    ))}
-                  </div>
-                )}
-              >
-                {rooms.map((room) => (
-                  <MenuItem key={room.id} value={room.id}>
-                    {room.roomName} 
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+
               <TextField
                 fullWidth
                 margin="normal"

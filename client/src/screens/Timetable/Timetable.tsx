@@ -42,6 +42,7 @@ interface TimetableProps {
   role: string;
   facultyId: string | null;
   name: string | null;
+  isVerified: boolean | null;
 }
 
 interface Event {
@@ -93,6 +94,7 @@ const Timetable: React.FC<TimetableProps> = ({
   role,
   facultyId,
   name,
+  isVerified
 }) => {
   const navigate = useNavigate();
   const [isTutorMode, setIsTutorMode] = useState(false);
@@ -369,25 +371,21 @@ const Timetable: React.FC<TimetableProps> = ({
         (event: CustomEvent) => event.id === clickInfo.event.id
       );
 
-    console.log(event);
+    console.log(isVerified);
+    console.log(role);
 
     if (event && event.extendedProps.lecture) {
-      if (
-        role === "Student" ||
-        !role ||
-        (role === "Tutor" &&
-          !isTutorInArray(name, event.extendedProps.tutors)) ||
-        (role === "Referat" && facultyId !== selectedFacultyId)
-      ) {
+      if (role === "Student" || !role || (role === "Tutor" && !isTutorInArray(name, event.extendedProps.tutors)) || (role === "Referat" && facultyId !== selectedFacultyId)) {
         setSelectedEvent(event);
         setMode("view");
         setOpen(true);
-      } else if (
-        (role === "Referat" && facultyId === selectedFacultyId) ||
-        (role === "Tutor" && isTutorInArray(name, event.extendedProps.tutors))
-      ) {
+      } else if ((role === "Referat" && facultyId === selectedFacultyId && isVerified) || (role === "Tutor" && isTutorInArray(name, event.extendedProps.tutors) && isVerified)) {
         setSelectedEvent(event);
         setMode("edit");
+        setOpen(true);
+      } else if (!isVerified && role !== 'Student') {
+        setSelectedEvent(event);
+        setMode("view");
         setOpen(true);
       }
     } else if (event && !event.extendedProps.lecture) {

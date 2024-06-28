@@ -23,9 +23,10 @@ interface DayOff {
 
 interface ReferatProps {
   facultyId: string | null;
+  isVerified: boolean | null;
 }
 
-const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
+const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
   const {
     faculties,
     loading: facultiesLoading,
@@ -212,7 +213,8 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
 
   return (
     <div>
-      <div className="flex flex-col 2xl:flex-row gap-4">
+      {isVerified && (
+        <div className="flex flex-col 2xl:flex-row gap-4">
         <div className="2xl:w-1/2">
           <Card className="p-4">
             <div className="flex flex-col gap-4">
@@ -322,6 +324,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId }) => {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };
