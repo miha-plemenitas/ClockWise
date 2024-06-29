@@ -25,6 +25,7 @@ import { Switch } from "../../Components/ui/switch";
 import AvaibleTimeSlotsModal from "../../Components/Modal/AvailableTimeSlotsModal";
 import TimeSlots from "./TimeSlots";
 import { Card } from "../../Components/ui/card";
+import Checkbox from '@mui/material/Checkbox';
 
 function renderEventContent(eventInfo: EventContentArg) {
   return (
@@ -110,6 +111,7 @@ const Timetable: React.FC<TimetableProps> = ({
   const [selectedRoomNames, setSelectedRoomNames] = useState<string[]>([]);
   const [selectedCourseNames, setSelectedCourseNames] = useState<string[]>([]);
   const [allCourseNames, setAllCourseNames] = useState<string[]>([]);
+  const [scheduleType, setScheduleType] = useState('');
 
   const [availableSlots, setAvailableSlots] = useState<any>('');
   const [names, setNames] = useState<any>('');
@@ -167,6 +169,9 @@ const Timetable: React.FC<TimetableProps> = ({
   );
 
   const fetchData = async () => {
+
+    console.log(scheduleType)
+
     try {
       const username = process.env.REACT_APP_USERNAME;
       const password = process.env.REACT_APP_PASSWORD;
@@ -185,6 +190,7 @@ const Timetable: React.FC<TimetableProps> = ({
             facultyId: selectedFacultyId,
             branchId: selectedBranch,
             startTime: "2023-10-01T00:00:00Z",
+            scheduleType: scheduleType
           },
           headers: headers,
         }
@@ -319,6 +325,7 @@ const Timetable: React.FC<TimetableProps> = ({
 
     clearFilters();
     setAvailableSlots('');
+    setScheduleType('');
   }, []);
 
   const isTutorInArray = (tutorName: any, tutorsArray: any): boolean => {
@@ -624,11 +631,18 @@ const Timetable: React.FC<TimetableProps> = ({
     }
   }
 
+
+  const handleCheckboxChange = (event: { target: { checked: any; }; }) => {
+    setScheduleType(event.target.checked ? 'generated' : '');
+  };
+
   return (
     <div className="w-full p-5">
       <h1 className="text-modra text-3xl font-bold mb-4">Timetable</h1>
       <div className="flex flex-wrap items-center justify-between mb-4">
+
         <div className="flex flex-col items-start space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+
           <DropdownMenuFaculties
             onSelectFaculty={(id) => {
               setSelectedFacultyId(id);
@@ -684,6 +698,18 @@ const Timetable: React.FC<TimetableProps> = ({
             }}
             selectedBranchName={selectedBranchName}
           />
+
+          <div>
+            {role === "Referat" && (
+              <label>
+                <Checkbox
+                
+                  onChange={handleCheckboxChange}
+                />
+                Show Generated Schedule
+              </label>
+            )}
+          </div>
         </div>
         {role === "Tutor" && (
           <div className="flex items-center">
@@ -692,6 +718,7 @@ const Timetable: React.FC<TimetableProps> = ({
           </div>
         )}
       </div>
+
       {selectedBranch && (
         <div className="flex flex-col items-start mb-4 space-y-4 md:flex-row md:space-y-0 md:space-x-4">
           <DropdownMenuCourses
