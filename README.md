@@ -1,5 +1,7 @@
 # ClockWise
 
+![ClockWise Banner](clockwise_banner.png)
+
 ClockWise is a smart scheduling application designed to help users efficiently manage their time with advanced planning tools and intuitive interfaces. Our platform categorizes users into four distinct roles: Student, Tutor, Referat, and Admin, each with tailored functionalities to enhance their scheduling experience.
 
 For Students, ClockWise offers the ability to view specific timetables for their faculty, customized according to their program year and branch. They can filter timetables based on course, tutor, room, and group, create custom events, access detailed lecture information, and save their timetable to a personalized dashboard.
