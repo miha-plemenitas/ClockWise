@@ -1,6 +1,16 @@
-# Pameten-Urnik
+# ClockWise
 
-Pameten-Urnik is a smart scheduling application designed to help users efficiently manage their time with advanced planning tools and intuitive interfaces.
+ClockWise is a smart scheduling application designed to help users efficiently manage their time with advanced planning tools and intuitive interfaces. Our platform categorizes users into four distinct roles: Student, Tutor, Referat, and Admin, each with tailored functionalities to enhance their scheduling experience.
+
+For Students, ClockWise offers the ability to view specific timetables for their faculty, customized according to their program year and branch. They can filter timetables based on course, tutor, room, and group, create custom events, access detailed lecture information, and save their timetable to a personalized dashboard.
+
+Tutors have all the capabilities of Students, with the addition of a dedicated timetable for their sessions. They can also find available rooms, add new lectures for tests and other purposes, and manage their teaching schedule more effectively.
+
+The Referat role encompasses all the functionalities of the Tutor role and extends further. Referat users can create time slots to mark periods when no education activities occur, such as holidays. They can generate and visualize a heatmap based on lecture counts and frequency, create new timetables, and display them for users.
+
+The Admin role is focused on administrative tasks, including authenticating and managing the Referat and Tutor roles, ensuring the smooth operation and security of the platform.
+
+ClockWise brings significant benefits to both students and teachers by simplifying the process of timetable management and enhancing the overall efficiency of scheduling tasks. Students can easily navigate and customize their academic schedules, ensuring they stay organized and up-to-date with their coursework. Tutors and Referat users can manage their teaching responsibilities more effectively, optimize room usage, and adapt quickly to schedule changes. Admins ensure a secure and well-regulated environment for all users. With ClockWise, the academic community can experience a more streamlined, user-friendly approach to time management.
 
 ## SonarCloud Code Review
 
