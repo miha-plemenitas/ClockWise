@@ -4,17 +4,50 @@
 
 ClockWise is a smart scheduling application designed to help users efficiently manage their time with advanced planning tools and intuitive interfaces. Our platform categorizes users into four distinct roles: Student, Tutor, Referat, and Admin, each with tailored functionalities to enhance their scheduling experience.
 
-For Students, ClockWise offers the ability to view specific timetables for their faculty, customized according to their program year and branch. They can filter timetables based on course, tutor, room, and group, create custom events, access detailed lecture information, and save their timetable to a personalized dashboard.
+## Features
 
-Tutors have all the capabilities of Students, with the addition of a dedicated timetable for their sessions. They can also find available rooms, add new lectures for tests and other purposes, and manage their teaching schedule more effectively.
+- **Student Role**:
 
-The Referat role encompasses all the functionalities of the Tutor role and extends further. Referat users can create time slots to mark periods when no education activities occur, such as holidays. They can generate and visualize a heatmap based on lecture counts and frequency, create new timetables, and display them for users.
+  - View specific timetables for their faculty, customized according to program year and branch.
+  - Filter timetables based on course, tutor, room, and group.
+  - Create custom events and access detailed lecture information.
+  - Save timetables to a personalized dashboard.
 
-The Admin role is focused on administrative tasks, including authenticating and managing the Referat and Tutor roles, ensuring the smooth operation and security of the platform.
+- **Tutor Role**:
 
-ClockWise brings significant benefits to both students and teachers by simplifying the process of timetable management and enhancing the overall efficiency of scheduling tasks. Students can easily navigate and customize their academic schedules, ensuring they stay organized and up-to-date with their coursework. Tutors and Referat users can manage their teaching responsibilities more effectively, optimize room usage, and adapt quickly to schedule changes. Admins ensure a secure and well-regulated environment for all users. With ClockWise, the academic community can experience a more streamlined, user-friendly approach to time management.
+  - Includes all student functionalities.
+  - Dedicated timetable for their sessions.
+  - Find available rooms and add new lectures for tests and other purposes.
+
+- **Referat Role**:
+
+  - Includes all tutor functionalities.
+  - Create time slots for holidays and other non-educational periods.
+  - Generate and visualize heatmaps based on lecture counts and frequency.
+  - Create and display new timetables.
+
+- **Admin Role**:
+  - Focus on administrative tasks including authenticating and managing the Referat and Tutor roles.
+  - Ensure smooth operation and security of the platform.
+
+## Benefits
+
+ClockWise simplifies timetable management and enhances the overall efficiency of scheduling tasks for both students and teachers. Students can easily navigate and customize their academic schedules, ensuring they stay organized and up-to-date with their coursework. Tutors and Referat users can manage their teaching responsibilities more effectively, optimize room usage, and adapt quickly to schedule changes. Admins ensure a secure and well-regulated environment for all users. With ClockWise, the academic community can experience a more streamlined, user-friendly approach to time management.
+
+## Technology Stack
+
+- **Frontend**: React.js, Material-UI, Tailwind CSS
+- **Backend**: Node.js, Firebase Functions
+- **Database**: Firestore
+- **Authentication**: Firebase Authentication
+- **Programming Languages**: JavaScript, TypeScript
+- **Data Visualization**: Plotly
+- **Code Quality**: SonarCloud
+- **Version Control**: GitHub
 
 ## SonarCloud Code Review
+
+ClockWise integrates with SonarCloud to ensure code quality and maintainability. SonarCloud provides continuous inspection of our codebase, highlighting issues in code quality, security vulnerabilities, and potential bugs. This integration helps us maintain high standards of code health and reliability throughout the development process.
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=miha-plemenitas_ClockWise&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=miha-plemenitas_ClockWise)
 
@@ -77,6 +110,22 @@ REACT_APP_USERNAME = USERNAME;
 
 2. Start the React project with `$ npm start` in directory `.\client`.
 
+## Contribution
+
+We welcome contributions to ClockWise. If you are interested in contributing, please follow these steps:
+
+1. Fork the repository: [ClockWise GitHub Repository](https://github.com/miha-plemenitas/ClockWise).
+2. Create a new branch (`git checkout -b feature/your-feature-name`).
+3. Commit your changes (`git commit -am 'Add some feature'`).
+4. Push to the branch (`git push origin feature/your-feature-name`).
+5. Create a new Pull Request.
+
 ## Authors
 
-Tjaša Gumilar, Miha Plemenitaš, Vito Zupanič
+For any questions or inquiries, please contact us at:
+
+- Tjaša Gumilar
+- Miha Plemenitaš
+- Vito Zupanič
+
+Thank you for using ClockWise!
