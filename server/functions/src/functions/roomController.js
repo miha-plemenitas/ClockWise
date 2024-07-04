@@ -68,6 +68,7 @@ exports.getAllForFaculty = functions
   .https
   .onRequest(async (request, response) => {
   response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+  
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 

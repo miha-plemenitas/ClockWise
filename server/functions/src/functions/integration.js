@@ -25,6 +25,7 @@ exports.addFaculties = functions
   .https
   .onRequest(async (request, response) => {
   response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
 
@@ -55,6 +56,7 @@ exports.addPrograms = functions
   .https
   .onRequest(async (request, response) => {
   response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
 
@@ -86,7 +88,8 @@ exports.addBranches = functions
   })
   .https
   .onRequest(async (request, response) => {
-  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');    const id = request.query.id;
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+  const id = request.query.id;
 
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
@@ -118,7 +121,8 @@ exports.addCourses = functions
   })
   .https
   .onRequest(async (request, response) => {
-  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');    const id = request.query.id;
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+  const id = request.query.id;
 
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
@@ -151,7 +155,8 @@ exports.addTutors = functions
   })
   .https
   .onRequest(async (request, response) => {
-  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');    const id = request.query.id;
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+  const id = request.query.id;
 
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
@@ -184,7 +189,8 @@ exports.addGroups = functions
   })
   .https
   .onRequest(async (request, response) => {
-  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');    const id = request.query.id;
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+  const id = request.query.id;
 
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
@@ -217,7 +223,8 @@ exports.addLectures = functions
   })
   .https
   .onRequest(async (request, response) => {
-  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');    const id = request.query.id;
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+  const id = request.query.id;
 
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
@@ -250,7 +257,8 @@ exports.addRooms = functions
   })
   .https
   .onRequest(async (request, response) => {
-  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');    const id = request.query.id;
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+  const id = request.query.id;
 
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");
@@ -283,7 +291,8 @@ exports.duplicateLectures = functions
   })
   .https
   .onRequest(async (request, response) => {
-  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');    const id = request.query.id;
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+  const id = request.query.id;
 
     try {
       await checkAuthenticationandMethodForRequest(request, "POST");

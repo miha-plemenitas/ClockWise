@@ -26,6 +26,7 @@ exports.getAll = functions
   .https
   .onRequest(async (request, response) => {
   response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -58,6 +59,7 @@ exports.getById = functions
   .https
   .onRequest(async (request, response) => {
   response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
+  
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
