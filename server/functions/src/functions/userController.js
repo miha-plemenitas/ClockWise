@@ -30,7 +30,7 @@ exports.add = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {
@@ -72,8 +72,7 @@ exports.get = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -96,8 +95,7 @@ exports.get = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -129,8 +127,7 @@ exports.update = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "PUT");
 
@@ -167,8 +164,7 @@ exports.delete = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "DELETE");
 
@@ -191,7 +187,7 @@ exports.delete = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {

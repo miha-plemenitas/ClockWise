@@ -17,7 +17,7 @@ exports.add = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {
@@ -40,8 +40,7 @@ exports.add = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 

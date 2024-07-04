@@ -136,9 +136,6 @@ function findFreeSlots(events, startTime, endTime) {
 
   let freeSlots = [];
 
-  startTime = convertToDate(startTime, false);
-  endTime = convertToDate(endTime, true);
-
   if (startTime < convertedEvents[0].start) {
     freeSlots.push({ start: startTime, end: new Date(convertedEvents[0].start) });
   }
@@ -213,10 +210,40 @@ function formatFreeSlots(freeSlots) {
  * @returns {Object} An object where keys are dates (YYYY-MM-DD) and values are arrays of free time slots with start, end, and duration properties.
  */
 function findAndFormatFreeSlots(events, startTime, endTime) {
-  let freeSlots = findFreeSlots(events, startTime, endTime);
-  let formatedSlots = formatFreeSlots(freeSlots);
+  let freeSlots;
 
-  return formatedSlots;
+  startTime = convertToDate(startTime, false);
+  endTime = convertToDate(endTime, true);
+  if (endTime <= startTime) {
+    throw new Error("No: End time must be larger than start time.");
+  }
+  
+  if (events.length === 0) {
+    freeSlots = generateFreeSlotsForEmptyPeriod(startTime, endTime);
+  } else {
+    freeSlots = findFreeSlots(events, startTime, endTime);
+    freeSlots = formatFreeSlots(freeSlots);
+  }
+
+  return freeSlots;
+}
+
+
+function generateFreeSlotsForEmptyPeriod(startTime, endTime) {
+  let freeSlots = {};
+
+  while (startTime <= endTime) {
+    let dateString = startTime.toISOString().split('T')[0];
+    freeSlots[dateString] = [{
+      start: "07:00",
+      end: "21:00",
+      duration: 14
+    }];
+
+    startTime.setDate(startTime.getDate() + 1);
+  }
+
+  return freeSlots;
 }
 
 

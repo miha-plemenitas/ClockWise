@@ -30,8 +30,7 @@ exports.get = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -66,8 +65,7 @@ exports.getAllForFaculty = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -103,8 +101,7 @@ exports.getAllForProgram = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -140,7 +137,7 @@ exports.getAllForBranch = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {

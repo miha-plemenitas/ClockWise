@@ -36,8 +36,7 @@ exports.getAllForCourse = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -77,7 +76,7 @@ exports.getAllForBranch = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {
@@ -120,8 +119,7 @@ exports.getAllForGroup = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       const { facultyId, groupId, startTime, endTime } = request.query;
       validateRequestParams({ facultyId, groupId });
@@ -159,8 +157,7 @@ exports.getAllForRoom = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -200,8 +197,7 @@ exports.getAllForTutor = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -239,8 +235,7 @@ exports.findAvailableByIds = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -264,8 +259,7 @@ exports.findAvailableRoomSizeAndGroupIds = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -296,7 +290,7 @@ exports.add = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set('Access-Control-Allow-Origin', '*');
+    response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     response.set('Access-Control-Allow-Credentials', 'true');
 
     try {
@@ -321,8 +315,7 @@ exports.update = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "PUT");
 

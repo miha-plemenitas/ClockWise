@@ -26,8 +26,7 @@ exports.get = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
       
@@ -63,8 +62,7 @@ exports.getAllForProgram = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
@@ -101,8 +99,7 @@ exports.getAllForProgramYear = functions
   })
   .https
   .onRequest(async (request, response) => {
-    response.set("Access-Control-Allow-Origin", "*");
-
+  response.set('Access-Control-Allow-Origin', 'https://clockwise.si');
     try {
       await checkAuthenticationandMethodForRequest(request, "GET");
 
