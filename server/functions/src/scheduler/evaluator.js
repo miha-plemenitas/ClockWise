@@ -4,13 +4,13 @@ function evaluateSchedule(lectures) {
     const groupMap = new Map();
     const roomMap = new Map();
 
-    for(const lecture of lectures) {
+    for (const lecture of lectures) {
         const room = lecture.roomId;
         const start = lecture.start;
         const end = lecture.end;
         const day = lecture.day;
 
-        if (!roomMap.has(lecture)) roomMap.set(room, []);
+        if (!roomMap.has(room)) roomMap.set(room, []);
         conflicts += checkConflicts(roomMap.get(room), start, end, day);
         roomMap.get(room).push({ start: start, end: end, day: day });
 
@@ -26,15 +26,15 @@ function evaluateSchedule(lectures) {
             groupMap.get(group).push({ start: start, end: end, day: day });
         });
     }
-    
-    const { totalIdle: groupIdle, maxIdle: groupMax } = evaluateIdleTime(groupMap);
-    const { totalIdle: tutorIdle, maxIdle: tutorMax } = evaluateIdleTime(tutorMap);
 
-    totalIdle = groupIdle + tutorIdle;
+    const { totalIdle: groupIdle, maxIdle: groupMax, consecutivePenalty: groupConsecutivePenalty } = evaluateIdleTime(groupMap);
+    const { totalIdle: tutorIdle, maxIdle: tutorMax, consecutivePenalty: tutorConsecutivePenalty } = evaluateIdleTime(tutorMap);
 
-    return { totalIdle, groupMax, tutorMax, conflicts };
+    const totalIdle = groupIdle + tutorIdle;
+    const totalConsecutivePenalty = groupConsecutivePenalty + tutorConsecutivePenalty;
+
+    return { totalIdle, groupMax, tutorMax, conflicts, totalConsecutivePenalty };
 }
-
 
 function checkConflicts(existingTimes, start, end, day) {
     let conflictCount = 0;
@@ -46,10 +46,10 @@ function checkConflicts(existingTimes, start, end, day) {
     return conflictCount;
 }
 
-
 function evaluateIdleTime(map) {
     let totalIdle = 0;
     let maxIdle = 0;
+    let consecutivePenalty = 0;
 
     const calculateIdle = (times) => {
         times.sort((a, b) => a.start - b.start);
@@ -59,6 +59,11 @@ function evaluateIdleTime(map) {
             totalIdle += idlePeriod;
             if (idlePeriod > localMaxIdle) {
                 localMaxIdle = idlePeriod;
+            }
+
+            // Penalty for non-consecutive lectures (gaps larger than a certain threshold, e.g., 60 minutes)
+            if (idlePeriod > 60) {
+                consecutivePenalty += (idlePeriod - 60) * 0.5; // Example penalty calculation
             }
         }
         return localMaxIdle;
@@ -78,7 +83,7 @@ function evaluateIdleTime(map) {
         });
     });
 
-    return { totalIdle, maxIdle };
+    return { totalIdle, maxIdle, consecutivePenalty };
 }
 
 module.exports = {
