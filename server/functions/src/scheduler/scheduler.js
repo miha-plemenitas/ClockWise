@@ -4,7 +4,6 @@ const {
   initializeSchedule,
   splitAndSortRooms
 } = require("./utilities");
-const { evaluateSchedule } = require("./evaluator");
 const { resetCollectionAndFetchSchedule, expandLectureData } = require("./preparer");
 const { updateLectureDates, saveGeneratedSchedule } = require("./converter");
 const fs = require('fs');
