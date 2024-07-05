@@ -4,6 +4,8 @@
 
 ClockWise is a smart scheduling application designed to help users efficiently manage their time with advanced planning tools and intuitive interfaces. Our platform categorizes users into four distinct roles: Student, Tutor, Referat, and Admin, each with tailored functionalities to enhance their scheduling experience.
 
+Currenty available [here](https://clockwise.si/). 
+
 ## Features
 
 - **Student Role**:
