@@ -126,9 +126,7 @@ const Signin: React.FC<SigninProps> = ({ onSignin }) => {
               <h2 className="text-3xl font-semibold mb-4">ClockWise</h2>
               <blockquote>
                 <p className="italic">
-                  "This library has saved me countless hours of work and helped
-                  me deliver stunning designs to my clients faster than ever
-                  before."
+                  "Master Your Time, Achieve Your Goals."
                 </p>
                 <footer className="mt-4"></footer>
               </blockquote>

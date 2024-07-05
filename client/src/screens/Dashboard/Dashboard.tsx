@@ -208,7 +208,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           </Button>
           {loading && <CircularProgress />}
           {!loading && generatedEvents.length > 0 && (
-            <pre>{JSON.stringify(generatedEvents, null, 2)}</pre>
+            <pre>Timetable successfully generated!</pre>
           )}
           {!loading && generatedEvents.length === 0 && (
             <p>No events generated. Please try again.</p>

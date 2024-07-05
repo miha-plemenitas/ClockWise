@@ -113,6 +113,8 @@ const Timetable: React.FC<TimetableProps> = ({
   const [allCourseNames, setAllCourseNames] = useState<string[]>([]);
   const [scheduleType, setScheduleType] = useState('');
 
+  const [allGroups, setAllGroups] = useState<Group[]>([]);
+
   const [availableSlots, setAvailableSlots] = useState<any>('');
   const [names, setNames] = useState<any>('');
 
@@ -167,6 +169,25 @@ const Timetable: React.FC<TimetableProps> = ({
     programId || "",
     selectedYear
   );
+
+  const fetchAllGroups = async () => {
+    try {
+      const querySnapshot = await firestore
+        .collection("faculties")
+        .doc(selectedFacultyId)
+        .collection("groups")
+        .get();
+
+      const filteredGroups: Group[] = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Group[];
+
+      setAllGroups(filteredGroups);
+    } catch (err) {
+      console.error("Error loading groups:", err);
+    }
+  };
 
   const fetchData = async () => {
 
@@ -246,10 +267,18 @@ const Timetable: React.FC<TimetableProps> = ({
   };
 
   useEffect(() => {
+  
     if (selectedFacultyId && selectedBranch) {
       fetchData();
     }
   }, [selectedBranch, selectedFacultyId]);
+
+  useEffect(() => {
+    if (selectedFacultyId) {
+      fetchAllGroups();
+    }
+
+  }, [selectedFacultyId]);
 
   useEffect(() => {
     let filtered = events;
@@ -833,6 +862,7 @@ const Timetable: React.FC<TimetableProps> = ({
         event={selectedEvent}
         role={role}
         selectedFacultyId={selectedFacultyId}
+        allGroups={allGroups}
       />
     </div>
   );

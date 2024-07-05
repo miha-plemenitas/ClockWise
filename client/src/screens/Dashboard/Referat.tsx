@@ -142,7 +142,7 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
         }
       );
       setDaysOff(
-        response.data.result.map((dayOff: { startDate: any; endDate: any; }) => {
+        response.data.result.map((dayOff: { startDate: any; endDate: any }) => {
           const formatDate = (dateString: string | number | Date) => {
             const date = new Date(dateString);
             const day = String(date.getDate()).padStart(2, '0');
@@ -150,11 +150,11 @@ const Referat: React.FC<ReferatProps> = ({ facultyId, isVerified }) => {
             const year = date.getFullYear();
             return `${day}. ${month}. ${year}`;
           };
-
+      
           return {
             ...dayOff,
             startDate: formatDate(dayOff.startDate),
-            endDate: formatDate(dayOff.endDate),
+            endDate: dayOff.endDate ? formatDate(dayOff.endDate) : null, // <-- Conditional formatting
           };
         })
       );

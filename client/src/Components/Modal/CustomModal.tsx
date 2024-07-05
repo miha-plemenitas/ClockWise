@@ -110,7 +110,7 @@ export default function CustomModal({
   const [tutor, setTutor] = useState<{ name: string; id: string }[]>([]);
   const [group, setGroup] = useState<{ name: string; id: string }[]>([]);
   const [repeatCount, setRepeatCount] = useState(0);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
 
   const { rooms } = useRooms(selectedFacultyId);
   const { tutors } = useTutors(selectedFacultyId);
@@ -142,9 +142,17 @@ export default function CustomModal({
 
     if (allGroups) {
       setGroups(allGroups);
+      console.log("groups",allGroups);
     }
   }, [event]);
 
+  useEffect(() => {
+
+    if (allGroups) {
+      setGroups(allGroups);
+      console.log("groups",allGroups);
+    }
+  }, [selectedFacultyId]);
   
   const handleRoomChange = (event: any) => {
     const selectedValues = event.target.value;
